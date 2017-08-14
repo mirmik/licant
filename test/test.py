@@ -1,41 +1,44 @@
 #!/usr/bin/env python3.5
 #coding: utf-8
 
+import os
 import sys
 sys.path.insert(0, "..")
 
-from glink.make import copy, file, make, clean
+import glink.util as gu
+from glink.make import copy, file, print_result_string
+import glink.make
+import glink.cxx_make as cxx
 
-file("first")
-copy(src="second", tgt="third")
-copy(src="first", tgt="second")
+print(gu.green("Script Start"))
 
-make("third")
-clean("third")
+opts = cxx.options(
+	binutils = cxx.host_binutils,
+)
 
-#cpp = glink.cxx_make.host_cxx_maker(includePaths=["inc"])
-#
-#srcs = [
-#	"main.cpp", 
-#	"ttt.cpp"
-#]
-#
-#objs = ["build/main/" + gu.changeext(s,"o") for s in srcs]
-#
-#
-#for s, o in zip(srcs, objs):
-#    cpp.file(s)
-#    cpp.object(src=s, tgt=o)
-#
-#cpp.executable(tgt="target", srcs=objs)
-#
-#target = "target"
-#
-#def all():
-#	return cpp.make(target)
-#
-#def clean():
-#	return cpp.clean(target)
-#
-#result = glink.util.do_argv_routine(arg=1, default="all", locs=locals())
-#cpp.print_result_string(result)
+srcs = [
+	"main.cpp", 
+	"ttt.cpp"
+]
+
+objs = ["build/main/" + gu.changeext(s,"o") for s in srcs]
+
+
+for s, o in zip(srcs, objs):
+    file(s)
+    cxx.object(src=s, tgt=o, opts=opts)
+
+cxx.executable(tgt="target", srcs=objs, opts=opts)
+
+copy(src="target", tgt="mirmik")
+
+target = "mirmik"
+
+def all():
+	return glink.make.make(target)
+
+def clean():
+	return glink.make.clean(target)
+
+result = gu.do_argv_routine(arg=1, default="all", locs=locals())
+print_result_string(result)
