@@ -10,7 +10,7 @@ def execute(target, rule, echo=False, message=None):
 		print(rule)
 	
 	if message:
-		print(self.message.format(**target.__dict__))
+		print(message.format(**target.__dict__))
 
 	ret = os.system(rule)
 	return ret
@@ -105,12 +105,17 @@ def clean(root):
 	stree.invoke_foreach(ops = "need_if_exist")
 	return stree.invoke_foreach(ops="clr", cond=if_need_or_not_file)
 
-def make(root):
+def make(root, rebuild = False):
 	stree = subtree(root)
 	directories_keeper(stree)
 	stree.invoke_foreach(ops = "update_info")
-	stree.invoke_foreach(ops = "need_if_timestamp_compare")
-	stree.reverse_recurse_invoke(ops = need_spawn)
+	
+	if not rebuild:
+		stree.invoke_foreach(ops = "need_if_timestamp_compare")
+		stree.reverse_recurse_invoke(ops = need_spawn)
+	else:
+		stree.invoke_foreach(ops = set_need)
+
 	return stree.reverse_recurse_invoke(ops = "build", cond = if_need_or_not_file)
 
 def if_need_or_not_file(context, target):
@@ -125,6 +130,9 @@ def need_spawn(target):
 		if dt.need == True:
 			target.need = True
 			return 
+
+def set_need(target):
+	target.need = True
 
 def error_if_not_exist(target):
 	info = fcache.get_info(target.tgt)

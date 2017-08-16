@@ -14,20 +14,23 @@ class solver:
 		self.include = include
 		self.default = default
 
-def base(base, local):
+def base(base, local, solver):
 	return base
 
-def local(base, local):
+def local(base, local, solver):
+	if local == None:
+		return solver.default
 	return local
 
-def lstconcat(base, local):
+def lstconcat(base, local, solver):
 	if local == None:
 		local = []
 	return base + local
 
 cxx_module_field_list = {
+	"loglevel": 		solver("str", 		base, 		base,	"info"),
 	"srcdir": 			solver("str", 		local, 		base,	"."),
-	"sources": 			solver("list", 		lstconcat, 	base,	[]),
+	"sources": 			solver("list", 		local, 		base,	[]),
 	"target": 			solver("str", 		base, 		base,	"target"),
 	"includePaths": 	solver("list", 		lstconcat, 	base,	[]),
 	"cxxstd": 			solver("str", 		base, 		base,	"c++11"),
@@ -68,7 +71,7 @@ class CXXModuleOptions:
 			else: 
 				local = None
 
-			resopts[k] = self.table[k].merge(base, local)
+			resopts[k] = self.table[k].merge(base, local, self.table[k])
 
 		return CXXModuleOptions(**resopts)
 		
@@ -94,14 +97,30 @@ def sources_paths(opts):
 
 
 def link_objects(srcs, objs, opts):
+	if opts["loglevel"] == "debug":
+		message = None
+		echo = True
+	elif opts["loglevel"] == "info":
+		message="OBJECT {tgt}"
+		rmmsg = "DELETE {tgt}" 
+		echo=False
+
 	cxxopts = cxx_options_from_modopts(opts)
 	for s, o in zip(srcs, objs):
 		glink.make.file(s)
-		glink.cxx_make.object(src=s, tgt=o, opts=cxxopts)
+		glink.cxx_make.object(src=s, tgt=o, opts=cxxopts, message=message, rmmsg=rmmsg, echo=echo)
 
 def application(srcs, opts):
+	if opts["loglevel"] == "debug":
+		message = None
+		echo = True
+	elif opts["loglevel"] == "info":
+		message="APPLICATION {tgt}" 
+		rmmsg = "DELETE {tgt}"
+		echo=False
+
 	cxxopts = cxx_options_from_modopts(opts)
-	glink.cxx_make.executable(tgt=opts["target"], srcs=srcs, opts=cxxopts)
+	glink.cxx_make.executable(tgt=opts["target"], srcs=srcs, opts=cxxopts, message=message, rmmsg=rmmsg, echo=echo)
 	return opts["target"]
 
 def make(name, **kwargs):
@@ -116,7 +135,7 @@ def make(name, **kwargs):
 		
 		modopts = CXXModuleOptions(**mod.opts)
 		locopts = baseopts.merge(modopts)
-
+		
 		locsrcs = sources_paths(locopts)
 		locobjs = objects_paths(locsrcs, locopts)
 
@@ -124,10 +143,9 @@ def make(name, **kwargs):
 
 		submodules_results = []
 		for smod in locopts["modules"]:
-			print(smod.name)
 			submodules_results += modmake(smod.name, locopts)
 
-		return locobjs
+		return locobjs + submodules_results
 
 	result = modmake(name, opts)
 	if opts["type"] == "application":
