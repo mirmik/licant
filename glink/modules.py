@@ -34,3 +34,8 @@ def module(name, **kwargs):
 #		Implementation(name, impl, script=scriptq.last(), **kwargs)
 #	)
 #	print("impl {0} {1} register")
+
+class submodule:
+	def __init__(self, name, addopts = None):
+		self.name = name
+		self.addopts = addopts

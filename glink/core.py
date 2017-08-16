@@ -112,7 +112,8 @@ class SubTree:
 			if cond(self, w):
 				ret = w.invoke(ops)
 				if not (ret == 0 or ret == None):
-					raise context.ResultIsNotNull()
+					print(glink.util.red("Ошибка исполнения."))
+					exit(-1)
 				if ret == 0:
 					sum += 1
 	
