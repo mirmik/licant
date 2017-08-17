@@ -26,6 +26,7 @@ class FileTarget(Target):
 	
 
 	def timestamp(self, _self):
+		#print("timestamp: {}", self.tgt)
 		curinfo = fcache.get_info(self.tgt)
 
 		if curinfo.exist == False:
@@ -100,11 +101,11 @@ def copy(src, tgt):
 		deps=[src]
 	)
 
-def source(tgt):
+def source(tgt, deps=[]):
 	target = FileTarget(
 		build=error_if_not_exist,
+		deps=deps,
 		tgt=tgt, 
-		deps=[],		
 	)
 	target.clr = None
 	target.dirkeep = None
@@ -129,6 +130,7 @@ def make(root, rebuild = False, echo=True):
 	core.runtime["echo"] = echo
 	#core.runtime["debug"] = debug
 	stree = subtree(root)
+
 	#directories_keeper(stree)
 	stree.invoke_foreach(ops = "dirkeep")
 	stree.invoke_foreach(ops = "update_info")
@@ -197,17 +199,17 @@ def need_if_timestamp_compare(target):
 	#print("{}::need_if_timestamp_compare {}".format(target.tgt, getattr(target, "tstamp", 0)))
 	#curtime = getattr(target, "timestamp", None)
 	if target.tstamp == 0:
-		#print("\tresult: need=True")
 		target.need = True
 		return 0
 
 	maxtime = 0
 	for dep in [get_target(t) for t in target.depends]:
+		#print(dep.tgt)
 		if dep.tstamp > maxtime:
 			maxtime = dep.tstamp
 	
 	if maxtime > target.tstamp:
-		#print("\tresult: need=True")
+		#print("\tresult: need=True", maxtime)
 		target.need = True
 	else:
 		#print("\tresult: need=False")

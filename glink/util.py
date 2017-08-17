@@ -73,3 +73,12 @@ def as_list(src):
 	if (not isinstance(src, list)):
 		return [src]
 	return src
+
+def find_recursive(root, pattern, hide):
+	result = []
+	for d, dirs, files in os.walk(root):
+		if not hide in d:
+			for f in files:
+				if pattern in f:
+					result.append(os.path.join(d,f))
+	return result

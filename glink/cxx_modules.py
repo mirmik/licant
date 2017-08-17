@@ -106,11 +106,11 @@ def sources_paths(opts, moddir):
 	return [os.path.normpath(os.path.join(moddir, opts["srcdir"], s)) for s in opts["sources"]]
 
 
-def link_objects(srcs, objs, opts):
+def link_objects(srcs, objs, opts, adddeps):
 	cxxopts = cxx_options_from_modopts(opts)
 	for s, o in zip(srcs, objs):
 		glink.make.source(s)
-		glink.cxx_make.object(src=s, tgt=o, opts=cxxopts)
+		glink.cxx_make.object(src=s, tgt=o, opts=cxxopts, deps=[s] + adddeps)
 
 def application(srcs, opts):
 	cxxopts = cxx_options_from_modopts(opts)
@@ -124,8 +124,9 @@ def make(name, **kwargs):
 	opts = CXXModuleOptions(**kwargs)
 	opts.set_default_if_empty()
 
-	def modmake(name, baseopts):
-		mod = mlibrary.get(name)
+	def modmake(name, impl, baseopts):
+		mod = mlibrary.get(name, impl)
+
 		moddir = os.path.dirname(mod.script)
 		
 		modopts = CXXModuleOptions(**mod.opts)
@@ -135,14 +136,16 @@ def make(name, **kwargs):
 		locobjs = build_paths(locsrcs, locopts, "o")
 		locdeps = build_paths(locsrcs, locopts, "d")
 
-		link_objects(locsrcs, locobjs, locopts)
+		adddeps = mod.stack
+		
+		link_objects(locsrcs, locobjs, locopts, adddeps)
 
 		submodules_results = []
 		for smod in locopts["modules"]:
-			submodules_results += modmake(smod.name, locopts)
+			submodules_results += modmake(smod.name, smod.impl, locopts)
 
 		return locobjs + submodules_results
 
-	result = modmake(name, opts)
+	result = modmake(name, None, opts)
 	if opts["type"] == "application":
 		return application(result, opts)

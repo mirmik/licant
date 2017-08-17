@@ -37,7 +37,10 @@ host_binutils = binutils(
 	objdump= 	"objdump"
 )
 
-def object(src, tgt, opts, type=None):
+def object(src, tgt, opts, type=None, deps=None):
+	if deps == None:
+		deps = [src]
+
 	if type == None:
 		ext = src.split('.')[-1]
 	
@@ -63,7 +66,7 @@ def object(src, tgt, opts, type=None):
 		opts=opts,
 		tgt=tgt, 
 		src=src,
-		deps=[src],
+		deps=deps,
 		build=build,
 		#clr=glink.make.executor("rm -f {tgt}"),  
 	)

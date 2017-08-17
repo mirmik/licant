@@ -119,6 +119,7 @@ class SubTree:
 					sum += 1
 	
 			for r in [get_target(t) for t in w.rdepends]:
+				#print(w.rdepends)
 				r.rcounter = r.rcounter + 1
 				if r.rcounter == len(r.depends):
 					works.put(r)
