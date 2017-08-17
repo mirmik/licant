@@ -37,7 +37,7 @@ glink.make.copy(src = "target", tgt = "target2")
 target = "target2"
 
 def all():
-	return glink.make.make(target, rebuild=True)
+	return glink.make.make(target)
 
 def clean():
 	return glink.make.clean(target)

@@ -23,29 +23,45 @@ class FileTarget(Target):
 
 	def update_info(self, _self):
 		fcache.update_info(self.tgt)
+	
 
-	def need_if_timestamp_compare(self, _self):
+	def timestamp(self, _self):
 		curinfo = fcache.get_info(self.tgt)
-		curmtime = curinfo.mtime
-		if curmtime == None:
-			self.need = True
-			return 0
 
-		maxmtime = 0
-		for dep in [get_target(t) for t in self.depends]:
-			if dep.isfile:
-				info = fcache.get_info(dep.tgt)
-				if info.exist == False:
-					return True
-				if info.mtime > maxmtime:
-					maxmtime = info.mtime
+		if curinfo.exist == False:
+			self.tstamp = 0
+		else:	
+			self.tstamp = curinfo.mtime
+	
 
-		if maxmtime > curmtime:
-			self.need = True
-		else:
-			self.need = False
+	def dirkeep(self, _self):
+		dr = os.path.normpath(os.path.dirname(self.tgt))
+		if (not os.path.exists(dr)):
+			print("MKDIR %s" % dr)
+			os.system("mkdir -p {0}".format(dr))
 
-		return 0
+	#def need_if_timestamp_compare(self, _self):
+	#	curinfo = fcache.get_info(self.tgt)
+	#	curmtime = curinfo.mtime
+	#	if curmtime == None:
+	#		self.need = True
+	#		return 0
+#
+	#	maxmtime = 0
+	#	for dep in [get_target(t) for t in self.depends]:
+	#		if dep.isfile:
+	#			info = fcache.get_info(dep.tgt)
+	#			if info.exist == False:
+	#				return True
+	#			if info.mtime > maxmtime:
+	#				maxmtime = info.mtime
+#
+	#	if maxmtime > curmtime:
+	#		self.need = True
+	#	else:
+	#		self.need = False
+#
+	#	return 0
 
 	def need_if_exist(self, _self):
 		curinfo = fcache.get_info(self.tgt)
@@ -91,18 +107,8 @@ def source(tgt):
 		deps=[],		
 	)
 	target.clr = None
+	target.dirkeep = None
 	core.targets[tgt] = target
-
-def directories_keeper(stree):
-	depset = stree.depset
-	targets = [get_target(t) for t in depset]
-
-	for target in targets:
-		if isinstance(target, FileTarget):
-			dr = os.path.normpath(os.path.dirname(target.tgt))
-			if (not os.path.exists(dr)):
-				print("MKDIR %s" % dr)
-				os.system("mkdir -p {0}".format(dr))
 
 def print_result_string(ret):
 	if ret == 0:
@@ -122,13 +128,14 @@ def clean(root, echo=True):
 def make(root, rebuild = False, echo=True):
 	core.runtime["echo"] = echo
 	#core.runtime["debug"] = debug
-
 	stree = subtree(root)
-	directories_keeper(stree)
+	#directories_keeper(stree)
+	stree.invoke_foreach(ops = "dirkeep")
 	stree.invoke_foreach(ops = "update_info")
+	stree.reverse_recurse_invoke(ops = "timestamp")
 	
 	if not rebuild:
-		stree.invoke_foreach(ops = "need_if_timestamp_compare", cond = files_only)
+		stree.invoke_foreach(ops = need_if_timestamp_compare, cond = files_only)
 		stree.reverse_recurse_invoke(ops = need_spawn)
 	else:
 		stree.invoke_foreach(ops = set_need)
@@ -141,15 +148,19 @@ def files_only(context, target):
 	return isinstance(target, FileTarget)
 
 def if_need_and_file(context, target):
-	return target.need and isinstance(target, FileTarget)
+	need = getattr(target, "need", None)
+	if need == None:
+		return False
+	return need and isinstance(target, FileTarget)
 
 def need_spawn(target):
 	deptgts = [get_target(t) for t in target.depends]
 	for dt in deptgts:
 		if dt.need == True:
 			target.need = True
-			return 
-
+			return 0 
+	target.need = getattr(target, "need", False)
+		
 def set_need(target):
 	target.need = True
 
@@ -164,7 +175,7 @@ def error_if_not_exist(target):
 def do_function(target):
 	target.func(*target.args, **target.kwargs)
 
-def function(tgt, func, deps=[], args=[], kwargs={}, always=False):
+def function(tgt, func, deps=[], args=[], kwargs={}):
 	core.targets[tgt] = Target(
 		tgt=tgt,
 		build=do_function,
@@ -172,5 +183,34 @@ def function(tgt, func, deps=[], args=[], kwargs={}, always=False):
 		deps=deps,
 		args=args,
 		kwargs=kwargs, 
-		need=always
+		timestamp=timestamp_max_of_depends
 	)
+
+def timestamp_max_of_depends(target):
+	maxtime = 0
+	for dep in [get_target(t) for t in target.depends]:
+		if dep.tstamp > maxtime:
+			maxtime = dep.tstamp
+	target.tstamp = maxtime	
+
+def need_if_timestamp_compare(target):
+	#print("{}::need_if_timestamp_compare {}".format(target.tgt, getattr(target, "tstamp", 0)))
+	#curtime = getattr(target, "timestamp", None)
+	if target.tstamp == 0:
+		#print("\tresult: need=True")
+		target.need = True
+		return 0
+
+	maxtime = 0
+	for dep in [get_target(t) for t in target.depends]:
+		if dep.tstamp > maxtime:
+			maxtime = dep.tstamp
+	
+	if maxtime > target.tstamp:
+		#print("\tresult: need=True")
+		target.need = True
+	else:
+		#print("\tresult: need=False")
+		target.need = False
+
+	return 0

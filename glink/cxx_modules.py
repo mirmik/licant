@@ -35,6 +35,8 @@ cxx_module_field_list = {
 	"includePaths": 	solver("list", 		lstconcat, 	base,	[]),
 	"cxxstd": 			solver("str", 		base, 		base,	"c++11"),
 	"ccstd": 			solver("str", 		base, 		base,	"c11"),
+	"cxx_flags": 		solver("str", 		base, 		base,	""),
+	"cc_flags": 		solver("str", 		base, 		base,	""),
 	"modules": 			solver("list", 		local, 		base,	[]),
 	"type": 			solver("str", 		base, 		base,	"application"),
 	"builddir": 		solver("str", 		base, 		base,	"build"),
@@ -81,46 +83,38 @@ class CXXModuleOptions:
 		self.check()
 
 def cxx_options_from_modopts(modopts):
+	cxxstd = "-std=" + modopts["cxxstd"]
+	ccstd = "-std=" + modopts["ccstd"]
+
+	cxx_flags = cxxstd + " " + modopts["cxx_flags"]
+	cc_flags = ccstd + " " + modopts["cc_flags"]
+
 	return glink.cxx_make.options(
 		binutils = modopts["binutils"],
-		includePaths = modopts["includePaths"]
-	)
+		includePaths = modopts["includePaths"],
+		cc_flags = cc_flags,
+		cxx_flags = cxx_flags,
+	)	
 
-def objects_paths(srcs, opts):
+def build_paths(srcs, opts, ext):
 	objs = []
 	for s in srcs:
-		objs.append(os.path.normpath(os.path.join(opts.opts["builddir"], gu.changeext(s, "o")))) 
+		objs.append(os.path.normpath(os.path.join(opts.opts["builddir"], gu.changeext(s, ext).replace("..", "__")))) 
 	return objs
 
-def sources_paths(opts):
-	return [os.path.normpath(os.path.join(opts["srcdir"], s)) for s in opts["sources"]]
+def sources_paths(opts, moddir):
+	return [os.path.normpath(os.path.join(moddir, opts["srcdir"], s)) for s in opts["sources"]]
 
 
 def link_objects(srcs, objs, opts):
-	if opts["loglevel"] == "debug":
-		message = None
-		echo = True
-	elif opts["loglevel"] == "info":
-		message="OBJECT {tgt}"
-		rmmsg = "DELETE {tgt}" 
-		echo=False
-
 	cxxopts = cxx_options_from_modopts(opts)
 	for s, o in zip(srcs, objs):
-		glink.make.file(s)
-		glink.cxx_make.object(src=s, tgt=o, opts=cxxopts, message=message, rmmsg=rmmsg, echo=echo)
+		glink.make.source(s)
+		glink.cxx_make.object(src=s, tgt=o, opts=cxxopts)
 
 def application(srcs, opts):
-	if opts["loglevel"] == "debug":
-		message = None
-		echo = True
-	elif opts["loglevel"] == "info":
-		message="APPLICATION {tgt}" 
-		rmmsg = "DELETE {tgt}"
-		echo=False
-
 	cxxopts = cxx_options_from_modopts(opts)
-	glink.cxx_make.executable(tgt=opts["target"], srcs=srcs, opts=cxxopts, message=message, rmmsg=rmmsg, echo=echo)
+	glink.cxx_make.executable(tgt=opts["target"], srcs=srcs, opts=cxxopts)
 	return opts["target"]
 
 def make(name, **kwargs):
@@ -132,12 +126,14 @@ def make(name, **kwargs):
 
 	def modmake(name, baseopts):
 		mod = mlibrary.get(name)
+		moddir = os.path.dirname(mod.script)
 		
 		modopts = CXXModuleOptions(**mod.opts)
 		locopts = baseopts.merge(modopts)
-		
-		locsrcs = sources_paths(locopts)
-		locobjs = objects_paths(locsrcs, locopts)
+
+		locsrcs = sources_paths(locopts, moddir)
+		locobjs = build_paths(locsrcs, locopts, "o")
+		locdeps = build_paths(locsrcs, locopts, "d")
 
 		link_objects(locsrcs, locobjs, locopts)
 

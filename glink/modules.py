@@ -1,5 +1,6 @@
 from glink.util import red 
 from glink.scripter import scriptq
+import inspect
 
 class ModuleLibrary:
 	def __init__(self):
@@ -26,7 +27,6 @@ class Module:
 mlibrary = ModuleLibrary()
 
 def module(name, **kwargs):
-	#print("module {0} register")
 	mlibrary.register(Module(name, script=scriptq.last(), **kwargs))
 
 #def implementation(name, impl, **kwargs):

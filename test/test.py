@@ -34,8 +34,8 @@ print(gu.green("Script Start"))
 source("a.cpp")
 source("b.cpp")
 
-ftarget(tgt="b.o", deps=["a.cpp"], 			build=glink.make.execute("g++ a.cpp -c -o a.o"))
-ftarget(tgt="a.o", deps=["b.cpp"], 			build=glink.make.execute("g++ b.cpp -c -o b.o"))
+ftarget(tgt="a.o", deps=["a.cpp"], 			build=glink.make.execute("g++ a.cpp -c -o a.o"))
+ftarget(tgt="b.o", deps=["b.cpp"], 			build=glink.make.execute("g++ b.cpp -c -o b.o"))
 ftarget(tgt="target", deps=["a.o", "b.o"], 	build=glink.make.execute("g++ a.o b.o -o target"))
 ftarget(tgt="mirmik", deps=["target", "fnc"], 		build=glink.make.execute("cp target mirmik"))
 

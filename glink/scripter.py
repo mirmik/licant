@@ -8,6 +8,7 @@ class ScriptQueue:
 	def execute(self, path):
 		self.stack.append(path)
 		exec(open(path).read(), globals())
+		self.stack.pop()
 
 	def last(self):
 		return self.stack[-1]
