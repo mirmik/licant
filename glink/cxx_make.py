@@ -37,7 +37,7 @@ host_binutils = binutils(
 	objdump= 	"objdump"
 )
 
-def object(src, tgt, opts, type=None, echo=True, message=None, rmmsg=None):
+def object(src, tgt, opts, type=None):
 	if type == None:
 		ext = src.split('.')[-1]
 	
@@ -51,11 +51,11 @@ def object(src, tgt, opts, type=None, echo=True, message=None, rmmsg=None):
 			print(glink.util.red("Unrecognized extention"))
 			exit(-1)
 	if type == "cxx":
-		build = glink.make.executor(opts.cxxobjrule, echo, message)
+		build = glink.make.execute(opts.cxxobjrule)
 	elif type == "cc":
-		build = glink.make.executor(opts.ccobjrule , echo, message)
+		build = glink.make.execute(opts.ccobjrule)
 	elif type == "asm":
-		build = glink.make.executor(opts.ccobjrule , echo, message)
+		build = glink.make.execute(opts.ccobjrule)
 	else:
 		print(glink.util.red("Unrecognized extention"))
 		exit(-1)
@@ -65,15 +65,15 @@ def object(src, tgt, opts, type=None, echo=True, message=None, rmmsg=None):
 		src=src,
 		deps=[src],
 		build=build,
-		clr=glink.make.executor("rm -f {tgt}", echo, rmmsg),  
+		#clr=glink.make.executor("rm -f {tgt}"),  
 	)
 
-def executable(tgt, srcs, opts, echo=True, message=None, rmmsg=None):
+def executable(tgt, srcs, opts):
 	core.targets[tgt] = glink.make.FileTarget(
 		opts=opts,
 		tgt=tgt, 
-		build=glink.make.executor(opts.execrule, echo, message),
-		clr=glink.make.executor("rm -f {tgt}", echo, rmmsg),  
+		build=glink.make.execute(opts.execrule),
+		#clr=glink.make.executor("rm -f {tgt}"),  
 		srcs=" ".join(srcs),
 		deps=srcs
 	)

@@ -6,34 +6,46 @@ import sys
 sys.path.insert(0, "..")
 
 import glink.util as gu
-from glink.make import copy, file, print_result_string
+from glink.make import copy, ftarget, source, function, print_result_string
 import glink.make
 import glink.cxx_make as cxx
 
 print(gu.green("Script Start"))
 
-opts = cxx.options(
-	binutils = cxx.host_binutils,
-)
+#opts = cxx.options(
+#	binutils = cxx.host_binutils,
+#)
+#
+#srcs = [
+#	"a.cpp", 
+#	"b.cpp"
+#]
+#
+#objs = ["build/main/" + gu.changeext(s,"o") for s in srcs]
+#
+#
+#for s, o in zip(srcs, objs):
+#    source(s)
+#    cxx.object(src=s, tgt=o, opts=opts)
+#
+#cxx.executable(tgt="target", srcs=objs, opts=opts)
 
-srcs = [
-	"main.cpp", 
-	"ttt.cpp"
-]
+#copy(src="target", tgt="mirmik")
+source("a.cpp")
+source("b.cpp")
 
-objs = ["build/main/" + gu.changeext(s,"o") for s in srcs]
+ftarget(tgt="b.o", deps=["a.cpp"], 			build=glink.make.execute("g++ a.cpp -c -o a.o"))
+ftarget(tgt="a.o", deps=["b.cpp"], 			build=glink.make.execute("g++ b.cpp -c -o b.o"))
+ftarget(tgt="target", deps=["a.o", "b.o"], 	build=glink.make.execute("g++ a.o b.o -o target"))
+ftarget(tgt="mirmik", deps=["target", "fnc"], 		build=glink.make.execute("cp target mirmik"))
 
+def func(*args, **kwargs):
+	print("Раньше mirmik, но позже target")
 
-for s, o in zip(srcs, objs):
-    file(s)
-    cxx.object(src=s, tgt=o, opts=opts)
+function(tgt="fnc", deps=["target"], func=func)
 
-cxx.executable(tgt="target", srcs=objs, opts=opts)
-
-copy(src="target", tgt="mirmik")
 
 target = "mirmik"
-
 def all():
 	return glink.make.make(target)
 

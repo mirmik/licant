@@ -3,6 +3,7 @@ import glink.util
 class GlinkCore:
 	def __init__(self):
 		self.targets = {}
+		self.runtime = {}
 
 core = GlinkCore()
 
@@ -18,7 +19,7 @@ class Target:
 			setattr(self, k, v)
 
 	def invoke(self, func):
-		if (isinstance(func ,str)):
+		if (isinstance(func, str)):
 			res = getattr(self, func, None)
 			if (res == None):
 				return None

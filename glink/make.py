@@ -3,14 +3,14 @@ from glink.cache import fcache
 from glink.util import red, green, yellow
 import os
 
-def execute(target, rule, echo=False, message=None):
+def do_execute(target, rule):
 	rule = rule.format(**target.__dict__)
 
-	if echo:
+	if core.runtime["echo"]:
 		print(rule)
 	
-	if message:
-		print(message.format(**target.__dict__))
+	#if message:
+	#	print(message.format(**target.__dict__))
 
 	ret = os.system(rule)
 	return ret
@@ -56,31 +56,42 @@ class FileTarget(Target):
 
 		return 0
 
-class executor:
-	def __init__(self, rule, echo=False, message=None):
-		self.rule = rule
-		self.echo = echo
-		self.message = message
+	def clr(self, _self):
+		do_execute(self, "rm -f {tgt}")
 
-	def __call__(self, target):
-		return execute(target, self.rule, self.echo, self.message)
-
-def copy(src, tgt, echo=True, message=None, rmmsg=None):
+def ftarget(tgt, deps=[], **kwargs):
 	core.targets[tgt] = FileTarget(
 		tgt=tgt, 
-		build=executor("cp {src} {tgt}", echo, message),
-		clr=executor("rm -f {tgt}", echo, rmmsg),  
+		deps=deps,
+		**kwargs
+	)
+
+class Executor:
+	def __init__(self, rule):
+		self.rule = rule
+
+	def __call__(self, target):
+		return do_execute(target, self.rule)
+
+def execute(*args, **kwargs):
+	return Executor(*args, **kwargs)
+
+def copy(src, tgt):
+	core.targets[tgt] = FileTarget(
+		tgt=tgt, 
+		build=execute("cp {src} {tgt}"),
 		src=src,
 		deps=[src]
 	)
 
-def file(tgt):
-	core.targets[tgt] = FileTarget(
+def source(tgt):
+	target = FileTarget(
 		build=error_if_not_exist,
 		tgt=tgt, 
-		deps=[]
+		deps=[],		
 	)
-
+	target.clr = None
+	core.targets[tgt] = target
 
 def directories_keeper(stree):
 	depset = stree.depset
@@ -99,30 +110,38 @@ def print_result_string(ret):
 	else:
 		print(green("Success"))
 
-def clean(root):
+def clean(root, echo=True):
+	core.runtime["echo"] = echo
+	#core.runtime["debug"] = debug
+	
 	stree = subtree(root)
 	stree.invoke_foreach(ops = "update_info")
 	stree.invoke_foreach(ops = "need_if_exist")
-	return stree.invoke_foreach(ops="clr", cond=if_need_or_not_file)
+	return stree.invoke_foreach(ops="clr", cond=if_need_and_file)
 
-def make(root, rebuild = False):
+def make(root, rebuild = False, echo=True):
+	core.runtime["echo"] = echo
+	#core.runtime["debug"] = debug
+
 	stree = subtree(root)
 	directories_keeper(stree)
 	stree.invoke_foreach(ops = "update_info")
 	
 	if not rebuild:
-		stree.invoke_foreach(ops = "need_if_timestamp_compare")
+		stree.invoke_foreach(ops = "need_if_timestamp_compare", cond = files_only)
 		stree.reverse_recurse_invoke(ops = need_spawn)
 	else:
 		stree.invoke_foreach(ops = set_need)
+	return stree.reverse_recurse_invoke(ops = "build", cond = if_need)
 
-	return stree.reverse_recurse_invoke(ops = "build", cond = if_need_or_not_file)
+def if_need(context, target):
+	return target.need
 
-def if_need_or_not_file(context, target):
-	if (not isinstance(target, FileTarget)):
-		return True
-	else:
-		return target.need
+def files_only(context, target):
+	return isinstance(target, FileTarget)
+
+def if_need_and_file(context, target):
+	return target.need and isinstance(target, FileTarget)
 
 def need_spawn(target):
 	deptgts = [get_target(t) for t in target.depends]
@@ -139,3 +158,19 @@ def error_if_not_exist(target):
 	if info.exist == False:
 		print("Файл не существует:", red(target.tgt))
 		exit(-1)
+
+
+
+def do_function(target):
+	target.func(*target.args, **target.kwargs)
+
+def function(tgt, func, deps=[], args=[], kwargs={}, always=False):
+	core.targets[tgt] = Target(
+		tgt=tgt,
+		build=do_function,
+		func=func,
+		deps=deps,
+		args=args,
+		kwargs=kwargs, 
+		need=always
+	)
