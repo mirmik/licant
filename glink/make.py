@@ -93,12 +93,12 @@ class Executor:
 def execute(*args, **kwargs):
 	return Executor(*args, **kwargs)
 
-def copy(src, tgt):
+def copy(src, tgt, adddeps=[]):
 	core.targets[tgt] = FileTarget(
 		tgt=tgt, 
 		build=execute("cp {src} {tgt}"),
 		src=src,
-		deps=[src]
+		deps=[src] + adddeps
 	)
 
 def source(tgt, deps=[]):

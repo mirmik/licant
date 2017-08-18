@@ -12,38 +12,31 @@ import glink.cxx_make as cxx
 
 print(gu.green("Script Start"))
 
-#opts = cxx.options(
-#	binutils = cxx.host_binutils,
-#)
-#
-#srcs = [
-#	"a.cpp", 
-#	"b.cpp"
-#]
-#
-#objs = ["build/main/" + gu.changeext(s,"o") for s in srcs]
-#
-#
-#for s, o in zip(srcs, objs):
-#    source(s)
-#    cxx.object(src=s, tgt=o, opts=opts)
-#
-#cxx.executable(tgt="target", srcs=objs, opts=opts)
+opts = cxx.options(
+	binutils = cxx.host_binutils,
+	cxx_flags = "-std=c++98"
+)
 
-#copy(src="target", tgt="mirmik")
-source("a.cpp")
-source("b.cpp")
+srcs = [
+	"a.c", 
+	"b.cpp"
+]
 
-ftarget(tgt="a.o", deps=["a.cpp"], 			build=glink.make.execute("g++ a.cpp -c -o a.o"))
-ftarget(tgt="b.o", deps=["b.cpp"], 			build=glink.make.execute("g++ b.cpp -c -o b.o"))
-ftarget(tgt="target", deps=["a.o", "b.o"], 	build=glink.make.execute("g++ a.o b.o -o target"))
-ftarget(tgt="mirmik", deps=["target", "fnc"], 		build=glink.make.execute("cp target mirmik"))
+objs = ["build/main/" + gu.changeext(s,"o") for s in srcs]
+
+
+for s, o in zip(srcs, objs):
+    source(s)
+    cxx.object(src=s, tgt=o, opts=opts)
+
+cxx.executable(tgt="target", srcs=objs, opts=opts)
+
 
 def func(*args, **kwargs):
 	print("Раньше mirmik, но позже target")
 
 function(tgt="fnc", deps=["target"], func=func)
-
+copy(tgt="mirmik", src="target", adddeps=["fnc"])
 
 target = "mirmik"
 def all():
