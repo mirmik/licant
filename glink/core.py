@@ -1,9 +1,22 @@
 import glink.util
+import sys
+from optparse import OptionParser
 
 class GlinkCore:
 	def __init__(self):
 		self.targets = {}
-		self.runtime = {}
+		self.runtime = { 'infomod': "info" }
+		self.glbopts = {}
+
+	def parse_argv(self, argv=sys.argv[1:]):
+		parser = OptionParser()
+		parser.add_option("-d", "--debug", action="store_true", default=False, 
+			help="print full system commands")
+		parser.add_option("-j", "--threads", default=None, help="count of threads for executor")
+
+		return parser.parse_args(argv)
+		#print(options)
+		#print(args)
 
 core = GlinkCore()
 

@@ -11,9 +11,9 @@ class binutils:
 		self.objdump = objdump
 
 class CXXCompileOptions:
-	def __init__(self, binutils, includePaths = None, defines = None, cxx_flags="", cc_flags="", ld_flags=""):
+	def __init__(self, binutils, include_paths = None, defines = None, cxx_flags="", cc_flags="", ld_flags=""):
 		self.binutils = binutils
-		self.incopt = glink.util.flag_prefix("-I", includePaths) 
+		self.incopt = glink.util.flag_prefix("-I", include_paths) 
 		self.defopt = glink.util.flag_prefix("-D", defines) 
 		self.cxx_flags = cxx_flags
 		self.cc_flags = cc_flags
@@ -22,8 +22,8 @@ class CXXCompileOptions:
 		self.cxxobjrule="{opts.binutils.cxx} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cxx_flags}"
 		self.ccobjrule= "{opts.binutils.cc} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cc_flags}"
 
-def options(binutils, includePaths = None, defines = None, cxx_flags="", cc_flags="", ld_flags=""):
-		return CXXCompileOptions(binutils, includePaths, defines, cxx_flags, cc_flags, ld_flags)
+def options(binutils, include_paths = None, defines = None, cxx_flags="", cc_flags="", ld_flags=""):
+		return CXXCompileOptions(binutils, include_paths, defines, cxx_flags, cc_flags, ld_flags)
 	
 cxx_ext_list = ["cpp", "cxx"]
 cc_ext_list = ["cc", "c"]
@@ -37,7 +37,7 @@ host_binutils = binutils(
 	objdump= 	"objdump"
 )
 
-def object(src, tgt, opts, type=None, deps=None):
+def object(src, tgt, opts, type=None, deps=None, message="OBJECT {tgt}"):
 	if deps == None:
 		deps = [src]
 
@@ -68,15 +68,17 @@ def object(src, tgt, opts, type=None, deps=None):
 		src=src,
 		deps=deps,
 		build=build,
+		message=message
 		#clr=glink.make.executor("rm -f {tgt}"),  
 	)
 
-def executable(tgt, srcs, opts):
+def executable(tgt, srcs, opts, message="EXECUTABLE {tgt}"):
 	core.targets[tgt] = glink.make.FileTarget(
 		opts=opts,
 		tgt=tgt, 
 		build=glink.make.execute(opts.execrule),
 		#clr=glink.make.executor("rm -f {tgt}"),  
 		srcs=" ".join(srcs),
-		deps=srcs
+		deps=srcs,
+		message=message
 	)

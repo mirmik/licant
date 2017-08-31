@@ -14,34 +14,60 @@ class solver:
 		self.include = include
 		self.default = default
 
-def base(base, local, solver):
+def base(base, local, solver, tbase, tlocal):
 	return base
 
-def local(base, local, solver):
+def local(base, local, solver, tbase, tlocal):
 	if local == None:
 		return solver.default
 	return local
 
-def lstconcat(base, local, solver):
+def concat(base, local, solver, tbase, tlocal):
 	if local == None:
 		local = []
 	return base + local
 
+def concat_add_srcdir(base, local, solver, tbase, tlocal):
+	if local == None:
+		local = []
+	else:
+		if "srcdir" in tlocal.opts:
+			srcdir = tlocal.opts["srcdir"]
+		else:
+			srcdir = ""
+
+		local = list(map(lambda p: os.path.join(tlocal.opts["__dir__"], srcdir, p), local))
+	return base + local
+
+def local_add_srcdir(base, local, solver, tbase, tlocal):
+	if "srcdir" in tlocal.opts:
+		srcdir = tlocal.opts["srcdir"]
+	else:
+		srcdir = ""
+	return list(map(lambda p: os.path.join(tlocal.opts["__dir__"], srcdir, p), local))
+	
+def concat_add_locdir(base, local, solver, tbase, tlocal):
+	if local == None:
+		local = []
+	else:
+		local = list(map(lambda p: os.path.join(tlocal.opts["__dir__"], p), local))
+	return base + local
+
 cxx_module_field_list = {
-	"loglevel": 		solver("str", 		base, 		base,	"info"),
-	"srcdir": 			solver("str", 		local, 		base,	"."),
-	"sources": 			solver("list", 		local, 		base,	[]),
-	"target": 			solver("str", 		base, 		base,	"target"),
-	"includePaths": 	solver("list", 		lstconcat, 	base,	[]),
-	"cxxstd": 			solver("str", 		base, 		base,	"c++11"),
-	"ccstd": 			solver("str", 		base, 		base,	"c11"),
-	"cxx_flags": 		solver("str", 		base, 		base,	""),
-	"cc_flags": 		solver("str", 		base, 		base,	""),
-	"modules": 			solver("list", 		local, 		base,	[]),
-	"type": 			solver("str", 		base, 		base,	"application"),
-	"builddir": 		solver("str", 		base, 		base,	"build"),
-	"binutils": 		solver("binutils", 	base, 		base,	host_binutils),
-	"includeModules": 	solver("list", 		base, 		base,	[]),
+	"loglevel": 		solver("str", 		base, 						base,					"info"),
+	"srcdir": 			solver("str", 		local, 						base,					"."),
+	"sources": 			solver("list", 		local_add_srcdir,			concat_add_srcdir,		[]),
+	"target": 			solver("str", 		base, 						base,					"target"),
+	"include_paths": 	solver("list", 		concat_add_locdir, 			concat_add_locdir,		[]),
+	"cxxstd": 			solver("str", 		base, 						base,					"c++11"),
+	"ccstd": 			solver("str", 		base, 						base,					"c11"),
+	"cxx_flags": 		solver("str", 		base, 						base,					""),
+	"cc_flags": 		solver("str", 		base, 						base,					""),
+	"modules": 			solver("list", 		local, 						concat,					[]),
+	"type": 			solver("str", 		base, 						base,					"application"),
+	"builddir": 		solver("str", 		base, 						base,					"build"),
+	"binutils": 		solver("binutils", 	base, 						base,					host_binutils),
+	"include_modules": 	solver("list", 		concat, 					local,					[]),
 }
 
 class CXXModuleOptions:
@@ -50,20 +76,21 @@ class CXXModuleOptions:
 
 	def check(self):
 		for k, v in self.opts.items():
-			if not k in self.table:
-				print("Нераспознанная опция: {}".format(red(k)))
-				exit(-1)
+			if not k in glink.modules.special:
+				if not k in self.table:
+					print("Нераспознанная опция: {}".format(red(k)))
+					exit(-1)
 
-			if (self.table[k].type != type(v).__name__):
-				print("Опция должна быть объектом типа {}: {}".format(yellow(self.table[k].type), red(k)))
-				exit(-1)
+				if (self.table[k].type != type(v).__name__):
+					print("Опция должна быть объектом типа {}: {}".format(yellow(self.table[k].type), red(k)))
+					exit(-1)
 
 	def set_default_if_empty(self, table=cxx_module_field_list):
 		for k in table:
 			if not k in self.opts:
 				self.opts[k] = table[k].default
 
-	def merge(self, other):
+	def merge(self, other, fnc):
 		resopts = {}
 		for k, v in self.opts.items():
 			
@@ -73,10 +100,11 @@ class CXXModuleOptions:
 			else: 
 				local = None
 
-			resopts[k] = self.table[k].merge(base, local, self.table[k])
+			func = getattr(self.table[k], fnc)
+			resopts[k] = func(base, local, self.table[k], self, other)
 
 		return CXXModuleOptions(**resopts)
-		
+
 	def __init__(self, table=cxx_module_field_list, **kwargs):
 		self.opts = kwargs
 		self.table = table
@@ -91,7 +119,7 @@ def cxx_options_from_modopts(modopts):
 
 	return glink.cxx_make.options(
 		binutils = modopts["binutils"],
-		includePaths = modopts["includePaths"],
+		include_paths = modopts["include_paths"],
 		cc_flags = cc_flags,
 		cxx_flags = cxx_flags,
 	)	
@@ -103,7 +131,8 @@ def build_paths(srcs, opts, ext):
 	return objs
 
 def sources_paths(opts, moddir):
-	return [os.path.normpath(os.path.join(moddir, opts["srcdir"], s)) for s in opts["sources"]]
+	return opts["sources"]
+	#return [os.path.normpath(os.path.join(moddir, opts["srcdir"], s)) for s in opts["sources"]]
 
 
 def link_objects(srcs, objs, opts, adddeps):
@@ -115,6 +144,10 @@ def link_objects(srcs, objs, opts, adddeps):
 def application(srcs, opts):
 	cxxopts = cxx_options_from_modopts(opts)
 	glink.cxx_make.executable(tgt=opts["target"], srcs=srcs, opts=cxxopts)
+	return opts["target"]
+
+def virtual(srcs, opts):
+	glink.core.target(tgt=opts["target"], deps=srcs)
 	return opts["target"]
 
 def make(name, **kwargs):
@@ -130,7 +163,11 @@ def make(name, **kwargs):
 		moddir = os.path.dirname(mod.script)
 		
 		modopts = CXXModuleOptions(**mod.opts)
-		locopts = baseopts.merge(modopts)
+		locopts = baseopts.merge(modopts, "merge")
+
+		for simod in locopts["include_modules"]:
+			imod = mlibrary.get(simod.name, simod.impl)
+			locopts = locopts.merge(imod, "include")
 
 		locsrcs = sources_paths(locopts, moddir)
 		locobjs = build_paths(locsrcs, locopts, "o")
@@ -141,6 +178,7 @@ def make(name, **kwargs):
 		link_objects(locsrcs, locobjs, locopts, adddeps)
 
 		submodules_results = []
+		#print(locopts["modules"])
 		for smod in locopts["modules"]:
 			submodules_results += modmake(smod.name, smod.impl, locopts)
 
@@ -149,3 +187,8 @@ def make(name, **kwargs):
 	result = modmake(name, None, opts)
 	if opts["type"] == "application":
 		return application(result, opts)
+	elif opts["type"] == "objects":
+		return virtual(result, opts)
+	else:
+		print("Неверный тип сборки: {}", gu.red(opts["type"]))
+		exit(-1)

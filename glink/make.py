@@ -2,16 +2,18 @@ from glink.core import Target, core, subtree, get_target
 from glink.cache import fcache
 from glink.util import red, green, yellow
 import os
+import sys
 
-def do_execute(target, rule):
+def do_execute(target, rule, msgfield):
 	rule = rule.format(**target.__dict__)
 
-	if core.runtime["echo"]:
+	message = getattr(target, msgfield, None)
+	if core.runtime["infomod"] == 'info' and message:
+		print(message.format(**target.__dict__))
+	else:
 		print(rule)
 	
-	#if message:
-	#	print(message.format(**target.__dict__))
-
+	
 	ret = os.system(rule)
 	return ret
 
@@ -20,6 +22,7 @@ class FileTarget(Target):
 		Target.__init__(self, tgt, deps, **kwargs)
 		self.isfile = True
 		self.need = True
+		self.clrmsg = "DELETE {tgt}"
 
 	def update_info(self, _self):
 		fcache.update_info(self.tgt)
@@ -74,7 +77,7 @@ class FileTarget(Target):
 		return 0
 
 	def clr(self, _self):
-		do_execute(self, "rm -f {tgt}")
+		do_execute(self, "rm -f {tgt}", "clrmsg")
 
 def ftarget(tgt, deps=[], **kwargs):
 	core.targets[tgt] = FileTarget(
@@ -84,21 +87,23 @@ def ftarget(tgt, deps=[], **kwargs):
 	)
 
 class Executor:
-	def __init__(self, rule):
+	def __init__(self, rule, msgfield='message'):
 		self.rule = rule
+		self.msgfield = msgfield
 
 	def __call__(self, target):
-		return do_execute(target, self.rule)
+		return do_execute(target, self.rule, self.msgfield)
 
 def execute(*args, **kwargs):
 	return Executor(*args, **kwargs)
 
-def copy(src, tgt, adddeps=[]):
+def copy(src, tgt, adddeps=[], message="COPY {src} {tgt}"):
 	core.targets[tgt] = FileTarget(
 		tgt=tgt, 
 		build=execute("cp {src} {tgt}"),
 		src=src,
-		deps=[src] + adddeps
+		deps=[src] + adddeps,
+		message=message
 	)
 
 def source(tgt, deps=[]):
@@ -117,8 +122,8 @@ def print_result_string(ret):
 	else:
 		print(green("Success"))
 
-def clean(root, echo=True):
-	core.runtime["echo"] = echo
+def clean(root):
+	#core.runtime["echo"] = echo
 	#core.runtime["debug"] = debug
 	
 	stree = subtree(root)
@@ -126,8 +131,8 @@ def clean(root, echo=True):
 	stree.invoke_foreach(ops = "need_if_exist")
 	return stree.invoke_foreach(ops="clr", cond=if_need_and_file)
 
-def make(root, rebuild = False, echo=True):
-	core.runtime["echo"] = echo
+def make(root, rebuild = False):
+	#core.runtime["echo"] = echo
 	#core.runtime["debug"] = debug
 	stree = subtree(root)
 
@@ -216,3 +221,18 @@ def need_if_timestamp_compare(target):
 		target.need = False
 
 	return 0
+
+def doit(target):
+	opts, args = core.parse_argv(sys.argv[1:])
+
+	if opts.debug:
+		core.runtime["infomod"] = "debug"
+
+	if len(args) == 0:
+		return make(target)
+	else:
+		if args[0] == "clean":
+			return clean(target)
+		else:
+			print("Плохая рутина")
+			sys.exit(-1)

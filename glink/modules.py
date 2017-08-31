@@ -2,12 +2,20 @@ from glink.util import red
 from glink.scripter import scriptq
 import inspect
 
+#from slots import *
+
+special = ["__script__", "__dir__"]
+
 class Module:
-	def __init__(self, name, script, stack, **kwargs):
+	#__slots__ = ['name', 'script', 'stack', 'opts']
+	def __init__(self, name, script, dir, stack, **kwargs):
 		self.name = name
 		self.script = script
 		self.stack = stack
 		self.opts = kwargs
+		self.opts["__script__"]=self.script
+		self.opts["__dir__"]=dir
+	#	self.set_up()
 
 class VariantModule:
 	def __init__(self):
@@ -22,7 +30,7 @@ class ModuleLibrary:
 
 	def register(self, mod):
 		if mod.name in self.modules:
-			print("Попытка зарегистрировать модуль {0} повторно".format(red(mod.name)))
+			print("Попытка зарегистрировать модуль {} повторно".format(red(mod.name)))
 			exit(-1)
 		else:
 			self.modules[mod.name] = mod
@@ -30,7 +38,7 @@ class ModuleLibrary:
 	def register_impl(self, mod, impl):
 		if mod.name in self.modules:
 			if not isinstance(self.modules[mod.name], VariantModule):
-				print("Попытка зарегистрировать модуль {0} повторно".format(red(mod.name)))
+				print("Попытка зарегистрировать модуль {} повторно".format(red(mod.name)))
 				exit(-1)
 			else:
 				varmod = self.modules[mod.name]
@@ -41,6 +49,10 @@ class ModuleLibrary:
 		varmod.addimpl(impl, mod)		
 
 	def get(self, name, impl=None):
+		if not name in self.modules:
+			print("Запрошен отсутствующий модуль: {}".format(red(name)))
+			exit(-1)
+				 
 		m = self.modules[name]
 		if impl == None:
 			if isinstance(m, VariantModule):
@@ -62,14 +74,20 @@ class ModuleLibrary:
 
 mlibrary = ModuleLibrary()
 
-def module(name, **kwargs):
-	mlibrary.register(Module(name, script=scriptq.last(), stack=list(scriptq.stack), **kwargs))
+def module(name, impl=None, **kwargs):
+	if impl != None:
+		implementation(name, impl, **kwargs)
+		return
+	mlibrary.register(Module(name, script=scriptq.last(), dir=scriptq.curdir(), stack=list(scriptq.stack), **kwargs))
 
 def implementation(name, impl, **kwargs):
-	mlibrary.register_impl(Module(name, script=scriptq.last(), stack=list(scriptq.stack), **kwargs), impl=impl)
+	mlibrary.register_impl(Module(name, script=scriptq.last(), dir=scriptq.curdir(), stack=list(scriptq.stack), **kwargs), impl=impl)
 
 class submodule:
 	def __init__(self, name, impl=None, addopts = None):
 		self.name = name
 		self.impl = impl
 		self.addopts = addopts
+
+	def __repr__(self):
+		return "subm(" + self.name + ")"
