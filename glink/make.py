@@ -29,7 +29,6 @@ class FileTarget(Target):
 	
 
 	def timestamp(self, _self):
-		#print("timestamp: {}", self.tgt)
 		curinfo = fcache.get_info(self.tgt)
 
 		if curinfo.exist == False:
@@ -43,29 +42,6 @@ class FileTarget(Target):
 		if (not os.path.exists(dr)):
 			print("MKDIR %s" % dr)
 			os.system("mkdir -p {0}".format(dr))
-
-	#def need_if_timestamp_compare(self, _self):
-	#	curinfo = fcache.get_info(self.tgt)
-	#	curmtime = curinfo.mtime
-	#	if curmtime == None:
-	#		self.need = True
-	#		return 0
-#
-	#	maxmtime = 0
-	#	for dep in [get_target(t) for t in self.depends]:
-	#		if dep.isfile:
-	#			info = fcache.get_info(dep.tgt)
-	#			if info.exist == False:
-	#				return True
-	#			if info.mtime > maxmtime:
-	#				maxmtime = info.mtime
-#
-	#	if maxmtime > curmtime:
-	#		self.need = True
-	#	else:
-	#		self.need = False
-#
-	#	return 0
 
 	def need_if_exist(self, _self):
 		curinfo = fcache.get_info(self.tgt)
@@ -122,21 +98,14 @@ def print_result_string(ret):
 	else:
 		print(green("Success"))
 
-def clean(root):
-	#core.runtime["echo"] = echo
-	#core.runtime["debug"] = debug
-	
+def clean(root):	
 	stree = subtree(root)
 	stree.invoke_foreach(ops = "update_info")
 	stree.invoke_foreach(ops = "need_if_exist")
 	return stree.invoke_foreach(ops="clr", cond=if_need_and_file)
 
 def make(root, rebuild = False):
-	#core.runtime["echo"] = echo
-	#core.runtime["debug"] = debug
 	stree = subtree(root)
-
-	#directories_keeper(stree)
 	stree.invoke_foreach(ops = "dirkeep")
 	stree.invoke_foreach(ops = "update_info")
 	stree.reverse_recurse_invoke(ops = "timestamp")
@@ -201,38 +170,35 @@ def timestamp_max_of_depends(target):
 	target.tstamp = maxtime	
 
 def need_if_timestamp_compare(target):
-	#print("{}::need_if_timestamp_compare {}".format(target.tgt, getattr(target, "tstamp", 0)))
-	#curtime = getattr(target, "timestamp", None)
 	if target.tstamp == 0:
 		target.need = True
 		return 0
 
 	maxtime = 0
 	for dep in [get_target(t) for t in target.depends]:
-		#print(dep.tgt)
 		if dep.tstamp > maxtime:
 			maxtime = dep.tstamp
 	
 	if maxtime > target.tstamp:
-		#print("\tresult: need=True", maxtime)
 		target.need = True
 	else:
-		#print("\tresult: need=False")
 		target.need = False
 
 	return 0
 
-def doit(target):
-	opts, args = core.parse_argv(sys.argv[1:])
+def doit(target, argv=sys.argv[1:]):
+	opts, args = core.parse_argv(argv)
 
 	if opts.debug:
 		core.runtime["infomod"] = "debug"
 
 	if len(args) == 0:
-		return make(target)
+		result = make(target)
 	else:
 		if args[0] == "clean":
-			return clean(target)
+			result = clean(target)
 		else:
 			print("Плохая рутина")
 			sys.exit(-1)
+
+	print_result_string(result)

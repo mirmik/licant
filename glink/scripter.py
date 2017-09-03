@@ -9,11 +9,15 @@ class ScriptQueue:
 		self.stack = [sys.argv[0]]
 		glink.make.source(sys.argv[0])
 
-	def execute(self, path):
+	def __execute(self, path):
 		glink.make.source(path)
 		self.stack.append(path)
 		exec(open(path).read(), globals())
 		self.stack.pop()
+
+	def execute(self, path):
+		path = os.path.join(self.curdir(), path)
+		self.__execute(path)
 
 	def last(self):
 		return self.stack[-1]
@@ -21,10 +25,12 @@ class ScriptQueue:
 	def curdir(self):
 		return os.path.dirname(self.last())
 
-	def execute_recursive(self, root, pattern, hide):
-		flst = glink.util.find_recursive(os.path.join(self.curdir(), root), pattern, hide)
+	def execute_recursive(self, root, pattern, hide=None, debug=False):
+		root = os.path.join(self.curdir(), root)
+		#print(root)
+		flst = glink.util.find_recursive(root, pattern, hide, debug)
 		for f in flst:
-			self.execute(f)
+			self.__execute(f)
 
 scriptq = ScriptQueue()
 

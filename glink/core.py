@@ -42,7 +42,7 @@ class Target:
 			return func(self)
 
 	def __repr__(self):
-		return "target:"+self.tgt
+		return self.tgt
 
 def target(tgt, deps=[], **kwargs):
 	core.targets[tgt] = Target(tgt=tgt, deps=deps, **kwargs)
