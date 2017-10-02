@@ -35,15 +35,16 @@ module("main",
 
 	include_modules=[
 		submodule("incm")
-	]
+	],
+
+	type = "application",
+	target="target",
+	
 )
 
 target = glink.cxx_modules.make("main",
-	type = "objects",
-	target="target",
 	builddir = "build",
 	binutils = glink.cxx_make.host_binutils
 )
-
 
 glink.make.doit(target)

@@ -1,6 +1,7 @@
 import glink.util
 import sys
 from optparse import OptionParser
+import traceback
 
 class GlinkCore:
 	def __init__(self):
@@ -51,6 +52,7 @@ def get_target(tgt):
 	if tgt in core.targets:
 		return core.targets[tgt]
 	print("Попытка получить несуществующую цель: {0}".format(tgt))
+	traceback.print_stack()
 	exit(-1)
 
 def depends_as_set(tgt, incroot=True):

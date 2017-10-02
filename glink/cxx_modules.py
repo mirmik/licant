@@ -83,7 +83,7 @@ cxx_module_field_list = {
 	"cc_flags": 		solver("str", 		strconcat, 					strconcat,				""),
 	"ld_flags": 		solver("str", 		strconcat, 					strconcat,				""),
 	"modules": 			solver("list", 		local, 						concat,					[]),
-	"type": 			solver("str", 		local_if_exist, 			base,					"objects"),
+	"type": 			solver("str", 		local,			 			base,					"objects"),
 	"builddir": 		solver("str", 		base, 						base,					"build"),
 	"binutils": 		solver("binutils", 	local_if_exist, 			base,					host_binutils),
 	"include_modules": 	solver("list", 		concat, 					base,					[]),
@@ -223,9 +223,13 @@ def make(name, impl = None, **kwargs):
 		if locopts["type"] == "application":
 			return application(locobjs + submodules_results, locopts)
 		elif locopts["type"] == "objects":
-			return virtual(locobjs + submodules_results, locopts)
+			#print(locobjs + submodules_results)
+			#return virtual(locobjs + submodules_results, locopts)
+			#print(locobjs + submodules_results)
+			return locobjs + submodules_results
 		else:
 			print("Неверный тип сборки: {}", gu.red(locopts["type"]))
 			exit(-1)
 
-	return modmake(name, impl, opts)
+	res = modmake(name, impl, opts)
+	return res 
