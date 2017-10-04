@@ -4,13 +4,16 @@ from glink.util import red, green, yellow, quite
 import os
 import sys
 
-def do_execute(target, rule, msgfield):
+def do_execute(target, rule, msgfield, prefix = None):
 	rule = rule.format(**target.__dict__)
 
 	message = getattr(target, msgfield, None)
 	if core.runtime["infomod"] == 'info' and message != None:
 		if not isinstance(message, quite):
-			print(message.format(**target.__dict__))
+			if prefix != None:
+				print(prefix, message.format(**target.__dict__))
+			else:
+				print(message.format(**target.__dict__))
 	else:
 		print(rule)
 	
@@ -66,8 +69,8 @@ class Executor:
 		self.rule = rule
 		self.msgfield = msgfield
 		
-	def __call__(self, target):
-		return do_execute(target, self.rule, self.msgfield)
+	def __call__(self, target, **kwargs):
+		return do_execute(target, self.rule, self.msgfield, **kwargs)
 
 def execute(*args, **kwargs):
 	return Executor(*args, **kwargs)
@@ -103,18 +106,31 @@ def clean(root):
 	stree.invoke_foreach(ops = "need_if_exist")
 	return stree.invoke_foreach(ops="clr", cond=if_need_and_file)
 
-def make(root, rebuild = False):
+def make(root, rebuild = False, threads = 1):
 	stree = subtree(root)
+
+	#Создать директории, если они не существуют
 	stree.invoke_foreach(ops = "dirkeep")
+	
+	#Считать в кэш информацию о файлах
 	stree.invoke_foreach(ops = "update_info")
+	
+	#Установить каждому файлу время его последнего изменения
 	stree.reverse_recurse_invoke(ops = "timestamp")
 	
 	if not rebuild:
+		#Операция вычисления устаревших файлов
 		stree.invoke_foreach(ops = need_if_timestamp_compare, cond = files_only)
 		stree.reverse_recurse_invoke(ops = need_spawn)
 	else:
+		#Если установлина опция rebuild, все файлы помечаются для сборки
 		stree.invoke_foreach(ops = set_need)
-	return stree.reverse_recurse_invoke(ops = "build", cond = if_need)
+
+	#Непосредственно операция всех файлов, имеющих метку need 
+	ret = stree.reverse_recurse_invoke(ops = "build", cond = if_need, threads = threads)
+	
+	#Возвращает информацию о том, сколько файлов было пересобрано
+	return ret
 
 def if_need(context, target):
 	return target.need
@@ -144,8 +160,6 @@ def error_if_not_exist(target):
 	if info.exist == False:
 		print("Файл не существует:", red(target.tgt))
 		exit(-1)
-
-
 
 def do_function(target):
 	target.func(*target.args, **target.kwargs)
@@ -192,7 +206,7 @@ def doit(target, argv=sys.argv[1:]):
 		core.runtime["infomod"] = "debug"
 
 	if len(args) == 0:
-		result = make(target)
+		result = make(target, threads = int(opts.threads))
 	else:
 		if args[0] == "clean":
 			result = clean(target)

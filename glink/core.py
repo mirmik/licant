@@ -1,7 +1,8 @@
 import glink.util
+import threading
 import sys
+import time
 from optparse import OptionParser
-import traceback
 
 class GlinkCore:
 	def __init__(self):
@@ -13,9 +14,10 @@ class GlinkCore:
 		parser = OptionParser()
 		parser.add_option("-d", "--debug", action="store_true", default=False, 
 			help="print full system commands")
-		parser.add_option("-j", "--threads", default=None, help="count of threads for executor")
+		parser.add_option("-j", "--threads", default=8, help="amount of threads for executor")
 
-		return parser.parse_args(argv)
+		opts = parser.parse_args(argv)
+		return opts
 		#print(options)
 		#print(args)
 
@@ -32,15 +34,15 @@ class Target:
 		for k, v in kwargs.items():
 			setattr(self, k, v)
 
-	def invoke(self, func):
+	def invoke(self, func, **kwargs):
 		if (isinstance(func, str)):
 			res = getattr(self, func, None)
 			if (res == None):
 				return None
-			ret = res(self)
+			ret = res(self, **kwargs)
 			return ret
 		else:
-			return func(self)
+			return func(self, **kwargs)
 
 	def __repr__(self):
 		return self.tgt
@@ -110,7 +112,7 @@ class SubTree:
 				dtarget.rdepends.append(t.tgt)
 	
 	
-	def reverse_recurse_invoke(self, ops, cond=glink.util.always_true):
+	def reverse_recurse_invoke_single(self, ops, cond=glink.util.always_true):
 		targets = [get_target(t) for t in self.depset]
 		sum = 0
 	
@@ -134,12 +136,72 @@ class SubTree:
 					sum += 1
 	
 			for r in [get_target(t) for t in w.rdepends]:
-				#print(w.rdepends)
 				r.rcounter = r.rcounter + 1
 				if r.rcounter == len(r.depends):
 					works.put(r)
 	
 		return sum
+
+	def reverse_recurse_invoke_threads(self, ops, threads, cond=glink.util.always_true):
+		targets = [get_target(t) for t in self.depset]
+		
+		self.__generate_rdepends_lists(targets)
+		works = glink.util.queue()
+		
+		class info_cls:
+			def __init__(self):
+				self.have_done = 0
+				self.need_done = len(targets)
+				self.sum = 0
+		info = info_cls()
+
+		for t in targets:
+			if t.rcounter == len(t.depends):
+				works.put(t)
+	
+		lock = threading.Lock()
+		def thread_func(index):
+			while info.have_done != info.need_done:
+				lock.acquire()
+				if not works.empty():
+					w = works.get()
+					lock.release()
+
+					if cond(self, w):
+						#ret = w.invoke(ops, prefix = "{}:".format(index))
+						ret = w.invoke(ops)
+						if not (ret == 0 or ret == None):
+							print(glink.util.red("Ошибка исполнения."))
+							exit(-1)
+						if ret == 0:
+							info.sum += 1
+
+					for r in [get_target(t) for t in w.rdepends]:
+						r.rcounter = r.rcounter + 1
+						if r.rcounter == len(r.depends):
+							works.put(r)
+
+					info.have_done += 1
+					continue
+				lock.release()
+				#time.sleep(0.01) 
+
+
+		threads_list = [threading.Thread(target = thread_func, args = (i,)) for i in range(0, threads)]	
+		for t in threads_list:
+			t.start()
+
+		for t in threads_list:
+			t.join()
+	
+		return info.sum
+
+	def reverse_recurse_invoke(self, *args, threads = 1, **kwargs):
+		if threads == 1:
+			return self.reverse_recurse_invoke_single(*args, **kwargs)
+		else:
+			return self.reverse_recurse_invoke_threads(*args, **kwargs, threads = threads)
+				
 
 def subtree(root):
 	return SubTree(root)
