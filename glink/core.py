@@ -153,6 +153,7 @@ class SubTree:
 				self.have_done = 0
 				self.need_done = len(targets)
 				self.sum = 0
+				self.err = False
 		info = info_cls()
 
 		for t in targets:
@@ -162,6 +163,9 @@ class SubTree:
 		lock = threading.Lock()
 		def thread_func(index):
 			while info.have_done != info.need_done:
+				if info.err:
+					break
+
 				lock.acquire()
 				if not works.empty():
 					w = works.get()
@@ -171,6 +175,7 @@ class SubTree:
 						#ret = w.invoke(ops, prefix = "{}:".format(index))
 						ret = w.invoke(ops)
 						if not (ret == 0 or ret == None):
+							info.err = True
 							print(glink.util.red("Ошибка исполнения."))
 							exit(-1)
 						if ret == 0:
@@ -193,7 +198,9 @@ class SubTree:
 
 		for t in threads_list:
 			t.join()
-	
+
+		if info.err:
+			exit(-1)	
 		return info.sum
 
 	def reverse_recurse_invoke(self, *args, threads = 1, **kwargs):
