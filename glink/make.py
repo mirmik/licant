@@ -1,6 +1,6 @@
 from glink.core import Target, core, subtree, get_target
 from glink.cache import fcache
-from glink.util import red, green, yellow
+from glink.util import red, green, yellow, quite
 import os
 import sys
 
@@ -8,8 +8,9 @@ def do_execute(target, rule, msgfield):
 	rule = rule.format(**target.__dict__)
 
 	message = getattr(target, msgfield, None)
-	if core.runtime["infomod"] == 'info' and message:
-		print(message.format(**target.__dict__))
+	if core.runtime["infomod"] == 'info' and message != None:
+		if not isinstance(message, quite):
+			print(message.format(**target.__dict__))
 	else:
 		print(rule)
 	
@@ -26,7 +27,6 @@ class FileTarget(Target):
 
 	def update_info(self, _self):
 		fcache.update_info(self.tgt)
-	
 
 	def timestamp(self, _self):
 		curinfo = fcache.get_info(self.tgt)
@@ -36,7 +36,6 @@ class FileTarget(Target):
 		else:	
 			self.tstamp = curinfo.mtime
 	
-
 	def dirkeep(self, _self):
 		dr = os.path.normpath(os.path.dirname(self.tgt))
 		if (not os.path.exists(dr)):
@@ -66,7 +65,7 @@ class Executor:
 	def __init__(self, rule, msgfield='message'):
 		self.rule = rule
 		self.msgfield = msgfield
-
+		
 	def __call__(self, target):
 		return do_execute(target, self.rule, self.msgfield)
 

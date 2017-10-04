@@ -1,6 +1,6 @@
 from glink.modules import mlibrary
 from glink.cxx_make import host_binutils, binutils
-from glink.util import red, yellow
+from glink.util import red, yellow, cxx_read_depends
 
 import os
 import glink.util as gu
@@ -163,13 +163,21 @@ def sources_paths(opts, moddir):
 			ret.append(s)
 	return ret
 
-def link_objects(srcs, objs, opts, adddeps):
+def link_objects(srcs, objs, deps, opts, adddeps):
 	cxxopts = cxx_options_from_modopts(opts)
-	for s, o in zip(srcs, objs):
+	for s, o, d in zip(srcs, objs, deps):
 		glink.make.source(s)
-		glink.cxx_make.object(src=s, tgt=o, opts=cxxopts, deps=[s] + adddeps)
+		
+		headers = cxx_read_depends(d)
+		if headers == None:
+			headers = []
+		else:
+			for h in headers:
+				glink.make.source(h)
+		glink.cxx_make.depend(src=s, tgt=d, opts=cxxopts, deps=[s] + adddeps + headers, message = glink.util.quite())
+		glink.cxx_make.object(src=s, tgt=o, opts=cxxopts, deps=[s, d] + adddeps + headers)
 
-def application(srcs, opts):
+def executable(srcs, opts):
 	cxxopts = cxx_options_from_modopts(opts)
 	glink.cxx_make.executable(tgt=opts["target"], srcs=srcs, opts=cxxopts)
 	return opts["target"]
@@ -213,7 +221,7 @@ def make(name, impl = None, **kwargs):
 
 		adddeps = mod.stack
 		
-		link_objects(locsrcs, locobjs, locopts, adddeps)
+		link_objects(locsrcs, locobjs, locdeps, locopts, adddeps)
 
 		submodules_results = []
 		#print(locopts["modules"])
@@ -221,7 +229,7 @@ def make(name, impl = None, **kwargs):
 			submodules_results += modmake(smod.name, smod.impl, locopts)
 
 		if locopts["type"] == "application":
-			return application(locobjs + submodules_results, locopts)
+			return executable(locobjs + submodules_results, locopts)
 		elif locopts["type"] == "objects":
 			#print(locobjs + submodules_results)
 			#return virtual(locobjs + submodules_results, locopts)
@@ -233,3 +241,9 @@ def make(name, impl = None, **kwargs):
 
 	res = modmake(name, impl, opts)
 	return res 
+
+def application(name, impl=None, type="application", target="target", **kwargs):
+	return glink.modules.module(name, impl=impl, type=type, target=target, **kwargs)
+
+def doit(mod):
+	glink.make.doit(make(mod))

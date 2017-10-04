@@ -1,6 +1,9 @@
 import sys
 import os
 
+class quite:
+	pass
+
 class queue:
 	class DontHaveArg:
 		pass
@@ -97,3 +100,17 @@ def find_recursive(root, pattern, hide, debug):
 						result.append(path)
 
 	return result
+
+import re
+pattern = re.compile(r"[\w./]+")
+def cxx_read_depends(path):
+	if not os.path.exists(path):
+		return None
+	else:
+		f = open(path)
+		text = f.read()
+		lst = pattern.findall(text)
+		#lst = re.split(r'[ \n\\]+', text)
+		#print(lst)
+		#exit(0)
+		return lst[2:]
