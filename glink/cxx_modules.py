@@ -77,8 +77,8 @@ cxx_module_field_list = {
 	"sources": 			solver("list", 		local_add_srcdir,			concat_add_srcdir,		[]),
 	"target": 			solver("str", 		local_if_exist,				base,					"target"),
 	"include_paths": 	solver("list", 		concat_add_locdir, 			concat_add_locdir,		[]),
-	"cxxstd": 			solver("str", 		base, 						base,					"c++11"),
-	"ccstd": 			solver("str", 		base, 						base,					"c11"),
+	"cxxstd": 			solver("str", 		local_if_exist, 			local_if_exist,			"c++14"),
+	"ccstd": 			solver("str", 		local_if_exist, 			local_if_exist,			"c11"),
 	"cxx_flags": 		solver("str", 		strconcat, 					strconcat,				""),
 	"cc_flags": 		solver("str", 		strconcat, 					strconcat,				""),
 	"ld_flags": 		solver("str", 		strconcat, 					strconcat,				""),
@@ -187,9 +187,6 @@ def virtual(srcs, opts):
 	return opts["target"]
 
 def make(name, impl = None, **kwargs):
-	#mod = mlibrary.get(name)
-	#print("make module {}".format(mod.name))
-
 	opts = CXXModuleOptions(**kwargs)
 	opts.set_default_if_empty()
 
