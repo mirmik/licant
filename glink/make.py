@@ -159,7 +159,7 @@ def error_if_not_exist(target):
 	info = fcache.get_info(target.tgt)
 	if info.exist == False:
 		print("Файл не существует:", red(target.tgt))
-		exit(-1)
+		raise Exception("Файл не существует")
 
 def do_function(target):
 	target.func(*target.args, **target.kwargs)

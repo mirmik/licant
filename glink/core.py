@@ -173,11 +173,16 @@ class SubTree:
 
 					if cond(self, w):
 						#ret = w.invoke(ops, prefix = "{}:".format(index))
-						ret = w.invoke(ops)
+						try:
+							ret = w.invoke(ops)
+						except:
+							info.err = True
+							return
 						if not (ret == 0 or ret == None):
 							info.err = True
-							print(glink.util.red("Ошибка исполнения."))
-							exit(-1)
+							#print(glink.util.red("Ошибка исполнения."))
+							return
+							#exit(-1)
 						if ret == 0:
 							info.sum += 1
 
@@ -200,6 +205,7 @@ class SubTree:
 			t.join()
 
 		if info.err:
+			print(glink.util.red("runtime error"))
 			exit(-1)	
 		return info.sum
 
