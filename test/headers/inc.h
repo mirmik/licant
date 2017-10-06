@@ -1,1 +1,1 @@
-#define a 38
+const int aaa = 38;
