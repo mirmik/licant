@@ -5,10 +5,10 @@ import os
 import sys
 sys.path.insert(0, "..")
 
-import glink.util as gu
-from glink.make import copy, ftarget, source, function, print_result_string
-import glink.make
-import glink.cxx_make as cxx
+import licant.util as gu
+from licant.make import copy, ftarget, source, function, print_result_string
+import licant.make
+import licant.cxx_make as cxx
 
 print(gu.green("Script Start"))
 
@@ -40,10 +40,10 @@ copy(tgt="mirmik", src="target", adddeps=["fnc"])
 
 target = "mirmik"
 def all():
-	return glink.make.make(target)
+	return licant.make.make(target)
 
 def clean():
-	return glink.make.clean(target)
+	return licant.make.clean(target)
 
 result = gu.do_argv_routine(arg=1, default="all", locs=locals())
 print_result_string(result)

@@ -1,10 +1,11 @@
-from glink.modules import mlibrary
-from glink.cxx_make import host_binutils, binutils
-from glink.util import red, yellow, cxx_read_depends
+from licant.modules import mlibrary
+from licant.cxx_make import host_binutils, binutils
+from licant.util import red, yellow, cxx_read_depends
+
 
 import os
-import glink.util as gu
-import glink.make
+import licant.util as gu
+import licant.make
 
 import glob
 
@@ -97,13 +98,13 @@ class CXXModuleOptions:
 
 	def check(self):
 		for k, v in self.opts.items():
-			if not k in glink.modules.special:
+			if not k in licant.modules.special:
 				if not k in self.table:
-					print("Нераспознанная опция: {}".format(red(k)))
+					print("Unresolved option: {}".format(red(k)))
 					exit(-1)
 
-				if (self.table[k].type != type(v).__name__):
-					print("Опция должна быть объектом типа {}: {}".format(yellow(self.table[k].type), red(k)))
+				if v.__class__.__name__ != self.table[k].type:
+					print("Option should be object of {}: {}".format(yellow(self.table[k].type), red(k)))
 					exit(-1)
 
 	def set_default_if_empty(self, table=cxx_module_field_list):
@@ -138,7 +139,7 @@ def cxx_options_from_modopts(modopts):
 	cxx_flags = cxxstd + " " + modopts["cxx_flags"]
 	cc_flags = ccstd + " " + modopts["cc_flags"]
 
-	return glink.cxx_make.options(
+	return licant.cxx_make.options(
 		binutils = modopts["binutils"],
 		include_paths = modopts["include_paths"],
 		cc_flags = cc_flags,
@@ -166,24 +167,24 @@ def sources_paths(opts, moddir):
 def link_objects(srcs, objs, deps, opts, adddeps):
 	cxxopts = cxx_options_from_modopts(opts)
 	for s, o, d in zip(srcs, objs, deps):
-		glink.make.source(s)
+		licant.make.source(s)
 		
 		headers = cxx_read_depends(d)
 		if headers == None:
 			headers = []
 		else:
 			for h in headers:
-				glink.make.source(h)
-		glink.cxx_make.depend(src=s, tgt=d, opts=cxxopts, deps=[s] + adddeps + headers, message = glink.util.quite())
-		glink.cxx_make.object(src=s, tgt=o, opts=cxxopts, deps=[s, d] + adddeps + headers)
+				licant.make.source(h)
+		licant.cxx_make.depend(src=s, tgt=d, opts=cxxopts, deps=[s] + adddeps + headers, message = licant.util.quite())
+		licant.cxx_make.object(src=s, tgt=o, opts=cxxopts, deps=[s, d] + adddeps + headers)
 
 def executable(srcs, opts):
 	cxxopts = cxx_options_from_modopts(opts)
-	glink.cxx_make.executable(tgt=opts["target"], srcs=srcs, opts=cxxopts)
+	licant.cxx_make.executable(tgt=opts["target"], srcs=srcs, opts=cxxopts)
 	return opts["target"]
 
 def virtual(srcs, opts):
-	glink.core.target(tgt=opts["target"], deps=srcs)
+	licant.core.target(tgt=opts["target"], deps=srcs)
 	return opts["target"]
 
 def make(name, impl = None, **kwargs):
@@ -233,14 +234,14 @@ def make(name, impl = None, **kwargs):
 			#print(locobjs + submodules_results)
 			return locobjs + submodules_results
 		else:
-			print("Неверный тип сборки: {}", gu.red(locopts["type"]))
+			print("Wrong type of assemble: {}", gu.red(locopts["type"]))
 			exit(-1)
 
 	res = modmake(name, impl, opts)
 	return res 
 
 def application(name, impl=None, type="application", target="target", **kwargs):
-	return glink.modules.module(name, impl=impl, type=type, target=target, **kwargs)
+	return licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
 
 def doit(mod):
-	glink.make.doit(make(mod))
+	licant.make.doit(make(mod))

@@ -4,7 +4,7 @@
 import sys
 sys.path.insert(0, "../..")
 
-from glink.cxx_modules import application, doit
+from licant.cxx_modules import application, doit
 
 application("main",
 	sources = ["main.cpp", "ttt.cpp"]

@@ -1,5 +1,5 @@
-from glink.core import core
-import glink.make
+from licant.core import core
+import licant.make
 import os
 
 class binutils:
@@ -21,9 +21,9 @@ host_binutils = binutils(
 class options:
 	def __init__(self, binutils = host_binutils, include_paths = None, defines = None, cxx_flags="", cc_flags="", ld_flags="", ldscripts = None):
 		self.binutils = binutils
-		self.incopt = glink.util.flag_prefix("-I", include_paths) 
-		self.defopt = glink.util.flag_prefix("-D", defines)
-		self.ldscripts = glink.util.flag_prefix("-T", ldscripts) 
+		self.incopt = licant.util.flag_prefix("-I", include_paths) 
+		self.defopt = licant.util.flag_prefix("-D", defines)
+		self.ldscripts = licant.util.flag_prefix("-T", ldscripts) 
 		self.cxx_flags = cxx_flags
 		self.cc_flags = cc_flags
 		self.ld_flags = ld_flags
@@ -57,25 +57,25 @@ def object(src, tgt, opts = options(), type=None, deps=None, message="OBJECT {tg
 		elif ext in asm_ext_list:
 			type = "asm"
 		else:
-			print("Unrecognized extention: {}".format(glink.util.red(ext)))
+			print("Unrecognized extention: {}".format(licant.util.red(ext)))
 			exit(-1)
 	if type == "cxx":
-		build = glink.make.execute(opts.cxxobjrule)
+		build = licant.make.execute(opts.cxxobjrule)
 	elif type == "cc":
-		build = glink.make.execute(opts.ccobjrule)
+		build = licant.make.execute(opts.ccobjrule)
 	elif type == "asm":
-		build = glink.make.execute(opts.ccobjrule)
+		build = licant.make.execute(opts.ccobjrule)
 	else:
-		print(glink.util.red("Unrecognized extention"))
+		print(licant.util.red("Unrecognized extention"))
 		exit(-1)
-	core.targets[tgt] = glink.make.FileTarget(
+	core.targets[tgt] = licant.make.FileTarget(
 		opts=opts,
 		tgt=tgt, 
 		src=src,
 		deps=deps,
 		build=build,
 		message=message
-		#clr=glink.make.executor("rm -f {tgt}"),  
+		#clr=licant.make.executor("rm -f {tgt}"),  
 	)
 
 def depend(src, tgt, opts = options(), type=None, deps=None, message="DEPENDS {tgt}"):
@@ -92,33 +92,33 @@ def depend(src, tgt, opts = options(), type=None, deps=None, message="DEPENDS {t
 		elif ext in asm_ext_list:
 			type = "asm"
 		else:
-			print("Unrecognized extention: {}".format(glink.util.red(ext)))
+			print("Unrecognized extention: {}".format(licant.util.red(ext)))
 			exit(-1)
 	if type == "cxx":
-		build = glink.make.execute(opts.cxxdeprule)
+		build = licant.make.execute(opts.cxxdeprule)
 	elif type == "cc":
-		build = glink.make.execute(opts.ccdeprule)
+		build = licant.make.execute(opts.ccdeprule)
 	elif type == "asm":
-		build = glink.make.execute(opts.ccdeprule)
+		build = licant.make.execute(opts.ccdeprule)
 	else:
-		print(glink.util.red("Unrecognized extention"))
+		print(licant.util.red("Unrecognized extention"))
 		exit(-1)
-	core.targets[tgt] = glink.make.FileTarget(
+	core.targets[tgt] = licant.make.FileTarget(
 		opts=opts,
 		tgt=tgt, 
 		src=src,
 		deps=deps,
 		build=build,
 		message=message
-		#clr=glink.make.executor("rm -f {tgt}"),  
+		#clr=licant.make.executor("rm -f {tgt}"),  
 	)
 
 def executable(tgt, srcs, opts = options(), message="EXECUTABLE {tgt}"):
-	core.targets[tgt] = glink.make.FileTarget(
+	core.targets[tgt] = licant.make.FileTarget(
 		opts=opts,
 		tgt=tgt, 
-		build=glink.make.execute(opts.execrule),
-		#clr=glink.make.executor("rm -f {tgt}"),  
+		build=licant.make.execute(opts.execrule),
+		#clr=licant.make.executor("rm -f {tgt}"),  
 		srcs=" ".join(srcs),
 		deps=srcs,
 		message=message

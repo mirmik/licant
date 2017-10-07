@@ -18,9 +18,9 @@ if not ((len(args) == 2) or (opts.remove and len(args) == 1)):
 	exit(0)
 
 if opts.local:
-	paths_file = os.path.expanduser("~/.config/glink") 
+	paths_file = os.path.expanduser("~/.config/licant") 
 else:
-	paths_file = "/etc/glink" 
+	paths_file = "/etc/licant" 
 
 name = args[0]
 

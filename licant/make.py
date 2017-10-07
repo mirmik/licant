@@ -1,22 +1,31 @@
-from glink.core import Target, core, subtree, get_target
-from glink.cache import fcache
-from glink.util import red, green, yellow, quite
+from __future__ import print_function 
+
+from licant.core import Target, core, subtree, get_target
+from licant.cache import fcache
+from licant.util import red, green, yellow, quite
+import threading
 import os
 import sys
 
+_rlock = threading.RLock()
+	
 def do_execute(target, rule, msgfield, prefix = None):
+	def sprint(*args, **kwargs):
+		with _rlock:
+			print(*args, **kwargs) 
+
 	rule = rule.format(**target.__dict__)
 
 	message = getattr(target, msgfield, None)
+
 	if core.runtime["infomod"] == 'info' and message != None:
 		if not isinstance(message, quite):
 			if prefix != None:
-				print(prefix, message.format(**target.__dict__))
+				sprint(prefix, message.format(**target.__dict__))
 			else:
-				print(message.format(**target.__dict__))
+				sprint(message.format(**target.__dict__))
 	else:
-		print(rule)
-	
+		sprint(rule)
 	
 	ret = os.system(rule)
 	return ret
@@ -109,27 +118,27 @@ def clean(root):
 def make(root, rebuild = False, threads = 1):
 	stree = subtree(root)
 
-	#Создать директории, если они не существуют
+	#Create directory if not exists
 	stree.invoke_foreach(ops = "dirkeep")
 	
-	#Считать в кэш информацию о файлах
+	#Update cache
 	stree.invoke_foreach(ops = "update_info")
 	
-	#Установить каждому файлу время его последнего изменения
+	#Read timestamps
 	stree.reverse_recurse_invoke(ops = "timestamp")
 	
 	if not rebuild:
-		#Операция вычисления устаревших файлов
+		#Find old files
 		stree.invoke_foreach(ops = need_if_timestamp_compare, cond = files_only)
 		stree.reverse_recurse_invoke(ops = need_spawn)
 	else:
-		#Если установлина опция rebuild, все файлы помечаются для сборки
+		#If setted rebuild, set all files as needed to recompile
 		stree.invoke_foreach(ops = set_need)
 
-	#Непосредственно операция всех файлов, имеющих метку need 
+	#Build "needed" files. 
 	ret = stree.reverse_recurse_invoke(ops = "build", cond = if_need, threads = threads)
 	
-	#Возвращает информацию о том, сколько файлов было пересобрано
+	#To return amount of maded files 
 	return ret
 
 def if_need(context, target):
@@ -158,8 +167,8 @@ def set_need(target):
 def error_if_not_exist(target):
 	info = fcache.get_info(target.tgt)
 	if info.exist == False:
-		print("Файл не существует:", red(target.tgt))
-		raise Exception("Файл не существует")
+		print("File isn't exist:", red(target.tgt))
+		raise Exception("File  isn't exist")
 
 def do_function(target):
 	target.func(*target.args, **target.kwargs)
@@ -211,7 +220,7 @@ def doit(target, argv=sys.argv[1:]):
 		if args[0] == "clean":
 			result = clean(target)
 		else:
-			print("Плохая рутина")
+			print("Bad routine")
 			sys.exit(-1)
 
 	print_result_string(result)

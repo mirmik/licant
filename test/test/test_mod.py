@@ -3,12 +3,12 @@
 
 import os
 import sys
-sys.path.insert(0, "..")
+sys.path.insert(0, "../..")
 
-from glink.modules import module, submodule
-import glink.cxx_modules
+from licant.modules import module, submodule
+import licant.cxx_modules
 
-glink.scripter.scriptq.execute("src/test.g.py")
+licant.scripter.scriptq.execute("src/test.g.py")
 
 module("lib",
 	sources=["src/lib.cpp"]
@@ -42,9 +42,9 @@ module("main",
 	
 )
 
-target = glink.cxx_modules.make("main",
+target = licant.cxx_modules.make("main",
 	builddir = "build",
-	binutils = glink.cxx_make.host_binutils
+	binutils = licant.cxx_make.host_binutils
 )
 
-glink.make.doit(target)
+licant.make.doit(target)

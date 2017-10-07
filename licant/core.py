@@ -1,10 +1,10 @@
-import glink.util
+import licant.util
 import threading
 import sys
 import time
 from optparse import OptionParser
 
-class GlinkCore:
+class licantCore:
 	def __init__(self):
 		self.targets = {}
 		self.runtime = { 'infomod': "info" }
@@ -21,7 +21,7 @@ class GlinkCore:
 		#print(options)
 		#print(args)
 
-core = GlinkCore()
+core = licantCore()
 
 class Target:
 	def __init__(self, tgt, deps, **kwargs):
@@ -53,7 +53,7 @@ def target(tgt, deps=[], **kwargs):
 def get_target(tgt):
 	if tgt in core.targets:
 		return core.targets[tgt]
-	print("Попытка получить несуществующую цель: {0}".format(tgt))
+	print("Unregistred target: {0}".format(tgt))
 	traceback.print_stack()
 	exit(-1)
 
@@ -112,13 +112,13 @@ class SubTree:
 				dtarget.rdepends.append(t.tgt)
 	
 	
-	def reverse_recurse_invoke_single(self, ops, cond=glink.util.always_true):
+	def reverse_recurse_invoke_single(self, ops, cond=licant.util.always_true):
 		targets = [get_target(t) for t in self.depset]
 		sum = 0
 	
 		self.__generate_rdepends_lists(targets)
 		
-		works = glink.util.queue()
+		works = licant.util.queue()
 	
 		for t in targets:
 			if t.rcounter == len(t.depends):
@@ -130,7 +130,7 @@ class SubTree:
 			if cond(self, w):
 				ret = w.invoke(ops)
 				if not (ret == 0 or ret == None):
-					print(glink.util.red("Ошибка исполнения."))
+					print(licant.util.red("runtime error"))
 					exit(-1)
 				if ret == 0:
 					sum += 1
@@ -142,11 +142,11 @@ class SubTree:
 	
 		return sum
 
-	def reverse_recurse_invoke_threads(self, ops, threads, cond=glink.util.always_true):
+	def reverse_recurse_invoke_threads(self, ops, threads, cond=licant.util.always_true):
 		targets = [get_target(t) for t in self.depset]
 		
 		self.__generate_rdepends_lists(targets)
-		works = glink.util.queue()
+		works = licant.util.queue()
 		
 		class info_cls:
 			def __init__(self):
@@ -172,7 +172,6 @@ class SubTree:
 					lock.release()
 
 					if cond(self, w):
-						#ret = w.invoke(ops, prefix = "{}:".format(index))
 						try:
 							ret = w.invoke(ops)
 						except:
@@ -180,9 +179,7 @@ class SubTree:
 							return
 						if not (ret == 0 or ret == None):
 							info.err = True
-							#print(glink.util.red("Ошибка исполнения."))
 							return
-							#exit(-1)
 						if ret == 0:
 							info.sum += 1
 
@@ -205,15 +202,15 @@ class SubTree:
 			t.join()
 
 		if info.err:
-			print(glink.util.red("runtime error"))
+			print(licant.util.red("runtime error"))
 			exit(-1)	
 		return info.sum
 
-	def reverse_recurse_invoke(self, *args, threads = 1, **kwargs):
+	def reverse_recurse_invoke(self, threads = 1, *args, **kwargs):
 		if threads == 1:
 			return self.reverse_recurse_invoke_single(*args, **kwargs)
 		else:
-			return self.reverse_recurse_invoke_threads(*args, **kwargs, threads = threads)
+			return self.reverse_recurse_invoke_threads(threads = threads, *args, **kwargs)
 				
 
 def subtree(root):

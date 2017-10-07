@@ -54,7 +54,7 @@ def do_argv_routine(arg, default, locs):
 	if func in locs:
 		return locs[func]()
 	else:
-		print("Плохая рутина")
+		print("Bad routine")
 		exit(-1)
 
 

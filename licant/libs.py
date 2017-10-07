@@ -1,11 +1,11 @@
-from glink.scripter import scriptq
+from licant.scripter import scriptq
 
 import os
 import sys
 import json
 
-gpath = "/etc/glink"
-lpath = os.path.expanduser("~/.config/glink")
+gpath = "/etc/licant"
+lpath = os.path.expanduser("~/.config/licant")
 
 libs = None
 

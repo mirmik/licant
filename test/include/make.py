@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 #coding: utf-8
 
-from glink.cxx_modules import application, doit
-from glink.modules import submodule
-from glink.libs import include
+from licant.cxx_modules import application, doit
+from licant.modules import submodule
+from licant.libs import include
 
 include("gxx")
 

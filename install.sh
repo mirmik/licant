@@ -1,5 +1,5 @@
-DIR=/usr/lib/python3.5/glink
+DIR=/usr/lib/python3.5/licant
 
 mkdir -p $DIR/
-cp -r glink/* $DIR/
-cp configurator/glink-config.py /usr/bin/glink-config
+cp -r licant/* $DIR/
+cp configurator/licant-config.py /usr/bin/licant-config

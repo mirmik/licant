@@ -1,5 +1,5 @@
-from glink.util import red 
-from glink.scripter import scriptq
+from licant.util import red 
+from licant.scripter import scriptq
 import inspect
 
 #from slots import *
@@ -30,7 +30,7 @@ class ModuleLibrary:
 
 	def register(self, mod):
 		if mod.name in self.modules:
-			print("Попытка зарегистрировать модуль {} повторно".format(red(mod.name)))
+			print("Attempt to register the module {} again".format(red(mod.name)))
 			exit(-1)
 		else:
 			self.modules[mod.name] = mod
@@ -38,7 +38,7 @@ class ModuleLibrary:
 	def register_impl(self, mod, impl):
 		if mod.name in self.modules:
 			if not isinstance(self.modules[mod.name], VariantModule):
-				print("Попытка зарегистрировать модуль {} повторно".format(red(mod.name)))
+				print("Attempt to register the module {} again".format(red(mod.name)))
 				exit(-1)
 			else:
 				varmod = self.modules[mod.name]
@@ -50,25 +50,25 @@ class ModuleLibrary:
 
 	def get(self, name, impl=None):
 		if not name in self.modules:
-			print("Запрошен отсутствующий модуль: {}".format(red(name)))
+			print("The missing module {} was requested".format(red(name)))
 			exit(-1)
 				 
 		m = self.modules[name]
 		if impl == None:
 			if isinstance(m, VariantModule):
-				print("Требуется уточнение реализации: {}".format(red(name)))
+				print("Need implementation: {}".format(red(name)))
 				exit(-1)
 			else:
 				return m
 		else:
 			if isinstance(m, Module):
-				print("У этого модуля только одна реализации: {}".format(red(name)))
+				print("This modile have only one implementation: {}".format(red(name)))
 				exit(-1)
 			else:
 				if impl in m.impls:
 					return m.impls[impl]
 				else:
-					print("Несуществующая реализации: {}".format(red(impl)))
+					print("Unregistred implementation: {}".format(red(impl)))
 					exit(-1)
 		
 
