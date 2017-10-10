@@ -54,7 +54,7 @@ def get_target(tgt):
 	if tgt in core.targets:
 		return core.targets[tgt]
 	print("Unregistred target: {0}".format(tgt))
-	traceback.print_stack()
+	#traceback.print_stack()
 	exit(-1)
 
 def depends_as_set(tgt, incroot=True):

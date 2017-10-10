@@ -115,7 +115,10 @@ def clean(root):
 	stree.invoke_foreach(ops = "need_if_exist")
 	return stree.invoke_foreach(ops="clr", cond=if_need_and_file)
 
-def make(root, rebuild = False, threads = 1):
+def makefile(root):
+	threads = core.runtime["threads"]
+	rebuild = False
+
 	stree = subtree(root)
 
 	#Create directory if not exists
@@ -208,19 +211,17 @@ def need_if_timestamp_compare(target):
 
 	return 0
 
+import licant.routine
 def doit(target, argv=sys.argv[1:]):
 	opts, args = core.parse_argv(argv)
+	core.runtime["threads"] = opts.threads
 
 	if opts.debug:
 		core.runtime["infomod"] = "debug"
 
-	if len(args) == 0:
-		result = make(target, threads = int(opts.threads))
-	else:
-		if args[0] == "clean":
-			result = clean(target)
-		else:
-			print("Bad routine")
-			sys.exit(-1)
+	licant.routine.internal_routines({"make" : makefile, "clean" : clean})
+	licant.routine.default("make")
+
+	result = licant.routine.invoke(args, target)
 
 	print_result_string(result)

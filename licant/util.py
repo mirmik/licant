@@ -102,7 +102,7 @@ def find_recursive(root, pattern, hide, debug):
 	return result
 
 import re
-pattern = re.compile(r"[\w./]+")
+pattern = re.compile(r"[\w./-]+")
 def cxx_read_depends(path):
 	if not os.path.exists(path):
 		return None

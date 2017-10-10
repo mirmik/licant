@@ -150,9 +150,14 @@ def cxx_options_from_modopts(modopts):
 	)	
 
 def build_paths(srcs, opts, ext):
+	#print(srcs)
 	objs = []
 	for s in srcs:
-		objs.append(os.path.normpath(os.path.join(opts.opts["builddir"], gu.changeext(s, ext).replace("..", "__")))) 
+		if os.path.isabs(s):
+			objs.append(opts.opts["builddir"] + gu.changeext(s, ext))
+		else:
+			objs.append(os.path.normpath(os.path.join(opts.opts["builddir"], gu.changeext(s, ext).replace("..", "__")))) 
+	#print(objs)
 	return objs
 
 def sources_paths(opts, moddir):

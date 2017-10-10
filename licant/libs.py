@@ -27,4 +27,5 @@ def include(lib):
 		print("Unregistred library")
 		exit(-1)
 
+	#print(libs[lib])
 	scriptq.execute(libs[lib])	

@@ -1,9 +1,11 @@
+#!/usr/bin/env python
+
 from setuptools import setup
 
 setup(
   name = 'licant',
   packages = ['licant'],
-  version = '0.1',
+  version = '0.11',
   license='MIT',
   description = 'licant make system',
   author = 'Sorokin Nikolay',
@@ -11,4 +13,6 @@ setup(
   url = 'https://github.com/mirmik/licant',
   keywords = ['testing', 'make'],
   classifiers = [],
+
+  scripts = ["configurator/licant-config"]
 )

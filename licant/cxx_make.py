@@ -10,6 +10,9 @@ class binutils:
 		self.ar = ar
 		self.objdump = objdump
 
+	def __repr__(self):
+		return str(self.__dict__)
+
 host_binutils = binutils(
 	cxx= 		"c++",
 	cc= 		"cc",
@@ -123,3 +126,13 @@ def executable(tgt, srcs, opts = options(), message="EXECUTABLE {tgt}"):
 		deps=srcs,
 		message=message
 	)
+
+#utils
+def make_gcc_binutils(pref):
+	return binutils(
+	cxx= 		pref + "-g++",
+	cc= 		pref + "-gcc",
+	ld= 		pref + "-ld",
+	ar= 		pref + "-ar",
+	objdump= 	pref + "-objdump"
+)
