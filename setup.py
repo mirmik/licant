@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from setuptools import setup
 
 setup(
   name = 'licant',
   packages = ['licant'],
-  version = '0.11',
+  version = '0.13',
   license='MIT',
   description = 'licant make system',
   author = 'Sorokin Nikolay',
