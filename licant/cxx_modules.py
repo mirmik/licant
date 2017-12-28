@@ -222,7 +222,7 @@ def make(name, impl = None, **kwargs):
 		locobjs = build_paths(locsrcs, locopts, "o")
 		locdeps = build_paths(locsrcs, locopts, "d")
 
-		adddeps = mod.stack
+		adddeps = []#mod.stack
 		
 		link_objects(locsrcs, locobjs, locdeps, locopts, adddeps)
 

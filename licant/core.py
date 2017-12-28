@@ -14,8 +14,9 @@ class licantCore:
 		parser = OptionParser()
 		parser.add_option("-d", "--debug", action="store_true", default=False, 
 			help="print full system commands")
-		parser.add_option("-j", "--threads", default=8, help="amount of threads for executor")
+		parser.add_option("-j", "--threads", default=1, help="amount of threads for executor")
 
+		#self.runtime["threads"] = int(argv["threads"])
 		opts = parser.parse_args(argv)
 		return opts
 		#print(options)

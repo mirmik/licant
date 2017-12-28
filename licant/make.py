@@ -214,7 +214,7 @@ def need_if_timestamp_compare(target):
 import licant.routine
 def doit(target, argv=sys.argv[1:]):
 	opts, args = core.parse_argv(argv)
-	core.runtime["threads"] = opts.threads
+	core.runtime["threads"] = int(opts.threads)
 
 	if opts.debug:
 		core.runtime["infomod"] = "debug"

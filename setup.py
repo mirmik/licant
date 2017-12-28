@@ -5,7 +5,7 @@ from setuptools import setup
 setup(
   name = 'licant',
   packages = ['licant'],
-  version = '0.13',
+  version = '0.13.2',
   license='MIT',
   description = 'licant make system',
   author = 'Sorokin Nikolay',

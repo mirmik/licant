@@ -1,3 +1,3 @@
 rm dist/*
 ./setup.py bdist_wheel
-sudo pip install $(find 'dist' -name 'licant*') --upgrade
+python3 -m pip install $(find 'dist' -name 'licant*') --upgrade
