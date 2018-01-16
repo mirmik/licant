@@ -54,6 +54,10 @@ class FileTarget(Target):
 			print("MKDIR %s" % dr)
 			os.system("mkdir -p {0}".format(dr))
 
+	def is_exist(self):
+		curinfo = fcache.get_info(self.tgt)
+		return curinfo.exist
+
 	def need_if_exist(self, _self):
 		curinfo = fcache.get_info(self.tgt)
 		if curinfo.exist:
@@ -200,11 +204,15 @@ def need_if_timestamp_compare(target):
 		return 0
 
 	maxtime = 0
+	force = False
 	for dep in [get_target(t) for t in target.depends]:
+		if not dep.is_exist():
+			force = True
+			break
 		if dep.tstamp > maxtime:
 			maxtime = dep.tstamp
 	
-	if maxtime > target.tstamp:
+	if maxtime > target.tstamp or force:
 		target.need = True
 	else:
 		target.need = False
