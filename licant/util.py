@@ -36,6 +36,9 @@ class queue:
 def textblock(str):
 	return chr(27) + str + chr(27) + "[0m"
 
+def black(str):
+	return textblock("[30;1m" + str)
+
 def red(str):
 	return textblock("[31;1m" + str)
 
@@ -44,6 +47,15 @@ def green(str):
 
 def yellow(str):
 	return textblock("[33;1m" + str)
+
+def purple(str):
+	return textblock("[35;1m" + str)
+
+def cyan(str):
+	return textblock("[36;1m" + str)
+
+def white(str):
+	return textblock("[37;1m" + str)
 
 def do_argv_routine(arg, default, locs):
 	if len(sys.argv) <= arg:
