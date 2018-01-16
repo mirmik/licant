@@ -76,6 +76,7 @@ cxx_module_field_list = {
 #	"loglevel": 		solver("str", 		base, 						base,					"info"),
 	"srcdir": 			solver("str", 		local, 						base,					"."),
 	"sources": 			solver("list", 		local_add_srcdir,			concat_add_srcdir,		[]),
+	"libs": 			solver("list", 		local,						base,		[]),
 	"target": 			solver("str", 		local_if_exist,				base,					"target"),
 	"include_paths": 	solver("list", 		concat_add_locdir, 			concat_add_locdir,		[]),
 	"cxxstd": 			solver("str", 		local_if_exist, 			local_if_exist,			"c++14"),
@@ -139,6 +140,8 @@ def cxx_options_from_modopts(modopts):
 	cxx_flags = cxxstd + " " + modopts["cxx_flags"]
 	cc_flags = ccstd + " " + modopts["cc_flags"]
 
+	ld_libs = "".join([" -l" + l for l in modopts["libs"]])
+
 	return licant.cxx_make.options(
 		binutils = modopts["binutils"],
 		include_paths = modopts["include_paths"],
@@ -146,7 +149,7 @@ def cxx_options_from_modopts(modopts):
 		cxx_flags = cxx_flags,
 		defines = modopts["defines"],
 		ldscripts = modopts["ldscripts"],
-		ld_flags = modopts["ld_flags"],
+		ld_flags = modopts["ld_flags"] + ld_libs,
 	)	
 
 def build_paths(srcs, opts, ext):
