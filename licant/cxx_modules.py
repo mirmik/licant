@@ -180,7 +180,7 @@ def link_objects(srcs, objs, deps, opts, adddeps):
 		else:
 			for h in headers:
 				licant.make.source(h)
-		licant.cxx_make.depend(src=s, tgt=d, opts=cxxopts, deps=[s] + adddeps + headers, message = licant.util.quite())
+		licant.cxx_make.depend(src=s, tgt=d, opts=cxxopts, deps=[s] + adddeps + headers)
 		licant.cxx_make.object(src=s, tgt=o, opts=cxxopts, deps=[s, d] + adddeps + headers)
 
 def executable(srcs, opts):

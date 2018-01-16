@@ -2,7 +2,7 @@ from __future__ import print_function
 
 from licant.core import Target, core, subtree, get_target
 from licant.cache import fcache
-from licant.util import red, green, yellow, quite
+from licant.util import red, green, yellow, purple, quite
 import threading
 import os
 import sys
@@ -99,7 +99,7 @@ def copy(src, tgt, adddeps=[], message="COPY {src} {tgt}"):
 
 def source(tgt, deps=[]):
 	target = FileTarget(
-		build=error_if_not_exist,
+		build=warn_if_not_exist,
 		deps=deps,
 		tgt=tgt, 
 	)
@@ -170,6 +170,12 @@ def need_spawn(target):
 		
 def set_need(target):
 	target.need = True
+
+def warn_if_not_exist(target):
+	info = fcache.get_info(target.tgt)
+	if info.exist == False:
+		print("Warn: file {} isn`t exist".format(purple(target.tgt)))
+		#raise Exception("File  isn't exist")
 
 def error_if_not_exist(target):
 	info = fcache.get_info(target.tgt)
