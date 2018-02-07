@@ -1,2 +1,2 @@
-rm dist/*
-./setup.py bdist_wheel upload
+./make.sh
+twine upload dist/*
