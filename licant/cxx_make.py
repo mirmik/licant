@@ -3,12 +3,13 @@ import licant.make
 import os
 
 class binutils:
-	def __init__(self, cxx, cc, ld, ar, objdump):
+	def __init__(self, cxx, cc, ld, ar, objdump, moc):
 		self.cc = cc
 		self.cxx = cxx
 		self.ld = ld
 		self.ar = ar
 		self.objdump = objdump
+		self.moc = moc
 
 	def __repr__(self):
 		return str(self.__dict__)
@@ -18,7 +19,8 @@ host_binutils = binutils(
 	cc= 		"cc",
 	ld= 		"ld",
 	ar= 		"ar",
-	objdump= 	"objdump"
+	objdump= 	"objdump",
+	moc= 		"moc" #Qt support
 )
 
 class options:
@@ -31,12 +33,14 @@ class options:
 		self.cc_flags = cc_flags
 		self.ld_flags = ld_flags
 		self.execrule=  "{opts.binutils.cxx} {srcs} -o {tgt} {opts.ld_flags} {opts.ldscripts}"
+		self.dynlibrule= "{opts.binutils.cxx} --shared {srcs} -o {tgt} {opts.ld_flags} {opts.ldscripts}"
 		self.cxxobjrule="{opts.binutils.cxx} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cxx_flags}"
 		self.ccobjrule= "{opts.binutils.cc} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cc_flags}"
 		
 		self.cxxdeprule="{opts.binutils.cxx} -MM {src} > {tgt} {opts.incopt} {opts.defopt} {opts.cxx_flags}"
 		self.ccdeprule= "{opts.binutils.cc} -MM {src} > {tgt} {opts.incopt} {opts.defopt} {opts.cc_flags}"
-	
+		self.mocrule="{opts.binutils.moc} {src} > {tgt}"
+		
 #		cc_rule = "%CC% -o %tgt% -c %src% %__options__%",
 #		s_rule = "%CC% -o %tgt% -c %src% %__options__%",
 #		cxx_dep_rule = "%CXX% -MM %src% > %tgt% %__options__%",
@@ -52,7 +56,7 @@ def object(src, tgt, opts = options(), type=None, deps=None, message="OBJECT {tg
 
 	if type == None:
 		ext = os.path.basename(src).split('.')[-1]
-	
+		
 		if ext in cxx_ext_list:
 			type = "cxx"
 		elif ext in cc_ext_list:
@@ -77,6 +81,20 @@ def object(src, tgt, opts = options(), type=None, deps=None, message="OBJECT {tg
 		src=src,
 		deps=deps,
 		build=build,
+		message=message
+		#clr=licant.make.executor("rm -f {tgt}"),  
+	)
+
+def moc(src, tgt, opts = options(), type=None, deps=None, message="MOC {tgt}"):
+	if deps == None:
+		deps = [src]
+
+	core.targets[tgt] = licant.make.FileTarget(
+		opts=opts,
+		tgt=tgt, 
+		src=src,
+		deps=deps,
+		build=licant.make.execute(opts.mocrule),
 		message=message
 		#clr=licant.make.executor("rm -f {tgt}"),  
 	)
@@ -121,6 +139,17 @@ def executable(tgt, srcs, opts = options(), message="EXECUTABLE {tgt}"):
 		opts=opts,
 		tgt=tgt, 
 		build=licant.make.execute(opts.execrule),
+		#clr=licant.make.executor("rm -f {tgt}"),  
+		srcs=" ".join(srcs),
+		deps=srcs,
+		message=message
+	)
+
+def dynamic_library(tgt, srcs, opts = options(), message="DYNLIB {tgt}"):
+	core.targets[tgt] = licant.make.FileTarget(
+		opts=opts,
+		tgt=tgt, 
+		build=licant.make.execute(opts.dynlibrule),
 		#clr=licant.make.executor("rm -f {tgt}"),  
 		srcs=" ".join(srcs),
 		deps=srcs,

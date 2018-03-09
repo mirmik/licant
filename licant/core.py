@@ -48,6 +48,7 @@ core = licantCore()
 
 class Target:
 	def __init__(self, tgt, deps, **kwargs):
+		#print("deps", tgt, deps)
 		self.depends = set()
 		self.tgt = tgt
 

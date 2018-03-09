@@ -124,6 +124,9 @@ def makefile(root):
 	rebuild = False
 
 	stree = subtree(root)
+	#if core.runtime["infomod"] == "debug":
+	#	print('STREE:')
+	#	print(stree)
 
 	#Create directory if not exists
 	stree.invoke_foreach(ops = "dirkeep")

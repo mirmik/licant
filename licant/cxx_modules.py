@@ -25,8 +25,8 @@ def local(base, local, solver, tbase, tlocal):
 	return local
 
 def concat(base, local, solver, tbase, tlocal):
-	if local == None:
-		local = []
+	if local == None: local = []
+	if base == None: base = []
 	return base + local
 
 def strconcat(base, local, solver, tbase, tlocal):
@@ -43,7 +43,7 @@ def concat_add_srcdir(base, local, solver, tbase, tlocal):
 		else:
 			srcdir = ""
 
-		local = list(map(lambda p: os.path.join(tlocal.opts["__dir__"], srcdir, p), local))
+		local = list(map(lambda p: os.path.join(tlocal.opts["__dir__"], srcdir, os.path.expanduser(p)), local))
 	#print(base + local)
 	return base + local
 
@@ -54,7 +54,9 @@ def local_add_srcdir(base, local, solver, tbase, tlocal):
 		srcdir = ""
 	if isinstance(local, type("str")):
 		local = [local]
-	return list(map(lambda p: os.path.join(tlocal.opts["__dir__"], srcdir, p), local))
+	if local == None:
+		return []	
+	return list(map(lambda p: os.path.join(tlocal.opts["__dir__"], srcdir, os.path.expanduser(p)), local))
 	
 def concat_add_locdir(base, local, solver, tbase, tlocal):
 	if local == None:
@@ -62,7 +64,7 @@ def concat_add_locdir(base, local, solver, tbase, tlocal):
 	else:
 		if isinstance(local, type("str")):
 			local = [local]
-		local = list(map(lambda p: os.path.join(tlocal.opts["__dir__"], p), local))
+		local = list(map(lambda p: os.path.join(tlocal.opts["__dir__"], os.path.expanduser(p)), local))
 	return base + local
 
 def local_if_exist(base, local, solver, tbase, tlocal):
@@ -75,8 +77,10 @@ def local_if_exist(base, local, solver, tbase, tlocal):
 cxx_module_field_list = {
 #	"loglevel": 		solver("str", 		base, 						base,					"info"),
 	"srcdir": 			solver("str", 		local, 						base,					"."),
+	"objects": 			solver("list", 		local_add_srcdir,			concat_add_srcdir,		[]),
 	"sources": 			solver("list", 		local_add_srcdir,			concat_add_srcdir,		[]),
-	"libs": 			solver("list", 		local,						base,		[]),
+	"moc": 				solver("list", 		local_add_srcdir,			concat_add_srcdir,		[]),
+	"libs": 			solver("list", 		concat,						concat,					[]),
 	"target": 			solver("str", 		local_if_exist,				base,					"target"),
 	"include_paths": 	solver("list", 		concat_add_locdir, 			concat_add_locdir,		[]),
 	"cxxstd": 			solver("str", 		local_if_exist, 			local_if_exist,			"c++14"),
@@ -163,7 +167,7 @@ def build_paths(srcs, opts, ext):
 	#print(objs)
 	return objs
 
-def sources_paths(opts, moddir):
+def sources_paths(opts):
 	ret = []
 	for s in opts["sources"]:
 		if "*" in s:
@@ -172,10 +176,19 @@ def sources_paths(opts, moddir):
 			ret.append(s)
 	return ret
 
-def link_objects(srcs, objs, deps, opts, adddeps):
-	cxxopts = cxx_options_from_modopts(opts)
+def moc_paths(opts):
+	ret = []
+	for s in opts["moc"]:
+		if "*" in s:
+			ret.extend(glob.glob(s))		
+		else:
+			ret.append(s)
+	return ret
+
+def link_objects(srcs, objs, deps, cxxopts, adddeps):
 	for s, o, d in zip(srcs, objs, deps):
-		licant.make.source(s)
+		if not s in licant.core.core.targets: 
+			licant.make.source(s)
 		
 		headers = cxx_read_depends(d)
 		if headers == None:
@@ -183,12 +196,26 @@ def link_objects(srcs, objs, deps, opts, adddeps):
 		else:
 			for h in headers:
 				licant.make.source(h)
+
+		#print(s, o, d)
+
 		licant.cxx_make.depend(src=s, tgt=d, opts=cxxopts, deps=[s] + adddeps + headers)
 		licant.cxx_make.object(src=s, tgt=o, opts=cxxopts, deps=[s, d] + adddeps + headers)
 
+def link_moc(mocs, srcs, cxxopts, adddeps):
+	for m, s in zip(mocs, srcs):
+		#print(m,s)
+		licant.make.source(m)
+		licant.cxx_make.moc(src=m, tgt=s, opts=cxxopts, deps=[m] + adddeps)
+		
 def executable(srcs, opts):
 	cxxopts = cxx_options_from_modopts(opts)
 	licant.cxx_make.executable(tgt=opts["target"], srcs=srcs, opts=cxxopts)
+	return opts["target"]
+
+def dynlib(srcs, opts):
+	cxxopts = cxx_options_from_modopts(opts)
+	licant.cxx_make.dynamic_library(tgt=opts["target"], srcs=srcs, opts=cxxopts)
 	return opts["target"]
 
 def virtual(srcs, opts):
@@ -219,15 +246,31 @@ def make(name, impl = None, **kwargs):
 			#print(retopts.__dict__)
 			return retopts
 
-		locopts = include_modules(locopts, locopts["include_modules"])
-
-		locsrcs = sources_paths(locopts, moddir)
-		locobjs = build_paths(locsrcs, locopts, "o")
-		locdeps = build_paths(locsrcs, locopts, "d")
-
 		adddeps = []#mod.stack
+
+		locopts = include_modules(locopts, locopts["include_modules"])
+		cxxopts = cxx_options_from_modopts(locopts)
+
+		locsrcs = sources_paths(locopts)
+		locobjs = build_paths(locsrcs, locopts, "o")
+		locdeps = build_paths(locsrcs, locopts, "d")		
 		
-		link_objects(locsrcs, locobjs, locdeps, locopts, adddeps)
+		if len(locopts["moc"]) != 0:
+			locmoc = moc_paths(locopts)
+			locmoccxx = build_paths(locmoc, locopts, "h.cxx")
+			locmocobjs = build_paths(locmoc, locopts, "h.cxx.o")
+			locmocdeps = build_paths(locmoc, locopts, "h.cxx.d")
+			link_moc(locmoc, locmoccxx, cxxopts, adddeps)
+
+			locsrcs.extend(locmoccxx)
+			locobjs.extend(locmocobjs)
+			locdeps.extend(locmocdeps)
+
+		link_objects(locsrcs, locobjs, locdeps, cxxopts, adddeps)
+
+		if len(locopts["objects"]) != 0:
+			for t in locopts["objects"]: licant.make.source(t)
+			locobjs.extend(locopts["objects"])
 
 		submodules_results = []
 		#print(locopts["modules"])
@@ -236,6 +279,8 @@ def make(name, impl = None, **kwargs):
 
 		if locopts["type"] == "application":
 			return executable(locobjs + submodules_results, locopts)
+		if locopts["type"] == "shared_library":
+			return dynlib(locobjs + submodules_results, locopts)
 		elif locopts["type"] == "objects":
 			#print(locobjs + submodules_results)
 			#return virtual(locobjs + submodules_results, locopts)
@@ -249,6 +294,9 @@ def make(name, impl = None, **kwargs):
 	return res 
 
 def application(name, impl=None, type="application", target="target", **kwargs):
+	return licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
+
+def shared_library(name, impl=None, type="shared_library", target="target", **kwargs):
 	return licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
 
 def doit(mod):
