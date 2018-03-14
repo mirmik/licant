@@ -4,10 +4,11 @@
 import sys
 sys.path.insert(0, "../..")
 
-from licant.cxx_modules import application, doit
+from licant.cxx_modules import application
+import licant
 
-application("main",
+application("target",
 	sources = ["main.cpp", "ttt.cpp"]
 )
 
-doit("main")
+licant.ex(default = "target")

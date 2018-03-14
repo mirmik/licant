@@ -1,6 +1,6 @@
 from licant.util import red 
 from licant.scripter import scriptq
-import inspect
+#import inspect
 
 #from slots import *
 

@@ -254,3 +254,6 @@ class SubTree:
 
 def subtree(root):
 	return SubTree(core, root)
+
+def do(tgt, act):
+	return core.get_target(tgt).invoke(act)

@@ -8,7 +8,7 @@ def error(str):
 	exit(-1)
 
 def cutinvoke(func, *args, **kwargs):
-	if isinstance(open, types.FunctionType):
+	if isinstance(func, types.FunctionType):
 		ins = inspect.getargspec(func)
 		nargs = len(ins.args)
 		return func(*args[:nargs]) 

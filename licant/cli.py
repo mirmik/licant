@@ -27,8 +27,11 @@ def cli_argv_parse(argv):
 def cliexecute(argv = sys.argv[1:], default = None):
 	print(licant.util.green("[start]"))
 
-	if default != None: _default = default
+	if default != None:
+		global _default 
+		_default = default
 	opts, args = cli_argv_parse(argv)
+	licant.core.core.runtime["threads"] = int(opts.threads)
 
 	if len(args) == 0:
 		if _default == None:

@@ -294,11 +294,14 @@ def make(name, impl = None, **kwargs):
 	res = modmake(name, impl, opts)
 	return res 
 
-def application(name, impl=None, type="application", target="target", **kwargs):
-	return licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
+def task(name, target, impl, type, **kwargs):
+	if target == None: target = name
+	else: licant.add_makefile_target(tgt = name, targets = [target])
+	licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
+	make(name)
 
-def shared_library(name, impl=None, type="shared_library", target="target", **kwargs):
-	return licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
+def application(name, target = None, impl=None, type="application", **kwargs):
+	return task(name, target, impl, type, **kwargs)
 
-def doit(mod):
-	licant.make.doit(make(mod))
+def shared_library(name, target = None, impl=None, type="shared_library", **kwargs):
+	return task(name, target, impl, type, **kwargs)

@@ -1,5 +1,6 @@
 from __future__ import print_function 
 
+import licant
 from licant.core import Target, core, subtree, get_target
 from licant.cache import fcache
 from licant.util import red, green, yellow, purple, quite
@@ -99,7 +100,7 @@ class FileTarget(Target):
 			stree.invoke_foreach(ops = set_need)
 	
 		#Build "needed" files. 
-		ret = stree.reverse_recurse_invoke(ops = "build", cond = if_need, threads = 1)#, threads = threads)
+		ret = stree.reverse_recurse_invoke(ops = "build", cond = if_need, threads = core.runtime["threads"])#, threads = threads)
 		
 		#To return amount of maded files 
 		return ret
@@ -231,6 +232,26 @@ def need_if_timestamp_compare(target):
 		target.need = False
 
 	return 0
+
+class MakefileTarget(licant.core.Target):
+	def __init__(self, tgt, targets):
+		def makefile_lambda():
+			for t in targets : 
+				print("here")
+				licant.core.get_target(t).invoke("makefile")
+		def clean_lambda():
+			for t in targets :  
+				print("here2")
+				licant.core.get_target(t).invoke("clean")
+		licant.core.Target.__init__(self, tgt = tgt, deps = targets,
+			makefile = makefile_lambda,
+			clean = clean_lambda,
+			default_action = "makefile"
+		)
+
+def add_makefile_target(tgt, targets):
+	licant.add_target(MakefileTarget(tgt = tgt, targets = targets)) 
+
 
 #import licant.routine
 #def doit(target, argv=sys.argv[1:]):
