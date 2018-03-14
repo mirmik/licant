@@ -75,6 +75,7 @@ def local_if_exist(base, local, solver, tbase, tlocal):
 
 
 cxx_module_field_list = {
+											#merge						#include
 #	"loglevel": 		solver("str", 		base, 						base,					"info"),
 	"srcdir": 			solver("str", 		local, 						base,					"."),
 	"objects": 			solver("list", 		local_add_srcdir,			concat_add_srcdir,		[]),
@@ -90,7 +91,7 @@ cxx_module_field_list = {
 	"ld_flags": 		solver("str", 		strconcat, 					strconcat,				""),
 	"modules": 			solver("list", 		local, 						concat,					[]),
 	"type": 			solver("str", 		local,			 			base,					"objects"),
-	"builddir": 		solver("str", 		base, 						base,					"build"),
+	"builddir": 		solver("str", 		local_if_exist, 			base,					"build"),
 	"binutils": 		solver("binutils", 	local_if_exist, 			base,					host_binutils),
 	"include_modules": 	solver("list", 		concat, 					base,					[]),
 	"defines": 			solver("list", 		concat, 					concat,					[]),

@@ -1,25 +1,16 @@
 import licant.util
 import threading
-import sys
 import time
-from optparse import OptionParser
 
-class licantCore:
+class WrongAction(Exception): pass
+
+class LicantCore:
 	def __init__(self):
 		self.targets = {}
 		self.runtime = { 'infomod': "info" }
-		self.glbopts = {}
 
-	def parse_argv(self, argv=sys.argv[1:]):
-		parser = OptionParser()
-		parser.add_option("-d", "--debug", action="store_true", default=False, 
-			help="print full system commands")
-		parser.add_option("-j", "--threads", default=1, help="amount of threads for executor")
-		opts = parser.parse_args(argv)
-		return opts
-
-	def add_target(self, tgt, deps=[], **kwargs):
-		self.targets[tgt] = Target(tgt=tgt, deps=deps, **kwargs)
+	def add_target(self, target):
+		self.targets[target.tgt] = target
 
 	def subtree(self, root):
 		return SubTree(self, root)
@@ -27,8 +18,7 @@ class licantCore:
 	def get_target(self, tgt):
 		if tgt in self.targets:
 			return self.targets[tgt]
-		print("Unregistred target: {0}".format(tgt))
-		exit(-1)
+		licant.util.error("unregistred target " + licant.util.yellow(tgt))
 	
 	def depends_as_set(self, tgt, incroot=True):
 		res = set()
@@ -44,43 +34,55 @@ class licantCore:
 				res = res.union(subres)
 		return res
 
-core = licantCore()
+core = LicantCore()
+
+def add_target(target):
+	return core.add_target(target)
+
+def get_target(tgt):
+	return core.get_target(tgt)
 
 class Target:
 	def __init__(self, tgt, deps, **kwargs):
-		#print("deps", tgt, deps)
-		self.depends = set()
 		self.tgt = tgt
 
+		self.depends = set()
 		for d in deps:
 			self.depends.add(d)
-		
-		for k, v in kwargs.items():
-			setattr(self, k, v)
-
 		self.deps = self.depends
 
-	def invoke(self, func, **kwargs):
+		for k, v in kwargs.items():
+			setattr(self, k, v)
+		
+	def invoke(self, func, critical = False, **kwargs):
 		if (isinstance(func, str)):
 			res = getattr(self, func, None)
 			if (res == None):
+				if (critical): raise WrongAction(func)
 				return None
-			ret = res(self, **kwargs)
-			return ret
+			return licant.util.cutinvoke(res, self, **kwargs)
 		else:
-			return func(self, **kwargs)
+			return licant.util.cutinvoke(func, self, **kwargs)
 
 	def __repr__(self):
 		return self.tgt
 
+	#def invoke_list(self, args):
+	#	if len(args) == 0:
+	#		return self.invoke("default_action")
+
+	#	print("TODO")
+		#func = args[0]
+
+class Routine(Target):
+	def __init__(self, func, deps=[], tgt = None, **kwargs):
+		if tgt == None: tgt = func.__name__
+		Target.__init__(self, tgt = tgt, deps = deps, func = func, 
+			default_action = func, **kwargs
+		)
+
 def target(tgt, deps=[], **kwargs):
 	core.targets[tgt] = Target(tgt=tgt, deps=deps, **kwargs)
-
-def get_target(tgt):
-	if tgt in core.targets:
-		return core.targets[tgt]
-	print("Unregistred target: {0}".format(tgt))
-	exit(-1)
 
 def depends_as_set(tgt, incroot=True):
 	res = set()

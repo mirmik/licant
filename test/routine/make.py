@@ -3,9 +3,14 @@
 import sys
 sys.path.insert(0, "../..")
 
-from licant.routine import add_routine, invoke
+import licant
 
-add_routine("hello", lambda: print("HelloWorld"))
+@licant.default_routine
+def routine1():
+	print("1")
 
-invoke(sys.argv[1:])
+@licant.routine
+def routine2():
+	print("2")
 
+licant.ex()

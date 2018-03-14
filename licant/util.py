@@ -1,5 +1,19 @@
 import sys
 import os
+import inspect
+import types
+
+def error(str):
+	print(red("LicantError: ") + str)
+	exit(-1)
+
+def cutinvoke(func, *args, **kwargs):
+	if isinstance(open, types.FunctionType):
+		ins = inspect.getargspec(func)
+		nargs = len(ins.args)
+		return func(*args[:nargs]) 
+	else:
+		return func(*args)
 
 class quite:
 	pass

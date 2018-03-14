@@ -36,6 +36,7 @@ class FileTarget(Target):
 		self.isfile = True
 		self.need = True
 		self.clrmsg = "DELETE {tgt}"
+		self.default_action = "makefile"
 
 	def update_info(self, _self):
 		fcache.update_info(self.tgt)
@@ -70,12 +71,53 @@ class FileTarget(Target):
 	def clr(self, _self):
 		do_execute(self, "rm -f {tgt}", "clrmsg")
 
+
+	def makefile(self, _self):
+		#threads = core.runtime["threads"]
+		rebuild = False
+	
+		stree = subtree(self.tgt)
+		#if core.runtime["infomod"] == "debug":
+		#	print('STREE:')
+		#print(stree)
+
+		#Create directory if not exists
+		stree.invoke_foreach(ops = "dirkeep")
+		
+		#Update cache
+		stree.invoke_foreach(ops = "update_info")
+		
+		#Read timestamps
+		stree.reverse_recurse_invoke(ops = "timestamp")
+		
+		if not rebuild:
+			#Find old files
+			stree.invoke_foreach(ops = need_if_timestamp_compare, cond = files_only)
+			stree.reverse_recurse_invoke(ops = need_spawn)
+		else:
+			#If setted rebuild, set all files as needed to recompile
+			stree.invoke_foreach(ops = set_need)
+	
+		#Build "needed" files. 
+		ret = stree.reverse_recurse_invoke(ops = "build", cond = if_need, threads = 1)#, threads = threads)
+		
+		#To return amount of maded files 
+		return ret
+
+
+	def clean(self, _self):	
+		stree = subtree(self.tgt)
+		stree.invoke_foreach(ops = "update_info")
+		stree.invoke_foreach(ops = "need_if_exist")
+		return stree.invoke_foreach(ops="clr", cond=if_need_and_file)
+
+
 def ftarget(tgt, deps=[], **kwargs):
-	core.targets[tgt] = FileTarget(
+	core.add_target(FileTarget(
 		tgt=tgt, 
 		deps=deps,
 		**kwargs
-	)
+	))
 
 class Executor:
 	def __init__(self, rule, msgfield='message'):
@@ -88,14 +130,14 @@ class Executor:
 def execute(*args, **kwargs):
 	return Executor(*args, **kwargs)
 
-def copy(src, tgt, adddeps=[], message="COPY {src} {tgt}"):
-	core.targets[tgt] = FileTarget(
+def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
+	core.add_target(FileTarget(
 		tgt=tgt, 
 		build=execute("cp {src} {tgt}"),
 		src=src,
 		deps=[src] + adddeps,
 		message=message
-	)
+	))
 
 def source(tgt, deps=[]):
 	target = FileTarget(
@@ -112,44 +154,6 @@ def print_result_string(ret):
 		print(yellow("Nothing to do"))
 	else:
 		print(green("Success"))
-
-def clean(root):	
-	stree = subtree(root)
-	stree.invoke_foreach(ops = "update_info")
-	stree.invoke_foreach(ops = "need_if_exist")
-	return stree.invoke_foreach(ops="clr", cond=if_need_and_file)
-
-def makefile(root):
-	threads = core.runtime["threads"]
-	rebuild = False
-
-	stree = subtree(root)
-	#if core.runtime["infomod"] == "debug":
-	#	print('STREE:')
-	#	print(stree)
-
-	#Create directory if not exists
-	stree.invoke_foreach(ops = "dirkeep")
-	
-	#Update cache
-	stree.invoke_foreach(ops = "update_info")
-	
-	#Read timestamps
-	stree.reverse_recurse_invoke(ops = "timestamp")
-	
-	if not rebuild:
-		#Find old files
-		stree.invoke_foreach(ops = need_if_timestamp_compare, cond = files_only)
-		stree.reverse_recurse_invoke(ops = need_spawn)
-	else:
-		#If setted rebuild, set all files as needed to recompile
-		stree.invoke_foreach(ops = set_need)
-
-	#Build "needed" files. 
-	ret = stree.reverse_recurse_invoke(ops = "build", cond = if_need, threads = threads)
-	
-	#To return amount of maded files 
-	return ret
 
 def if_need(context, target):
 	return target.need
@@ -228,17 +232,17 @@ def need_if_timestamp_compare(target):
 
 	return 0
 
-import licant.routine
-def doit(target, argv=sys.argv[1:]):
-	opts, args = core.parse_argv(argv)
-	core.runtime["threads"] = int(opts.threads)
-
-	if opts.debug:
-		core.runtime["infomod"] = "debug"
-
-	licant.routine.internal_routines({"make" : makefile, "clean" : clean})
-	licant.routine.default("make")
-
-	result = licant.routine.invoke(args, target)
-
-	print_result_string(result)
+#import licant.routine
+#def doit(target, argv=sys.argv[1:]):
+#	opts, args = core.parse_argv(argv)
+#	core.runtime["threads"] = int(opts.threads)
+#
+#	if opts.debug:
+#		core.runtime["infomod"] = "debug"
+#
+#	licant.routine.internal_routines({"make" : makefile, "clean" : clean})
+#	licant.routine.default("make")
+#
+#	result = licant.routine.invoke(args, target)
+#
+#	print_result_string(result)
