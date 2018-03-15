@@ -237,11 +237,9 @@ class MakefileTarget(licant.core.Target):
 	def __init__(self, tgt, targets):
 		def makefile_lambda():
 			for t in targets : 
-				print("here")
 				licant.core.get_target(t).invoke("makefile")
 		def clean_lambda():
 			for t in targets :  
-				print("here2")
 				licant.core.get_target(t).invoke("clean")
 		licant.core.Target.__init__(self, tgt = tgt, deps = targets,
 			makefile = makefile_lambda,
