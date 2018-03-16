@@ -29,13 +29,29 @@ def do_execute(target, rule, msgfield, prefix = None):
 		sprint(rule)
 	
 	ret = os.system(rule)
-	return ret
+	return True if ret == 0 else False 
 
-class FileTarget(Target):
+class MakeFileTarget(Target):
 	def __init__(self, tgt, deps, **kwargs):
 		Target.__init__(self, tgt, deps, **kwargs)
+
+	def clean(self, _self):	
+		stree = subtree(self.tgt)
+		stree.invoke_foreach(ops = "need_if_exist")
+		return stree.invoke_foreach(ops="clr", cond=if_need_and_file)
+
+	def makefile(self, _self):
+		stree = subtree(self.tgt)
+		if stree.invoke_foreach(ops = "dirkeep") == False: return False
+		if stree.reverse_recurse_invoke(ops = "build_if_need", threads = core.runtime["threads"]) == False: return False
+
+		
+
+class FileTarget(MakeFileTarget):
+	def __init__(self, tgt, deps, **kwargs):
+		MakeFileTarget.__init__(self, tgt, deps, **kwargs)
 		self.isfile = True
-		self.need = True
+		#self.need = True
 		self.clrmsg = "DELETE {tgt}"
 		self.default_action = "makefile"
 
@@ -50,11 +66,19 @@ class FileTarget(Target):
 		else:	
 			self.tstamp = curinfo.mtime
 	
+	def mtime(self):
+		curinfo = fcache.get_info(self.tgt)
+		if curinfo.exist == False:
+			return 0
+		else:	
+			return curinfo.mtime
+	
 	def dirkeep(self, _self):
 		dr = os.path.normpath(os.path.dirname(self.tgt))
 		if (not os.path.exists(dr)):
 			print("MKDIR %s" % dr)
 			os.system("mkdir -p {0}".format(dr))
+		return True
 
 	def is_exist(self):
 		curinfo = fcache.get_info(self.tgt)
@@ -73,45 +97,24 @@ class FileTarget(Target):
 		do_execute(self, "rm -f {tgt}", "clrmsg")
 
 
-	def makefile(self, _self):
-		#threads = core.runtime["threads"]
-		rebuild = False
+	def build_if_need(self, _self):
+		maxtime = 0
+		force = False
+		
+		for dep in [get_target(t) for t in self.depends]:
+			if not dep.is_exist():
+				force = True
+				break
+			if dep.mtime() > maxtime:
+				maxtime = dep.mtime()
 	
-		stree = subtree(self.tgt)
-		#if core.runtime["infomod"] == "debug":
-		#	print('STREE:')
-		#print(stree)
+		if maxtime > self.mtime() or force:
+			return self.build(self)
+		return True
+		
 
-		#Create directory if not exists
-		stree.invoke_foreach(ops = "dirkeep")
-		
-		#Update cache
-		stree.invoke_foreach(ops = "update_info")
-		
-		#Read timestamps
-		stree.reverse_recurse_invoke(ops = "timestamp")
-		
-		if not rebuild:
-			#Find old files
-			stree.invoke_foreach(ops = need_if_timestamp_compare, cond = files_only)
-			stree.reverse_recurse_invoke(ops = need_spawn)
-		else:
-			#If setted rebuild, set all files as needed to recompile
-			stree.invoke_foreach(ops = set_need)
+
 	
-		#Build "needed" files. 
-		ret = stree.reverse_recurse_invoke(ops = "build", cond = if_need, threads = core.runtime["threads"])#, threads = threads)
-		
-		#To return amount of maded files 
-		return ret
-
-
-	def clean(self, _self):	
-		stree = subtree(self.tgt)
-		stree.invoke_foreach(ops = "update_info")
-		stree.invoke_foreach(ops = "need_if_exist")
-		return stree.invoke_foreach(ops="clr", cond=if_need_and_file)
-
 
 def ftarget(tgt, deps=[], **kwargs):
 	core.add_target(FileTarget(
@@ -233,22 +236,14 @@ def need_if_timestamp_compare(target):
 
 	return 0
 
-class MakefileTarget(licant.core.Target):
+class VirtualMakeFileTarget(MakeFileTarget):
 	def __init__(self, tgt, targets):
-		def makefile_lambda():
-			for t in targets : 
-				licant.core.get_target(t).invoke("makefile")
-		def clean_lambda():
-			for t in targets :  
-				licant.core.get_target(t).invoke("clean")
-		licant.core.Target.__init__(self, tgt = tgt, deps = targets,
-			makefile = makefile_lambda,
-			clean = clean_lambda,
+		MakeFileTarget.__init__(self, tgt = tgt, deps = targets,
 			default_action = "makefile"
 		)
 
 def add_makefile_target(tgt, targets):
-	licant.add_target(MakefileTarget(tgt = tgt, targets = targets)) 
+	licant.add_target(VirtualMakeFileTarget(tgt = tgt, targets = targets)) 
 
 
 #import licant.routine

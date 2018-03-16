@@ -73,6 +73,12 @@ def local_if_exist(base, local, solver, tbase, tlocal):
 	else:
 		return local
 
+def concat_to_submodule(base, local, solver, tbase, tlocal):
+	if local == None: local = []
+	if base == None: base = []
+	lm = [licant.modules.submodule(l) for l in local]
+	return base + lm
+
 
 cxx_module_field_list = {
 											#merge						#include
@@ -93,7 +99,7 @@ cxx_module_field_list = {
 	"type": 			solver("str", 		local,			 			base,					"objects"),
 	"builddir": 		solver("str", 		local_if_exist, 			base,					"build"),
 	"binutils": 		solver("binutils", 	local_if_exist, 			base,					host_binutils),
-	"include_modules": 	solver("list", 		concat, 					base,					[]),
+	"include_modules": 	solver("list", 		concat_to_submodule,		base,					[]),
 	"defines": 			solver("list", 		concat, 					concat,					[]),
 	"ldscripts":		solver("list", 		concat_add_locdir, 			concat_add_locdir,		[]),
 }

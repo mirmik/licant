@@ -85,9 +85,18 @@ def implementation(name, impl, **kwargs):
 
 class submodule:
 	def __init__(self, name, impl=None, addopts = None):
-		self.name = name
-		self.impl = impl
-		self.addopts = addopts
+		if (isinstance(name, tuple)):
+			self.name = name[0]
+			self.impl = name[1]
+			self.addopts = addopts
+		elif (isinstance(name, submodule)):
+			self.name = name.name
+			self.impl = name.impl
+			self.addopts = addopts
+		else:
+			self.name = name
+			self.impl = impl
+			self.addopts = addopts
 
 	def __repr__(self):
 		return "subm(" + self.name + ")"

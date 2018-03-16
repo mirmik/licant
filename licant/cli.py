@@ -37,8 +37,13 @@ def cliexecute(argv = sys.argv[1:], default = None):
 		if _default == None:
 			licant.util.error("default target isn't set")
 
-		target = licant.core.get_target(_default)
-		ret = target.invoke(target.default_action)
+		try:
+			target = licant.core.get_target(_default)
+			ret = target.invoke(target.default_action, critical = True)
+		except licant.core.WrongAction as e:
+			print(e)
+			licant.util.error("Enough default action " + licant.util.yellow(target.default_action) + " in default target " + licant.util.yellow(_default))
+			
 	
 	if len(args) == 1:
 		fnd = args[0]
@@ -57,6 +62,16 @@ def cliexecute(argv = sys.argv[1:], default = None):
 				print(e)
 				licant.util.error("Can't find routine " + licant.util.yellow(fnd) + 
 					". Enough target or default target action with same name.")
+	
+	if len(args) == 2:
+		try:
+			target = licant.core.get_target(args[0])
+			ret = target.invoke(args[1], critical = True)
+		except licant.core.WrongAction as e:
+				print(e)
+				licant.util.error("Can't find action " + licant.util.yellow(args[1]) + 
+					" in target " + licant.util.yellow(args[0]))
+	
 	
 	print(licant.util.yellow("[finish]"))
 

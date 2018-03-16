@@ -15,8 +15,8 @@ application("main",
 	sources = ["main.cpp"],
 
 	include_modules = [
-		submodule("gxx", "posix"),
-		submodule("gxx.dprint", "stdout")
+		("gxx", "posix"),
+		("gxx.dprint", "stdout")
 	]
 )
 

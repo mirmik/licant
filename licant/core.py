@@ -101,7 +101,8 @@ def depends_as_set(tgt, incroot=True):
 def invoke_foreach(func):
 	save = dict(core.targets)
 	for k, v in save.items():
-		v.invoke(func)
+		if v.invoke(func) == False: return False
+	return True
 
 class SubTree:
 	def __init__(self, core, root):
@@ -141,8 +142,9 @@ class SubTree:
 	
 	
 	def reverse_recurse_invoke_single(self, ops, threads=None, cond=licant.util.always_true):
+		print("SINGLE THREAD MODE")
 		targets = [self.core.get_target(t) for t in self.depset]
-		sum = 0
+		#sum = 0
 	
 		self.__generate_rdepends_lists(targets)
 		
@@ -157,20 +159,21 @@ class SubTree:
 	
 			if cond(self, w):
 				ret = w.invoke(ops)
-				if not (ret == 0 or ret == None):
+				if ret == False:
 					print(licant.util.red("runtime error"))
 					exit(-1)
-				if ret == 0:
-					sum += 1
+				#if ret == 0:
+				#	sum += 1
 	
 			for r in [self.core.get_target(t) for t in w.rdepends]:
 				r.rcounter = r.rcounter + 1
 				if r.rcounter == len(r.depends):
 					works.put(r)
 	
-		return sum
+		#return sum
 
 	def reverse_recurse_invoke_threads(self, ops, threads, cond=licant.util.always_true):
+		print("THREADS MODE(threads = {}, ops = {})".format(threads, ops))
 		targets = [self.core.get_target(t) for t in self.depset]
 		
 		self.__generate_rdepends_lists(targets)
@@ -199,13 +202,15 @@ class SubTree:
 					w = works.get()
 					lock.release()
 
+					#print("thread {} get work {}".format(index, w.tgt))
+
 					if cond(self, w):
 						try:
 							ret = w.invoke(ops)
 						except:
 							info.err = True
 							return
-						if not (ret == 0 or ret == None):
+						if ret == False:
 							info.err = True
 							return
 						if ret == 0:
@@ -216,6 +221,7 @@ class SubTree:
 						if r.rcounter == len(r.depends):
 							works.put(r)
 
+					#print("thread {} fini work {}".format(index, w.tgt))
 					info.have_done += 1
 					continue
 				lock.release()
@@ -230,7 +236,7 @@ class SubTree:
 			t.join()
 
 		if info.err:
-			print(licant.util.red("runtime error"))
+			print(licant.util.red("runtime error (multithreads mode)"))
 			exit(-1)	
 		return info.sum
 
