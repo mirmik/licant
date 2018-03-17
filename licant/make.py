@@ -29,6 +29,10 @@ def do_execute(target, rule, msgfield, prefix = None):
 		sprint(rule)
 	
 	ret = os.system(rule)
+	
+	if target.isfile == True:
+		target.update_info(target) 
+
 	return True if ret == 0 else False 
 
 class MakeFileTarget(Target):
@@ -43,9 +47,15 @@ class MakeFileTarget(Target):
 	def makefile(self, _self):
 		stree = subtree(self.tgt)
 		if stree.invoke_foreach(ops = "dirkeep") == False: return False
-		if stree.reverse_recurse_invoke(ops = "build_if_need", threads = core.runtime["threads"]) == False: return False
-
-		
+		if stree.reverse_recurse_invoke(ops = "build_if_need", threads = core.runtime["threads"]) == False: return False		
+		#print("update_info")
+		#stree.invoke_foreach(ops = "update_info")
+		#print("timestamp")
+		#stree.reverse_recurse_invoke(ops = "timestamp")
+		#print("timestamp")
+		#stree.invoke_foreach(ops = need_if_timestamp_compare, cond = files_only)
+		#stree.reverse_recurse_invoke(ops = need_spawn)
+		#return stree.reverse_recurse_invoke(ops = "build", cond = if_need, threads = 1)#, 
 
 class FileTarget(MakeFileTarget):
 	def __init__(self, tgt, deps, **kwargs):
@@ -57,6 +67,7 @@ class FileTarget(MakeFileTarget):
 
 	def update_info(self, _self):
 		fcache.update_info(self.tgt)
+		return True
 
 	def timestamp(self, _self):
 		curinfo = fcache.get_info(self.tgt)
@@ -65,6 +76,7 @@ class FileTarget(MakeFileTarget):
 			self.tstamp = 0
 		else:	
 			self.tstamp = curinfo.mtime
+		return True
 	
 	def mtime(self):
 		curinfo = fcache.get_info(self.tgt)
@@ -218,7 +230,7 @@ def timestamp_max_of_depends(target):
 def need_if_timestamp_compare(target):
 	if target.tstamp == 0:
 		target.need = True
-		return 0
+		return True
 
 	maxtime = 0
 	force = False
@@ -234,7 +246,7 @@ def need_if_timestamp_compare(target):
 	else:
 		target.need = False
 
-	return 0
+	return True
 
 class VirtualMakeFileTarget(MakeFileTarget):
 	def __init__(self, tgt, targets):
