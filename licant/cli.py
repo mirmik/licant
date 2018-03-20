@@ -6,9 +6,14 @@ from optparse import OptionParser
 
 _default = None
 
-def routine_decorator(func):
+def routine_decorator(*args, **kwargs):
+	if len(kwargs) > 0:
+		return routine_decorator
+
 	global _routines
-	licant.core.add_target(licant.core.Routine(func))
+	func = args[0]
+	deps = getattr(kwargs, "deps", [])
+	licant.core.add_target(licant.core.Routine(func, deps = deps))
 	return func
 
 def default_routine_decorator(func):

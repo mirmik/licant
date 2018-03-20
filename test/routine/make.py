@@ -13,4 +13,8 @@ def routine1():
 def routine2():
 	print("2")
 
+@licant.routine(depacts = ["routine1", "routine2"])
+def routine3():
+	print("3")
+
 licant.ex()
