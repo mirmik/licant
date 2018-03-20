@@ -4,7 +4,7 @@
 import os
 from licant.core import *
 
-core = licantCore()
+core = LicantCore()
 
 def hello_world_0(tgt):
 	print("hw0")

@@ -1,2 +1,10 @@
-title: GenOS
-description: Когда что-то смешивается с чем-то
+title: Licant
+email: mirmikns@yandex.ru
+description: >
+  Licant make system
+baseurl: ""
+url: "https://github.com/mirmik/licant"
+github_username: mirmik
+
+# Build settings
+markdown: kramdown
