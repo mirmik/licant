@@ -1,20 +1,16 @@
----
-layout: default
----
-
 #Licant
 
 Licant предназначен для сборки небольших модульных проектов с зависимостями.
 
 Установка
 ---------
-{% highlight sh %}
+```sh
 python3 -m pip install licant
-{% endhighlight %}
+```
 
 HelloWorld
 ----------
-{% highlight python %}
+```python
 #!/usr/bin/env python
 
 import licant.make as lmake
@@ -27,4 +23,4 @@ lmake.copy(tgt = "build/c.txt", src = "build/b.txt")
 print("licant targets list:" + str(licant.core.core.targets))
 
 licant.ex(default = "build/c.txt")
-{% endhighlight %}
+```
