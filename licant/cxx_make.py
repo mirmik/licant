@@ -3,7 +3,7 @@ import licant.make
 import os
 
 class binutils:
-	def __init__(self, cxx, cc, ld, ar, objdump, moc):
+	def __init__(self, cxx, cc, ld, ar, objdump, moc = None):
 		self.cc = cc
 		self.cxx = cxx
 		self.ld = ld
@@ -40,11 +40,6 @@ class options:
 		self.cxxdeprule="{opts.binutils.cxx} -MM {src} > {tgt} {opts.incopt} {opts.defopt} {opts.cxx_flags}"
 		self.ccdeprule= "{opts.binutils.cc} -MM {src} > {tgt} {opts.incopt} {opts.defopt} {opts.cc_flags}"
 		self.mocrule="{opts.binutils.moc} {src} > {tgt}"
-		
-#		cc_rule = "%CC% -o %tgt% -c %src% %__options__%",
-#		s_rule = "%CC% -o %tgt% -c %src% %__options__%",
-#		cxx_dep_rule = "%CXX% -MM %src% > %tgt% %__options__%",
-#		cc_dep_rule = "%CC% -MM %src% > %tgt% %__options__%",
 
 cxx_ext_list = ["cpp", "cxx"]
 cc_ext_list = ["cc", "c"]
