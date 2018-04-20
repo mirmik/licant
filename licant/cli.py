@@ -37,6 +37,7 @@ def cliexecute(argv = sys.argv[1:], default = None):
 		_default = default
 	opts, args = cli_argv_parse(argv)
 	licant.core.core.runtime["threads"] = int(opts.threads)
+	licant.core.core.runtime["infomod"] = "info" if not opts.debug else "debug"
 
 	if len(args) == 0:
 		if _default == None:
@@ -79,56 +80,3 @@ def cliexecute(argv = sys.argv[1:], default = None):
 	
 	
 	print(licant.util.yellow("[finish]"))
-
-
-		#return target
-
-	#return target
-
-		#return do_routine(_default)
-
-	#if not args[0] in _routines:
-	#	licant.util.error("bad routine " + licant.util.yellow(args[0]))
-
-	#return do_routine(_routines[args[0]])
-
-#def do_routine(func):
-#	ins = inspect.getargspec(_default)
-#	nargs = len(ins.args)
-#	if nargs == 0 : func()
-#	if nargs == 1 : func(opts)
-#	if nargs == 2 : func(opts, args)
-
-
-
-#def internal_routines(dct):
-#	global _internal_routines
-#	_internal_routines = dct
-
-#def add_routine(name, func):
-#	_routines[name] = func
-
-#def default(name):
-#	global _default
-#	_default = name
-
-#def invoke(argv, *args, **kwargs):
-#	if len(argv) != 0:
-#		name = argv[0]
-#	else:
-#		name = _default
-
-#	func = None
-
-#	if name in _routines:
-#		func = _routines[name]
-#	elif name in _internal_routines:
-#		func = _internal_routines[name]
-#	else: 
-#		print("Bad routine")
-#		sys.exit(-1) 
-
-#	ins = inspect.getargspec(func)
-#	nargs = len(ins.args)
-#	return func(*args[:nargs]) 
-
