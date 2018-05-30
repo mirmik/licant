@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#coding: utf-8
 
 import sys
 sys.path.insert(0, "../..")
@@ -12,4 +13,4 @@ lmake.copy(tgt = "build/c.txt", src = "build/b.txt")
 
 print("licant targets list:" + str(licant.core.core.targets))
 
-licant.ex(default = "build/c.txt")
+licant.ex(default = "build/c.txt", colorwrap = False)

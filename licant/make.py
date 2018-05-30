@@ -1,7 +1,9 @@
+#coding: utf-8
+
 from __future__ import print_function 
 
 import licant
-from licant.core import Target, core, subtree, get_target
+from licant.core import Target, core, subtree
 from licant.cache import fcache
 from licant.util import red, green, yellow, purple, quite
 import threading
@@ -19,12 +21,13 @@ def do_execute(target, rule, msgfield, prefix = None):
 
 	message = getattr(target, msgfield, None)
 
-	if core.runtime["infomod"] == 'info' and message != None:
+	if not core.runtime["debug"] and message != None:
 		if not isinstance(message, quite):
 			if prefix != None:
 				sprint(prefix, message.format(**target.__dict__))
 			else:
 				sprint(message.format(**target.__dict__))
+	
 	else:
 		sprint(rule)
 	
@@ -46,16 +49,8 @@ class MakeFileTarget(Target):
 
 	def makefile(self, _self):
 		stree = subtree(self.tgt)
-		if stree.invoke_foreach(ops = "dirkeep") == False: return False
-		if stree.reverse_recurse_invoke(ops = "build_if_need", threads = core.runtime["threads"]) == False: return False		
-		#print("update_info")
-		#stree.invoke_foreach(ops = "update_info")
-		#print("timestamp")
-		#stree.reverse_recurse_invoke(ops = "timestamp")
-		#print("timestamp")
-		#stree.invoke_foreach(ops = need_if_timestamp_compare, cond = files_only)
-		#stree.reverse_recurse_invoke(ops = need_spawn)
-		#return stree.reverse_recurse_invoke(ops = "build", cond = if_need, threads = 1)#, 
+		stree.invoke_foreach(ops = "dirkeep")
+		stree.reverse_recurse_invoke(ops = "build_if_need", threads = core.runtime["threads"])
 
 class FileTarget(MakeFileTarget):
 	def __init__(self, tgt, deps, **kwargs):
@@ -113,7 +108,7 @@ class FileTarget(MakeFileTarget):
 		maxtime = 0
 		force = False
 		
-		for dep in [get_target(t) for t in self.depends]:
+		for dep in [core.get(t) for t in self.deps]:
 			if not dep.is_exist():
 				force = True
 				break
@@ -129,7 +124,7 @@ class FileTarget(MakeFileTarget):
 	
 
 def ftarget(tgt, deps=[], **kwargs):
-	core.add_target(FileTarget(
+	core.add(FileTarget(
 		tgt=tgt, 
 		deps=deps,
 		**kwargs
@@ -147,7 +142,7 @@ def execute(*args, **kwargs):
 	return Executor(*args, **kwargs)
 
 def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
-	core.add_target(FileTarget(
+	core.add(FileTarget(
 		tgt=tgt, 
 		build=execute("cp {src} {tgt}"),
 		src=src,
@@ -255,7 +250,7 @@ class VirtualMakeFileTarget(MakeFileTarget):
 		)
 
 def add_makefile_target(tgt, targets):
-	licant.add_target(VirtualMakeFileTarget(tgt = tgt, targets = targets)) 
+	licant.add(VirtualMakeFileTarget(tgt = tgt, targets = targets)) 
 
 
 #import licant.routine

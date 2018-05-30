@@ -1,78 +1,46 @@
+#coding: utf-8
+
 import licant.util
 import threading
 import time
 
 class WrongAction(Exception): pass
 
-class LicantCore:
-	def __init__(self):
-		self.targets = {}
-		self.runtime = { 'infomod': "info" }
-
-	def add_target(self, target):
-		self.targets[target.tgt] = target
-
-	def subtree(self, root):
-		return SubTree(self, root)
-
-	def get_target(self, tgt):
-		if tgt in self.targets:
-			return self.targets[tgt]
-		licant.util.error("unregistred target " + licant.util.yellow(tgt))
-	
-	def depends_as_set(self, tgt, incroot=True):
-		res = set()
-		if incroot:
-			res.add(tgt)
-		
-		target = self.get_target(tgt)
-		
-		for d in target.depends:
-			if not d in res:
-				res.add(d)
-				subres = self.depends_as_set(d)
-				res = res.union(subres)
-		return res
-
-core = LicantCore()
-
-def add_target(target):
-	return core.add_target(target)
-
-def get_target(tgt):
-	return core.get_target(tgt)
+class NoneDictionary(dict):
+	def __init__(self): dict.__init__(self)
+	def __getitem__(self, idx): 
+		try: return dict.__getitem__(self, idx)
+		except: return None 
 
 class Target:
 	def __init__(self, tgt, deps, **kwargs):
 		self.tgt = tgt
-
-		self.depends = set()
-		for d in deps:
-			self.depends.add(d)
-		self.deps = self.depends
-
-		for k, v in kwargs.items():
-			setattr(self, k, v)
+		self.deps = set(deps)
+		for k, v in kwargs.items(): setattr(self, k, v)
 		
 	def invoke(self, func, critical = False, **kwargs):
+		"""Invoke func function or method, or mthod with func name for this target
+
+		Поддерживается несколько разных типов func.
+		В качестве func может быть вызвана внешняя функция с параметром текущей цели,
+		или название локального метода.
+		critical -- Действует для строкового вызова. Если данный attr отсутствует у цели,
+		то в зависимости от данного параметра может быть возвращен None или выброшено исключение.
+		"""
+		if core.runtime["trace"]:
+			print("TRACE: invoke {} with action {}".format(self.tgt, func))
+
 		if (isinstance(func, str)):
-			res = getattr(self, func, None)
-			if (res == None):
+			func = getattr(self, func, None)
+			if (func == None):
 				if (critical): raise WrongAction(func)
 				return None
-			return licant.util.cutinvoke(res, self, **kwargs)
-		else:
-			return licant.util.cutinvoke(func, self, **kwargs)
+		
+		return licant.util.cutinvoke(func, self, **kwargs)
 
 	def __repr__(self):
+		"""По умолчанию вывод Target на печать возвращает идентификатор цели"""
 		return self.tgt
-
-	#def invoke_list(self, args):
-	#	if len(args) == 0:
-	#		return self.invoke("default_action")
-
-	#	print("TODO")
-		#func = args[0]
 
 class Routine(Target):
 	def __init__(self, func, deps=[], tgt = None, **kwargs):
@@ -81,28 +49,39 @@ class Routine(Target):
 			default_action = func, **kwargs
 		)
 
-def target(tgt, deps=[], **kwargs):
-	core.targets[tgt] = Target(tgt=tgt, deps=deps, **kwargs)
+class Core:
+	def __init__(self):
+		self.targets = {}
+		self.runtime = NoneDictionary()
 
-def depends_as_set(tgt, incroot=True):
-	res = set()
-	if incroot:
-		res.add(tgt)
-	
-	target = get_target(tgt)
-	
-	for d in target.depends:
-		if not d in res:
-			res.add(d)
-			subres = depends_as_set(d)
-			res = res.union(subres)
-	return res
+	def add(self, target):
+		"""Add new target"""
+		self.targets[target.tgt] = target
 
-def invoke_foreach(func):
-	save = dict(core.targets)
-	for k, v in save.items():
-		if v.invoke(func) == False: return False
-	return True
+	def get(self, tgt):
+		"""Get target object"""
+		if tgt in self.targets:
+			return self.targets[tgt]
+		licant.util.error("unregistred target " + licant.util.yellow(tgt))
+	
+	def subtree(self, root):
+		"""Construct Subtree accessor for root target"""
+		return SubTree(self, root)
+	
+	def depends_as_set(self, tgt, incroot=True):
+		""""""
+		res = set()
+		if incroot:
+			res.add(tgt)
+		
+		target = self.get(tgt)
+		
+		for d in target.deps:
+			if not d in res:
+				res.add(d)
+				subres = self.depends_as_set(d)
+				res = res.union(subres)
+		return res
 
 class SubTree:
 	def __init__(self, core, root):
@@ -118,7 +97,7 @@ class SubTree:
 		ret = None
 
 		for d in self.depset:
-			target = self.core.get_target(d)
+			target = self.core.get(d)
 			if cond==None:
 				ret = target.invoke(ops)
 			else:
@@ -136,14 +115,14 @@ class SubTree:
 			t.rcounter = 0
 	
 		for t in targets:
-			for dname in t.depends:
-				dtarget = self.core.get_target(dname)
+			for dname in t.deps:
+				dtarget = self.core.get(dname)
 				dtarget.rdepends.append(t.tgt)
 	
 	
 	def reverse_recurse_invoke_single(self, ops, threads=None, cond=licant.util.always_true):
-		print("SINGLE THREAD MODE")
-		targets = [self.core.get_target(t) for t in self.depset]
+		if core.runtime["debug"]: print("SINGLE THREAD MODE")
+		targets = [self.core.get(t) for t in self.depset]
 		#sum = 0
 	
 		self.__generate_rdepends_lists(targets)
@@ -151,7 +130,7 @@ class SubTree:
 		works = licant.util.queue()
 	
 		for t in targets:
-			if t.rcounter == len(t.depends):
+			if t.rcounter == len(t.deps):
 				works.put(t)
 
 		while(not works.empty()):
@@ -165,16 +144,16 @@ class SubTree:
 				#if ret == 0:
 				#	sum += 1
 	
-			for r in [self.core.get_target(t) for t in w.rdepends]:
+			for r in [self.core.get(t) for t in w.rdepends]:
 				r.rcounter = r.rcounter + 1
-				if r.rcounter == len(r.depends):
+				if r.rcounter == len(r.deps):
 					works.put(r)
 	
 		#return sum
 
 	def reverse_recurse_invoke_threads(self, ops, threads, cond=licant.util.always_true):
-		print("THREADS MODE(threads = {}, ops = {})".format(threads, ops))
-		targets = [self.core.get_target(t) for t in self.depset]
+		if core.runtime["debug"]: print("THREADS MODE(threads = {}, ops = {})".format(threads, ops))
+		targets = [self.core.get(t) for t in self.depset]
 		
 		self.__generate_rdepends_lists(targets)
 		works = licant.util.queue()
@@ -188,7 +167,7 @@ class SubTree:
 		info = info_cls()
 
 		for t in targets:
-			if t.rcounter == len(t.depends):
+			if t.rcounter == len(t.deps):
 				works.put(t)
 	
 		lock = threading.Lock()
@@ -218,7 +197,7 @@ class SubTree:
 
 					for r in [get_target(t) for t in w.rdepends]:
 						r.rcounter = r.rcounter + 1
-						if r.rcounter == len(r.depends):
+						if r.rcounter == len(r.deps):
 							works.put(r)
 
 					#print("thread {} fini work {}".format(index, w.tgt))
@@ -252,7 +231,7 @@ class SubTree:
 	def __str__(self):
 		ret = ""
 		for d in sorted(self.depset):
-			t = self.core.get_target(d)
+			t = self.core.get(d)
 			s = "{}: {}\n".format(d, sorted(t.deps))
 			ret += s
 		ret = ret[:-1]
@@ -265,3 +244,6 @@ def do(tgt, act = None):
 	if act == None:
 		return core.get_target(tgt).invoke(core.get_target(tgt).default_action)	
 	return core.get_target(tgt).invoke(act)
+
+#Объект ядра с которым библиотеки работают по умолчанию.
+core = Core()

@@ -1,5 +1,7 @@
+#coding: utf-8
+
 import licant.util
-import licant.core
+from licant.core import WrongAction
 
 import sys
 from optparse import OptionParser
@@ -23,28 +25,37 @@ def default_routine_decorator(func):
 
 def cli_argv_parse(argv):
 	parser = OptionParser()
-	parser.add_option("-d", "--debug", action="store_true", default=False, 
-		help="print full system commands")
+	parser.add_option("-d", "--debug", action="store_true", default=False, help="print full system commands")
 	parser.add_option("-j", "--threads", default=1, help="amount of threads for executor")
+	parser.add_option("-t", "--trace", action="store_true", default=False, help="print trace information")
+	
+	parser.add_option("--printruntime", action="store_true", default=False)
+	
 	opts, args = parser.parse_args(argv)
 	return opts, args
 
-def cliexecute(argv = sys.argv[1:], default = None):
+def cliexecute(argv = sys.argv[1:], default = None, core = licant.core.core):
 	print(licant.util.green("[start]"))
 
 	if default != None:
 		global _default 
 		_default = default
 	opts, args = cli_argv_parse(argv)
-	licant.core.core.runtime["threads"] = int(opts.threads)
-	licant.core.core.runtime["infomod"] = "info" if not opts.debug else "debug"
+
+	core.runtime["debug"] = opts.debug or opts.trace
+	core.runtime["trace"] = opts.trace
+	core.runtime["threads"] = int(opts.threads)
+
+	if opts.printruntime:
+		print("PRINT RUNTIME:", core.runtime)
+	
 
 	if len(args) == 0:
 		if _default == None:
 			licant.util.error("default target isn't set")
 
 		try:
-			target = licant.core.get_target(_default)
+			target = core.get(_default)
 			ret = target.invoke(target.default_action, critical = True)
 		except licant.core.WrongAction as e:
 			print(e)
@@ -53,16 +64,16 @@ def cliexecute(argv = sys.argv[1:], default = None):
 	
 	if len(args) == 1:
 		fnd = args[0]
-		if fnd in licant.core.core.targets:
+		if fnd in core.targets:
 			try:
-				target = licant.core.get_target(fnd)
+				target = core.get(fnd)
 				ret = target.invoke(target.default_action, critical = True)
 			except licant.core.WrongAction as e:
 				print(e)
 				licant.util.error("target.default_action")
 		else:
 			try:
-				target = licant.core.get_target(_default)
+				target = core.get(_default)
 				ret = target.invoke(fnd, critical = True)
 			except licant.core.WrongAction as e:
 				print(e)
