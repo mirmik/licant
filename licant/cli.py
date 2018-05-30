@@ -6,7 +6,7 @@ from licant.core import WrongAction
 import sys
 from optparse import OptionParser
 
-_default = None
+#_default = None
 
 def routine_decorator(*args, **kwargs):
 	if len(kwargs) > 0:
@@ -15,13 +15,13 @@ def routine_decorator(*args, **kwargs):
 	global _routines
 	func = args[0]
 	deps = getattr(kwargs, "deps", [])
-	licant.core.add_target(licant.core.Routine(func, deps = deps))
+	licant.core.core.add(licant.core.Routine(func, deps = deps))
 	return func
 
-def default_routine_decorator(func):
-	global _default
-	_default = func.__name__
-	return routine_decorator(func)	
+#def default_routine_decorator(func):
+#	global _default
+#	_default = func.__name__
+#	return routine_decorator(func)	
 
 def cli_argv_parse(argv):
 	parser = OptionParser()
@@ -34,12 +34,9 @@ def cli_argv_parse(argv):
 	opts, args = parser.parse_args(argv)
 	return opts, args
 
-def cliexecute(argv = sys.argv[1:], default = None, core = licant.core.core):
-	print(licant.util.green("[start]"))
+def cliexecute(default, colorwrap = False, argv = sys.argv[1:], core = licant.core.core):
+	if colorwrap: print(licant.util.green("[start]"))
 
-	if default != None:
-		global _default 
-		_default = default
 	opts, args = cli_argv_parse(argv)
 
 	core.runtime["debug"] = opts.debug or opts.trace
@@ -51,11 +48,11 @@ def cliexecute(argv = sys.argv[1:], default = None, core = licant.core.core):
 	
 
 	if len(args) == 0:
-		if _default == None:
+		if default == None:
 			licant.util.error("default target isn't set")
 
 		try:
-			target = core.get(_default)
+			target = core.get(default)
 			ret = target.invoke(target.default_action, critical = True)
 		except licant.core.WrongAction as e:
 			print(e)
@@ -73,7 +70,7 @@ def cliexecute(argv = sys.argv[1:], default = None, core = licant.core.core):
 				licant.util.error("target.default_action")
 		else:
 			try:
-				target = core.get(_default)
+				target = core.get(default)
 				ret = target.invoke(fnd, critical = True)
 			except licant.core.WrongAction as e:
 				print(e)
@@ -90,4 +87,4 @@ def cliexecute(argv = sys.argv[1:], default = None, core = licant.core.core):
 					" in target " + licant.util.yellow(args[0]))
 	
 	
-	print(licant.util.yellow("[finish]"))
+	if colorwrap: print(licant.util.yellow("[finish]"))

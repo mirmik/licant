@@ -5,7 +5,7 @@ sys.path.insert(0, "../..")
 
 import licant
 
-@licant.default_routine
+@licant.routine
 def routine1():
 	print("1")
 
@@ -17,4 +17,4 @@ def routine2():
 def routine3():
 	print("3")
 
-licant.ex()
+licant.ex("routine1")

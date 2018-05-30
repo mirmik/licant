@@ -11,4 +11,4 @@ lmake.source("a.cpp")
 lcxx.object(tgt = "build/a.o", src = "a.cpp")
 lcxx.executable(tgt = "target", srcs = ["build/a.o"])
 
-licant.ex(default = "target")
+licant.ex("target")

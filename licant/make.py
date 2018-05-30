@@ -250,7 +250,7 @@ class VirtualMakeFileTarget(MakeFileTarget):
 		)
 
 def add_makefile_target(tgt, targets):
-	licant.add(VirtualMakeFileTarget(tgt = tgt, targets = targets)) 
+	licant.core.core.add(VirtualMakeFileTarget(tgt = tgt, targets = targets)) 
 
 
 #import licant.routine

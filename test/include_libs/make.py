@@ -5,7 +5,6 @@ sys.path.insert(0, "../..")
 
 import licant
 from licant.cxx_modules import application
-from licant.modules import submodule
 from licant.libs import include
 
 include("gxx")

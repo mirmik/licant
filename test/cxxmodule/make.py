@@ -11,4 +11,4 @@ application("target",
 	sources = ["main.cpp", "ttt.cpp"]
 )
 
-licant.ex(default = "target")
+licant.ex("target")
