@@ -9,6 +9,8 @@ from licant.core import do as do
 
 from licant.make import add_makefile_target as add_makefile_target 
 
+import licant.scripter
+
 def execute(path):
 	licant.scripter.scriptq.execute(path)
 
