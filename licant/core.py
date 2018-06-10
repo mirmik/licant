@@ -242,8 +242,8 @@ def subtree(root):
 
 def do(tgt, act = None):
 	if act == None:
-		return core.get_target(tgt).invoke(core.get_target(tgt).default_action)	
-	return core.get_target(tgt).invoke(act)
+		return core.get(tgt).invoke(core.get(tgt).default_action)	
+	return core.get(tgt).invoke(act)
 
 #Объект ядра с которым библиотеки работают по умолчанию.
 core = Core()
