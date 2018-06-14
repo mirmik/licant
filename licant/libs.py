@@ -1,4 +1,5 @@
 from licant.scripter import scriptq
+from licant.util import yellow
 
 import os
 import sys
@@ -29,7 +30,7 @@ def include(lib):
 		libs =  merge_two_dicts(glibs, llibs)
 
 	if not lib in libs:
-		print("Unregistred library {}. Use licant-config or manually edit ~/.config/licant file".format(lib))
+		print("Unregistred library {}. Use licant-config utility or manually edit ~/.config/licant file.".format(yellow(lib)))
 		exit(-1)
 
 	#print(libs[lib])
