@@ -195,7 +195,7 @@ class SubTree:
 						if ret == 0:
 							info.sum += 1
 
-					for r in [get_target(t) for t in w.rdepends]:
+					for r in [self.core.get(t) for t in w.rdepends]:
 						r.rcounter = r.rcounter + 1
 						if r.rcounter == len(r.deps):
 							works.put(r)
