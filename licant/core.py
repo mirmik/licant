@@ -181,7 +181,7 @@ class SubTree:
 					w = works.get()
 					lock.release()
 
-					print("thread {} get work {}".format(index, w.tgt))
+					#print("thread {} get work {}".format(index, w.tgt))
 
 					if cond(self, w):
 						try:
