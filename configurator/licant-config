@@ -6,23 +6,20 @@ import os
 import json
 from optparse import OptionParser
 
+import licant.libs
+
 usage = "usage: %prog [options] lib path"
 parser = OptionParser(usage = usage)
-parser.add_option("-l", "--local", action = "store_true", default = False)
+parser.add_option("-u", "--user", action = "store_true", default = False)
 parser.add_option("-r", "--remove", action = "store_true", default = False)
+parser.add_option("-l", "--list", action = "store_true", default = False)
 opts, args = parser.parse_args(sys.argv[1:])
 
-if not ((len(args) == 2) or (opts.remove and len(args) == 1)):
-	#parser.print_help()
-	parser.error("incorrect numbers of argument")
-	exit(0)
-
-if opts.local:
-	paths_file = os.path.expanduser("~/.config/licant") 
-else:
-	paths_file = "/etc/licant" 
-
-name = args[0]
+paths_file = licant.libs.lpath if opts.user else licant.libs.gpath 
+#if opts.local:
+#	paths_file = licant.libs.lpath 
+#else:
+#	paths_file = licant.libs.gpath 
 
 if (os.path.exists(paths_file)):
 	try:
@@ -33,6 +30,19 @@ if (os.path.exists(paths_file)):
 		exit(-1)
 else:
 	paths = {}
+
+if opts.list:
+	print("Libraries:")
+	for k, v in paths.items():
+		print(k, v)
+	exit(0)
+
+if not ((len(args) == 2) or (opts.remove and len(args) == 1)):
+	#parser.print_help()
+	parser.error("incorrect numbers of argument")
+	exit(0)
+
+name = args[0]
 
 if opts.remove:
 	try:
@@ -57,7 +67,3 @@ except IOError as e:
 	print("Dump error:")
 	print(e)
 	exit(-1)
-
-print("Libraries:")
-for k, v in paths.items():
-	print(k, v)

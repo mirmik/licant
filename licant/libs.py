@@ -5,8 +5,8 @@ import os
 import sys
 import json
 
-gpath = "/etc/licant"
-lpath = os.path.expanduser("~/.config/licant")
+gpath = "/var/lib/licant"
+lpath = os.path.expanduser("~/.licant")
 
 libs = None
 
