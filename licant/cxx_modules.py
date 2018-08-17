@@ -242,6 +242,7 @@ def make(name, impl = None, **kwargs):
 		locopts = baseopts.merge(modopts, "merge")
 
 		def include_modules(locopts, lst):
+			#print(lst)
 			retopts = locopts
 			for simod in lst:
 				imod = mlibrary.get(simod.name, simod.impl)

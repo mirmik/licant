@@ -81,7 +81,7 @@ class Core:
 				res.add(d)
 				subres = self.depends_as_set(d)
 				res = res.union(subres)
-		return res
+		return sorted(res)
 
 class SubTree:
 	def __init__(self, core, root):
