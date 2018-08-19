@@ -30,7 +30,7 @@ def include(lib):
 		libs =  merge_two_dicts(glibs, llibs)
 
 	if not lib in libs:
-		print("Unregistred library {}. Use licant-config utility or manually edit ~/.config/licant file.".format(yellow(lib)))
+		print("Unregistred library {}. Use licant-config utility or manually edit {} or {} file.".format(yellow(lib), yellow(lpath), yellow(gpath)))
 		exit(-1)
 
 	#print(libs[lib])
