@@ -7,7 +7,7 @@ import os
 setup(
 	name = 'licant',
 	packages = ['licant'],
-	version = '0.18.7',
+	version = '0.18.8',
 	license='MIT',
 	description = 'licant make system',
 	author = 'Sorokin Nikolay',
