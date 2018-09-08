@@ -60,18 +60,23 @@ def local_add_srcdir(base, local, solver, tbase, tlocal):
 	
 def concat_add_locdir(base, local, solver, tbase, tlocal):
 	if local == None:
-		local = []
-	else:
-		if isinstance(local, type("str")):
-			local = [local]
-		local = list(map(lambda p: os.path.join(tlocal.opts["__dir__"], os.path.expanduser(p)), local))
+		return base
+	
+	if isinstance(local, type("str")):
+		local = [local]
+	local = list(map(lambda p: os.path.join(tlocal.opts["__dir__"], os.path.expanduser(p)), local))
 	return base + local
 
-def local_if_exist(base, local, solver, tbase, tlocal):
+def concat_add_locdir_second(base, local, solver, tbase, tlocal):
+	"""Добавить локальный путь ко всем вторым элементам локального массива. 
+	Для поддержки локальных заголовков."""
 	if local == None:
 		return base
-	else:
-		return local
+	local = [ ( pl[0], os.path.join(tlocal.opts["__dir__"], pl[1]) ) for pl in local ]
+	return base + local 
+
+def local_if_exist(base, local, solver, tbase, tlocal):
+	return base if local is None else local
 
 def concat_to_submodule(base, local, solver, tbase, tlocal):
 	if local == None: local = []
@@ -102,6 +107,7 @@ cxx_module_field_list = {
 	"include_modules": 	solver("list", 		concat_to_submodule,		base,					[]),
 	"defines": 			solver("list", 		concat, 					concat,					[]),
 	"ldscripts":		solver("list", 		concat_add_locdir, 			concat_add_locdir,		[]),
+	"local_headers":	solver("list", 		concat_add_locdir_second, 	concat_add_locdir_second,	[]),
 }
 
 class CXXModuleOptions:
@@ -164,14 +170,12 @@ def cxx_options_from_modopts(modopts):
 	)	
 
 def build_paths(srcs, opts, ext):
-	#print(srcs)
 	objs = []
 	for s in srcs:
 		if os.path.isabs(s):
 			objs.append(opts.opts["builddir"] + gu.changeext(s, ext))
 		else:
 			objs.append(os.path.normpath(os.path.join(opts.opts["builddir"], gu.changeext(s, ext).replace("..", "__")))) 
-	#print(objs)
 	return objs
 
 def sources_paths(opts):
@@ -257,6 +261,7 @@ def make(name, impl = None, **kwargs):
 		adddeps = []#mod.stack
 
 		locopts = include_modules(locopts, locopts["include_modules"])
+		if len(locopts["local_headers"]): locopts["include_paths"].append(locopts["builddir"] + "/__LOCAL_HEADERS__/")
 		cxxopts = cxx_options_from_modopts(locopts)
 
 		locsrcs = sources_paths(locopts)
@@ -273,6 +278,14 @@ def make(name, impl = None, **kwargs):
 			locsrcs.extend(locmoccxx)
 			locobjs.extend(locmocobjs)
 			locdeps.extend(locmocdeps)
+
+		if len(locopts["local_headers"]):
+			print(locopts["local_headers"])
+			for pair in locopts["local_headers"]:
+				licant.make.source(pair[1])
+				tgtpath = os.path.join(locopts["builddir"], "__LOCAL_HEADERS__", pair[0])
+				licant.make.copy(src = pair[1], tgt = tgtpath)
+				adddeps += [ tgtpath ]
 
 		link_objects(locsrcs, locobjs, locdeps, cxxopts, adddeps)
 

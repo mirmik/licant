@@ -19,3 +19,5 @@ def execute_recursive(*argv, **kwargs):
 
 def about():
 	return "I'm Licant"
+
+from licant.modules import module, submodule

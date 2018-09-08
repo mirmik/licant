@@ -1,13 +1,9 @@
 from licant.util import red 
 from licant.scripter import scriptq
-#import inspect
-
-#from slots import *
 
 special = ["__script__", "__dir__"]
 
 class Module:
-	#__slots__ = ['name', 'script', 'stack', 'opts']
 	def __init__(self, name, script, dir, stack, **kwargs):
 		self.name = name
 		self.script = script
@@ -15,7 +11,6 @@ class Module:
 		self.opts = kwargs
 		self.opts["__script__"]=self.script
 		self.opts["__dir__"]=dir
-	#	self.set_up()
 
 class VariantModule:
 	def __init__(self):

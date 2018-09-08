@@ -118,10 +118,6 @@ class FileTarget(MakeFileTarget):
 		if maxtime > self.mtime() or force:
 			return self.build(self)
 		return True
-		
-
-
-	
 
 def ftarget(tgt, deps=[], **kwargs):
 	core.add(FileTarget(
