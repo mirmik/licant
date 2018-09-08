@@ -15,7 +15,7 @@ def execute(path):
 	licant.scripter.scriptq.execute(path)
 
 def execute_recursive(*argv, **kwargs):
-	licant.scripter.scriptq.execute(*argv, **kwargs)
+	licant.scripter.scriptq.execute_recursive(*argv, **kwargs)
 
 def about():
 	return "I'm Licant"
