@@ -24,7 +24,7 @@ host_binutils = binutils(
 )
 
 class options:
-	def __init__(self, binutils = host_binutils, include_paths = None, defines = None, cxx_flags="", cc_flags="", ld_flags="", ldscripts = None):
+	def __init__(self, binutils = host_binutils, include_paths = None, defines = None, cxx_flags="", cc_flags="", ld_flags="", ld_srcs_add="", ldscripts = None):
 		self.binutils = binutils
 		self.incopt = licant.util.flag_prefix("-I", include_paths) 
 		self.defopt = licant.util.flag_prefix("-D", defines)
@@ -32,8 +32,9 @@ class options:
 		self.cxx_flags = cxx_flags
 		self.cc_flags = cc_flags
 		self.ld_flags = ld_flags
-		self.execrule=  "{opts.binutils.cxx} {srcs} -o {tgt} {opts.ld_flags} {opts.ldscripts}"
-		self.dynlibrule= "{opts.binutils.cxx} --shared {srcs} -o {tgt} {opts.ld_flags} {opts.ldscripts}"
+		self.ld_srcs_add = ld_srcs_add
+		self.execrule=  "{opts.binutils.cxx} {opts.ld_flags} -Wl,--start-group {srcs} {opts.ld_srcs_add} -Wl,--end-group -o {tgt} {opts.ldscripts}"
+		self.dynlibrule= "{opts.binutils.cxx} --shared {opts.ld_flags} -Wl,--start-group {srcs} {opts.ld_srcs_add} -Wl,--end-group -o {tgt} {opts.ldscripts}"
 		self.cxxobjrule="{opts.binutils.cxx} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cxx_flags}"
 		self.ccobjrule= "{opts.binutils.cc} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cc_flags}"
 		
