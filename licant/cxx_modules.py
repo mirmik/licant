@@ -1,7 +1,8 @@
+#coding: utf-8
+
 from licant.modules import mlibrary
 from licant.cxx_make import host_binutils, binutils
 from licant.util import red, yellow, cxx_read_depends
-
 
 import os
 import licant.util as gu
