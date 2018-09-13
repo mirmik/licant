@@ -126,7 +126,7 @@ class SubTree:
 		#sum = 0
 	
 		self.__generate_rdepends_lists(targets)
-		
+
 		works = licant.util.queue()
 	
 		for t in targets:

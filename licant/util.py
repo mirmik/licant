@@ -135,6 +135,10 @@ def cxx_read_depends(path):
 	else:
 		f = open(path)
 		text = f.read()
+
+		if len(text) == 0:
+			return None
+
 		lst = pattern.findall(text)
 		#lst = re.split(r'[ \n\\]+', text)
 		#print(lst)

@@ -79,7 +79,7 @@ def cliexecute(default, colorwrap = False, argv = sys.argv[1:], core = licant.co
 	
 	if len(args) == 2:
 		try:
-			target = licant.core.get_target(args[0])
+			target = licant.core.core.get(args[0])
 			ret = target.invoke(args[1], critical = True)
 		except licant.core.WrongAction as e:
 				print(e)

@@ -94,7 +94,7 @@ def moc(src, tgt, opts = options(), type=None, deps=None, message="MOC {tgt}"):
 		#clr=licant.make.executor("rm -f {tgt}"),  
 	)
 
-def depend(src, tgt, opts = options(), type=None, deps=None, message="DEPENDS {tgt}"):
+def depend(src, tgt, opts = options(), type=None, deps=None, message="DEPENDS {tgt}", **kwargs):
 	if deps == None:
 		deps = [src]
 
@@ -125,7 +125,8 @@ def depend(src, tgt, opts = options(), type=None, deps=None, message="DEPENDS {t
 		src=src,
 		deps=deps,
 		build=build,
-		message=message
+		message=message,
+		**kwargs
 		#clr=licant.make.executor("rm -f {tgt}"),  
 	)
 

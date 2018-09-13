@@ -53,10 +53,10 @@ class MakeFileTarget(Target):
 		stree.reverse_recurse_invoke(ops = "build_if_need", threads = core.runtime["threads"])
 
 class FileTarget(MakeFileTarget):
-	def __init__(self, tgt, deps, **kwargs):
+	def __init__(self, tgt, deps, force = False, **kwargs):
 		MakeFileTarget.__init__(self, tgt, deps, **kwargs)
 		self.isfile = True
-		#self.need = True
+		self.force = force
 		self.clrmsg = "DELETE {tgt}"
 		self.default_action = "makefile"
 
@@ -105,9 +105,12 @@ class FileTarget(MakeFileTarget):
 
 
 	def build_if_need(self, _self):
-		maxtime = 0
+		if self.force:
+			return self.build(self)			
+
 		force = False
-		
+
+		maxtime = 0
 		for dep in [core.get(t) for t in self.deps]:
 			if not dep.is_exist():
 				force = True

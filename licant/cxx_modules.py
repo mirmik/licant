@@ -157,7 +157,7 @@ def cxx_options_from_modopts(modopts):
 	cxx_flags = cxxstd + " " + modopts["cxx_flags"]
 	cc_flags = ccstd + " " + modopts["cc_flags"]
 
-	ld_libs = "".join([" -l" + l for l in modopts["libs"]])
+	ld_libs = "-Wl,--start-group " + "".join([" -l" + l for l in modopts["libs"]]) + " -Wl,--end-group"
 
 	return licant.cxx_make.options(
 		binutils = modopts["binutils"],
@@ -197,25 +197,25 @@ def moc_paths(opts):
 	return ret
 
 def link_objects(srcs, objs, deps, cxxopts, adddeps):
+
 	for s, o, d in zip(srcs, objs, deps):
 		if not s in licant.core.core.targets: 
 			licant.make.source(s)
 		
 		headers = cxx_read_depends(d)
+		force = headers == None
 		if headers == None:
 			headers = []
 		else:
 			for h in headers:
-				licant.make.source(h)
+				if h not in licant.core.core.targets: 
+					licant.make.source(h)
 
-		#print(s, o, d)
-
-		licant.cxx_make.depend(src=s, tgt=d, opts=cxxopts, deps=[s] + adddeps + headers)
+		licant.cxx_make.depend(src=s, tgt=d, opts=cxxopts, deps=[s] + adddeps + headers, force = force)
 		licant.cxx_make.object(src=s, tgt=o, opts=cxxopts, deps=[s, d] + adddeps + headers)
 
 def link_moc(mocs, srcs, cxxopts, adddeps):
 	for m, s in zip(mocs, srcs):
-		#print(m,s)
 		licant.make.source(m)
 		licant.cxx_make.moc(src=m, tgt=s, opts=cxxopts, deps=[m] + adddeps)
 		
@@ -261,7 +261,18 @@ def make(name, impl = None, **kwargs):
 		adddeps = []#mod.stack
 
 		locopts = include_modules(locopts, locopts["include_modules"])
-		if len(locopts["local_headers"]): locopts["include_paths"].append(locopts["builddir"] + "/__LOCAL_HEADERS__/")
+
+		if len(locopts["local_headers"]):
+			locopts["include_paths"].append(locopts["builddir"] + "/__LOCAL_HEADERS__/")
+			for pair in locopts["local_headers"]:
+				licant.make.source(pair[1])
+				tgtpath = os.path.join(locopts["builddir"], "__LOCAL_HEADERS__", pair[0])
+				licant.make.copy(src = pair[1], tgt = tgtpath)
+				
+				###BIG STUFF
+				licant.do(tgtpath, "dirkeep")
+				licant.do(tgtpath, "build_if_need")
+				
 		cxxopts = cxx_options_from_modopts(locopts)
 
 		locsrcs = sources_paths(locopts)
@@ -278,14 +289,6 @@ def make(name, impl = None, **kwargs):
 			locsrcs.extend(locmoccxx)
 			locobjs.extend(locmocobjs)
 			locdeps.extend(locmocdeps)
-
-		if len(locopts["local_headers"]):
-			print(locopts["local_headers"])
-			for pair in locopts["local_headers"]:
-				licant.make.source(pair[1])
-				tgtpath = os.path.join(locopts["builddir"], "__LOCAL_HEADERS__", pair[0])
-				licant.make.copy(src = pair[1], tgt = tgtpath)
-				adddeps += [ tgtpath ]
 
 		link_objects(locsrcs, locobjs, locdeps, cxxopts, adddeps)
 
