@@ -16,11 +16,11 @@ setup(
 	keywords = ['testing', 'make'],
 	classifiers = [],
 
-	scripts = ["configurator/licant-config", "configurator/licant-init"],
-	package_data={'licant': [
-    	'templates/cxx/make.py',
-    	'templates/cxx/main.cpp',
-    	'templates/cxxgxx/make.py',
-    	'templates/cxxgxx/main.cpp',
-    ]}
+	scripts = ["configurator/licant-config"],
+#	package_data={'licant': [
+#   	'templates/cxx/make.py',
+#	  	'templates/cxx/main.cpp',
+#	 	'templates/cxxgxx/make.py',
+#		'templates/cxxgxx/main.cpp',
+#    ]}
 )
