@@ -27,7 +27,9 @@ core.add(licant.Target(tgt="hello_world_1", deps=["hello_world_0", "copy"], do=h
 
 stree = core.subtree("hello_world_1")
 
+print("stree:")
 print(stree)
+print()
 
 stree.reverse_recurse_invoke("do", threads = 1)
 
