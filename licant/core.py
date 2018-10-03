@@ -2,7 +2,9 @@
 
 import licant.util
 import threading
-import time
+import types
+from enum import Enum
+
 
 class WrongAction(Exception):
     pass
@@ -10,46 +12,13 @@ class WrongAction(Exception):
 
 class NoneDictionary(dict):
     def __init__(self): dict.__init__(self)
-    def __getitem__(self, idx): 
-        try: return dict.__getitem__(self, idx)
-        except: return None 
 
-class Target:
-    def __init__(self, tgt, deps, **kwargs):
-        self.tgt = tgt
-        self.deps = set(deps)
-        for k, v in kwargs.items(): setattr(self, k, v)
-        
-    def invoke(self, func, critical = False, **kwargs):
-        """Invoke func function or method, or mthod with func name for this target
+    def __getitem__(self, idx):
+        try:
+            return dict.__getitem__(self, idx)
+        except:
+            return None
 
-        Поддерживается несколько разных типов func.
-        В качестве func может быть вызвана внешняя функция с параметром текущей цели,
-        или название локального метода.
-        critical -- Действует для строкового вызова. Если данный attr отсутствует у цели,
-        то в зависимости от данного параметра может быть возвращен None или выброшено исключение.
-        """
-        if core.runtime["trace"]:
-            print("TRACE: invoke {} with action {}".format(self.tgt, func))
-
-        if (isinstance(func, str)):
-            func = getattr(self, func, None)
-            if (func == None):
-                if (critical): raise WrongAction(func)
-                return None
-        
-        return licant.util.cutinvoke(func, self, **kwargs)
-
-    def __repr__(self):
-        """По умолчанию вывод Target на печать возвращает идентификатор цели"""
-        return self.tgt
-
-class Routine(Target):
-    def __init__(self, func, deps=[], tgt = None, **kwargs):
-        if tgt == None: tgt = func.__name__
-        Target.__init__(self, tgt = tgt, deps = deps, func = func, 
-            default_action = func, **kwargs
-        )
 
 class Core:
     def __init__(self):
@@ -58,6 +27,7 @@ class Core:
 
     def add(self, target):
         """Add new target"""
+        target.core = self
         self.targets[target.tgt] = target
 
     def get(self, tgt):
@@ -65,25 +35,26 @@ class Core:
         if tgt in self.targets:
             return self.targets[tgt]
         licant.util.error("unregistred target " + licant.util.yellow(tgt))
-    
+
     def subtree(self, root):
         """Construct Subtree accessor for root target"""
         return SubTree(self, root)
-    
+
     def depends_as_set(self, tgt, incroot=True):
         """"""
         res = set()
         if incroot:
             res.add(tgt)
-        
+
         target = self.get(tgt)
-        
+
         for d in target.deps:
             if not d in res:
                 res.add(d)
                 subres = self.depends_as_set(d)
                 res = res.union(subres)
         return sorted(res)
+
 
 class SubTree:
     def __init__(self, core, root):
@@ -100,30 +71,30 @@ class SubTree:
 
         for d in self.depset:
             target = self.core.get(d)
-            if cond==None:
+            if cond == None:
                 ret = target.invoke(ops)
             else:
                 if cond(self, target):
                     ret = target.invoke(ops)
-            
+
             if ret != None:
-                sum+=1
-    
-        return sum  
+                sum += 1
+
+        return sum
 
     def __generate_rdepends_lists(self, targets):
         for t in targets:
             t.rdepends = []
             t.rcounter = 0
-    
+
         for t in targets:
             for dname in t.deps:
                 dtarget = self.core.get(dname)
                 dtarget.rdepends.append(t.tgt)
-    
-    
+
     def reverse_recurse_invoke_single(self, ops, threads=None, cond=licant.util.always_true):
-        if core.runtime["debug"]: print("SINGLE THREAD MODE")
+        if core.runtime["debug"]:
+            print("SINGLE THREAD MODE")
         targets = [self.core.get(t) for t in self.depset]
 
         self.__generate_rdepends_lists(targets)
@@ -244,10 +215,93 @@ def subtree(root):
     return SubTree(core, root)
 
 
-def do(tgt, act=None):
-    if act is None:
-        return core.get(tgt).invoke(core.get(tgt).default_action)
-    return core.get(tgt).invoke(act)
-
 # Объект ядра с которым библиотеки работают по умолчанию.
 core = Core()
+
+
+class Target:
+    def __init__(self, tgt, deps, **kwargs):
+        self.tgt = tgt
+        self.deps = set(deps)
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def get_deplist(self):
+        return [self.core.get(d) for d in self.deps]
+
+    def invoke(self, func, critical=False, **kwargs):
+        """Invoke func function or method, or mthod with func name for this target
+
+        Поддерживается несколько разных типов func.
+        В качестве func может быть вызвана внешняя функция с параметром текущей цели,
+        или название локального метода.
+        critical -- Действует для строкового вызова. Если данный attr отсутствует у цели,
+        то в зависимости от данного параметра может быть возвращен None или выброшено исключение.
+        """
+        if core.runtime["trace"]:
+            print("TRACE: invoke {} with action {}".format(self.tgt, func))
+
+        if (isinstance(func, str)):
+            func = getattr(self, func, None)
+            if (func == None):
+                if (critical):
+                    raise WrongAction(func)
+                return None
+
+        if isinstance(func, types.MethodType):
+            return licant.util.cutinvoke(func, **kwargs)
+
+        else:
+            return licant.util.cutinvoke(func, self, **kwargs)
+
+    def __repr__(self):
+        """По умолчанию вывод Target на печать возвращает идентификатор цели"""
+        return self.tgt
+
+
+class Routine(Target):
+    def __init__(self, func, deps=[], tgt=None, **kwargs):
+        if tgt == None:
+            tgt = func.__name__
+        Target.__init__(self, tgt=tgt, deps=deps, func=func,
+                        default_action=func, **kwargs
+                        )
+
+
+class UpdateStatus(Enum):
+    Waiting = 0
+    Keeped = 1
+    Updated = 2
+
+
+class UpdatableTarget(Target):
+    def __init__(self, tgt, deps, update_status=UpdateStatus.Waiting, **kwargs):
+        Target.__init__(self, tgt, deps, **kwargs)
+        self.update_status = update_status
+
+    def update(self):
+        licant.error("Unoverrided update method")
+
+    def self_need(self):
+        return False
+
+    def has_updated_depends(self):
+        depends = self.get_deplist()
+
+        for d in depends:
+            if not isinstance(d, UpdatableTarget) or d.update_status == UpdateStatus.Updated:
+                return True
+
+            if d.update_status == UpdateStatus.Waiting:
+                print(d)
+                licant.error("Unwalked depends in UpdatableTarget")
+
+        return False
+
+    def update_if_need(self):
+        if self.has_updated_depends() or self.invoke("self_need"):
+            self.update_status = UpdateStatus.Updated
+            return self.invoke("update")
+        else:
+            self.update_status = UpdateStatus.Keeped
+            return True
