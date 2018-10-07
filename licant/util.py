@@ -2,6 +2,7 @@ import sys
 import os
 import inspect
 import types
+import re
 
 import functools
 import inspect
@@ -163,20 +164,7 @@ def white(str):
     return textblock("[37;1m" + str)
 
 
-def do_argv_routine(arg, default, locs):
-    if len(sys.argv) <= arg:
-        func = default
-    else:
-        func = sys.argv[arg]
-
-    if func in locs:
-        return locs[func]()
-    else:
-        print("Bad routine")
-        exit(-1)
-
-
-def always_true(context, work):
+def always_true(work):
     return True
 
 
@@ -189,12 +177,6 @@ def flag_prefix(pref, lst):
         return " ".join(map(lambda x: pref+x, lst))
     else:
         return ""
-
-
-def as_list(src):
-    if (not isinstance(src, list)):
-        return [src]
-    return src
 
 
 def find_recursive(root, pattern, hide, debug):
@@ -222,7 +204,6 @@ def find_recursive(root, pattern, hide, debug):
     return result
 
 
-import re
 pattern = re.compile(r"[\w./-]+")
 
 

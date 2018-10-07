@@ -65,17 +65,17 @@ class SubTree:
     def update(self):
         SubTree.__init__(self, root)
 
-    def invoke_foreach(self, ops, cond=None):
+    def invoke_foreach(self, ops, cond=licant.util.always_true):
+        if core.runtime["debug"]:
+            print("FOREACH(root={}, ops={}, cond={})".format(self.root, ops, cond))
+
         sum = 0
         ret = None
 
         for d in self.depset:
             target = self.core.get(d)
-            if cond is None:
+            if cond(target):
                 ret = target.invoke(ops)
-            else:
-                if cond(target):
-                    ret = target.invoke(ops)
 
             if ret is not None:
                 sum += 1
@@ -94,7 +94,7 @@ class SubTree:
 
     def reverse_recurse_invoke_single(self, ops, threads=None, cond=licant.util.always_true):
         if core.runtime["debug"]:
-            print("SINGLE THREAD MODE")
+            print("SINGLETHREAD MODE(root={}, ops={}, cond={})".format(self.root, ops, cond))
         targets = [self.core.get(t) for t in self.depset]
 
         self.__generate_rdepends_lists(targets)
@@ -108,7 +108,7 @@ class SubTree:
         while(not works.empty()):
             w = works.get()
 
-            if cond(self, w):
+            if cond(w):
                 ret = w.invoke(ops)
                 if ret is False:
                     print(licant.util.red("runtime error"))
@@ -124,7 +124,8 @@ class SubTree:
         cond=licant.util.always_true
     ):
         if core.runtime["debug"]:
-            print("THREADS MODE(threads = {}, ops = {})".format(threads, ops))
+            print("MULTITHREAD MODE(root={}, threads={}, ops={}, cond={})"
+            	.format(self.root, threads, ops, cond))
 
         targets = [self.core.get(t) for t in self.depset]
 
@@ -155,7 +156,7 @@ class SubTree:
                     w = works.get()
                     lock.release()
 
-                    if cond(self, w):
+                    if cond(w):
                         try:
                             ret = w.invoke(ops)
                         except:
