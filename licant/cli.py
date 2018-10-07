@@ -6,16 +6,19 @@ from licant.core import WrongAction
 import sys
 from optparse import OptionParser
 
+import inspect
 
-def routine_decorator(*args, **kwargs):
-    if len(kwargs) > 0:
-        return routine_decorator
+def routine_decorator(func=None, deps=None):
+    if inspect.isfunction(func):
+        licant.core.core.add(licant.core.Routine(func))
+        return func
 
-    global _routines
-    func = args[0]
-    deps = getattr(kwargs, "deps", [])
-    licant.core.core.add(licant.core.Routine(func, deps=deps))
-    return func
+    else:
+        def decorator(func):
+            licant.core.core.add(licant.core.Routine(func, deps=deps))
+            return func
+            
+        return decorator
 
 
 def cli_argv_parse(argv):

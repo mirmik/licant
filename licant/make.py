@@ -59,10 +59,11 @@ class MakeFileTarget(UpdatableTarget):
         return stree.invoke_foreach(ops="clr", cond=if_file_and_exist)
 
     def makefile(self):
-        stree = subtree(self.tgt)
-        stree.invoke_foreach(ops="dirkeep")
-        stree.reverse_recurse_invoke(
-            ops="update_if_need", threads=core.runtime["threads"])
+        return self.recurse_update()
+        #stree = subtree(self.tgt)
+        #stree.invoke_foreach(ops="dirkeep")
+        #stree.reverse_recurse_invoke(
+        #    ops="update_if_need", threads=core.runtime["threads"])
 
 
 class FileTarget(MakeFileTarget):

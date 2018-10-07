@@ -260,15 +260,6 @@ class Target:
         return self.tgt
 
 
-class Routine(Target):
-    def __init__(self, func, deps=[], tgt=None, **kwargs):
-        if tgt is None:
-            tgt = func.__name__
-        Target.__init__(self, tgt=tgt, deps=deps, func=func,
-                        default_action=func, **kwargs
-                        )
-
-
 class UpdateStatus(Enum):
     Waiting = 0
     Keeped = 1
@@ -276,8 +267,11 @@ class UpdateStatus(Enum):
 
 
 class UpdatableTarget(Target):
-    def __init__(self, tgt, deps, update_status=UpdateStatus.Waiting, **kwargs):
-        Target.__init__(self, tgt, deps, **kwargs)
+    def __init__(
+        self, tgt, deps, default_action="recurse_update", 
+        update_status=UpdateStatus.Waiting, **kwargs
+    ):
+        Target.__init__(self, tgt, deps, default_action=default_action, **kwargs)
         self.update_status = update_status
 
     def update(self):
@@ -306,3 +300,22 @@ class UpdatableTarget(Target):
         else:
             self.update_status = UpdateStatus.Keeped
             return True
+
+    def recurse_update(self):
+        stree = subtree(self.tgt)
+        stree.reverse_recurse_invoke(
+            ops="update_if_need", threads=core.runtime["threads"])
+
+
+class Routine(UpdatableTarget):
+    def __init__(self, func, deps=[], tgt=None, **kwargs):
+        if tgt is None:
+            tgt = func.__name__
+        UpdatableTarget.__init__(self, tgt=tgt, deps=deps, **kwargs)
+        self.func = func
+
+    def update(self):
+        return self.func()
+
+    def self_need(self):
+        return True
