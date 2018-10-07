@@ -54,7 +54,6 @@ def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.cor
             target = core.get(default)
             ret = target.invoke(target.default_action, critical=True)
         except licant.core.WrongAction as e:
-            print(e)
             licant.util.error("Enough default action " + licant.util.yellow(
                 target.default_action) + " in default target " + licant.util.yellow(_default))
 
@@ -65,14 +64,12 @@ def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.cor
                 target = core.get(fnd)
                 ret = target.invoke(target.default_action, critical=True)
             except licant.core.WrongAction as e:
-                print(e)
                 licant.util.error("target.default_action")
         else:
             try:
                 target = core.get(default)
                 ret = target.invoke(fnd, critical=True)
             except licant.core.WrongAction as e:
-                print(e)
                 licant.util.error("Can't find routine " + licant.util.yellow(fnd) +
                                   ". Enough target or default target action with same name.")
 
@@ -81,7 +78,6 @@ def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.cor
             target = licant.core.core.get(args[0])
             ret = target.invoke(args[1], critical=True)
         except licant.core.WrongAction as e:
-            print(e)
             licant.util.error("Can't find action " + licant.util.yellow(args[1]) +
                               " in target " + licant.util.yellow(args[0]))
 
