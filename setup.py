@@ -4,10 +4,12 @@ from setuptools import setup
 import glob
 import os
 
+import licant
+
 setup(
 	name = 'licant',
 	packages = ['licant'],
-	version = '1.0.0',
+	version = licant.__version__,
 	license='MIT',
 	description = 'licant make system',
 	author = 'Sorokin Nikolay',

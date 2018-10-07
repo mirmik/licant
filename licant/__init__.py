@@ -11,6 +11,8 @@ from licant.util import error
 
 import licant.scripter
 
+__version__ = '1.0.1'
+
 
 def execute(path):
     licant.scripter.scriptq.execute(path)
