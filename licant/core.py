@@ -301,7 +301,7 @@ class UpdatableTarget(Target):
             return True
 
     def recurse_update(self):
-        stree = subtree(self.tgt)
+        stree = self.core.subtree(self.tgt)
         stree.reverse_recurse_invoke(
             ops="update_if_need", threads=core.runtime["threads"])
 
@@ -318,10 +318,6 @@ class Routine(UpdatableTarget):
 
     def self_need(self):
         return True
-
-
-def subtree(root):
-    return SubTree(core, root)
 
 
 # Объект ядра с которым библиотеки работают по умолчанию.

@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 import licant
-from licant.core import Target, UpdatableTarget, UpdateStatus, core, subtree
+from licant.core import Target, UpdatableTarget, UpdateStatus, core
 from licant.cache import fcache
 from licant.util import red, green, yellow, purple, quite
 import threading
@@ -55,7 +55,7 @@ class MakeFileTarget(UpdatableTarget):
         UpdatableTarget.__init__(self, tgt, deps, **kwargs)
 
     def clean(self):
-        stree = subtree(self.tgt)
+        stree = self.core.subtree(self.tgt)
         return stree.invoke_foreach(ops="clr", cond=if_file_and_exist)
 
     def makefile(self):
@@ -122,6 +122,7 @@ class FileTarget(MakeFileTarget):
         return False
 
     def update(self):
+        self.dirkeep()
         return self.invoke("build")
 
 

@@ -14,6 +14,10 @@ import licant.scripter
 __version__ = '1.0.1'
 
 
+def subtree(tgt):
+	return default_core.subtree(tgt)
+
+
 def execute(path):
     licant.scripter.scriptq.execute(path)
 

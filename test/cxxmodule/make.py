@@ -12,3 +12,7 @@ application("target",
 )
 
 licant.ex("target")
+
+print("stree:")
+print(licant.subtree("target"))
+print()
