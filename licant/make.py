@@ -77,6 +77,7 @@ class FileTarget(MakeFileTarget):
             return curinfo.mtime
 
     def dirkeep(self):
+        """Create directory tree for this file if needed."""
         dr = os.path.normpath(os.path.dirname(self.tgt))
         if (not os.path.exists(dr)):
             print("MKDIR %s" % dr)
@@ -88,6 +89,7 @@ class FileTarget(MakeFileTarget):
         return curinfo.exist
 
     def need_if_exist(self):
+        """Mark file with 'need' field if it exist."""
         curinfo = fcache.get_info(self.tgt)
         if curinfo.exist:
             self.need = True
@@ -96,7 +98,14 @@ class FileTarget(MakeFileTarget):
 
         return 0
 
+    def warn_if_not_exist(self):
+        """Print warn if file isn't exist"""
+        info = fcache.get_info(self.tgt)
+        if info.exist == False:
+            print("Warn: file {} isn`t exist".format(purple(self.tgt)))
+
     def clr(self):
+        """Delete this file."""
         do_execute(self, "rm -f {tgt}", "clrmsg")
 
     def self_need(self):
@@ -118,6 +127,11 @@ class FileTarget(MakeFileTarget):
 
 
 class FileSet(MakeFileTarget):
+    """Virtual file target`s set.
+
+    For link a set of file objects to the licant tree
+    without depend`s overhead."""
+
     def __init__(self, tgt, targets):
         MakeFileTarget.__init__(
             self, tgt=tgt, deps=targets, default_action="makefile")
@@ -141,13 +155,6 @@ class FileSet(MakeFileTarget):
         return self.__mtime
 
 
-def fileset(tgt, targets):
-    core.add(FileSet(
-        tgt=tgt,
-        targets=targets
-    ))
-
-
 class Executor:
     def __init__(self, rule, msgfield='message'):
         self.rule = rule
@@ -157,19 +164,10 @@ class Executor:
         return do_execute(target, self.rule, self.msgfield, **kwargs)
 
 
-def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
-    core.add(FileTarget(
-        tgt=tgt,
-        build=Executor("cp {src} {tgt}"),
-        src=src,
-        deps=[src] + adddeps,
-        message=message
-    ))
-
-
 def source(tgt, deps=[]):
+    """Index source file by licant core."""
     target = FileTarget(
-        build=warn_if_not_exist,
+        build=lambda self: self.warn_if_not_exist(),
         deps=deps,
         tgt=tgt,
     )
@@ -179,14 +177,27 @@ def source(tgt, deps=[]):
     core.add(target)
 
 
+def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
+    """Make the file copy target."""
+    core.add(FileTarget(
+        tgt=tgt,
+        build=Executor("cp {src} {tgt}"),
+        src=src,
+        deps=[src] + adddeps,
+        message=message
+    ))
+
+
+def fileset(tgt, targets):
+    """Make a fileset."""
+    core.add(FileSet(
+        tgt=tgt,
+        targets=targets
+    ))
+
+
 def if_need_and_file(context, target):
     need = getattr(target, "need", None)
-    if need == None:
+    if need is None:
         return False
     return need and isinstance(target, FileTarget)
-
-
-def warn_if_not_exist(target):
-    info = fcache.get_info(target.tgt)
-    if info.exist == False:
-        print("Warn: file {} isn`t exist".format(purple(target.tgt)))
