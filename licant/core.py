@@ -156,6 +156,9 @@ class SubTree:
                     w = works.get()
                     lock.release()
 
+                    if core.runtime["trace"]:
+                        print("TRACE: THREAD {0} get work {1}".format(index, w))
+
                     if cond(w):
                         try:
                             ret = w.invoke(ops)
@@ -174,6 +177,10 @@ class SubTree:
                             works.put(r)
 
                     info.have_done += 1
+
+                    if core.runtime["trace"]:
+                        print("TRACE: THREAD {0} finished with work {1}".format(index, w))
+
                     continue
                 lock.release()
 
@@ -210,14 +217,6 @@ class SubTree:
             ret += s
         ret = ret[:-1]
         return ret
-
-
-def subtree(root):
-    return SubTree(core, root)
-
-
-# Объект ядра с которым библиотеки работают по умолчанию.
-core = Core()
 
 
 class Target:
@@ -319,3 +318,11 @@ class Routine(UpdatableTarget):
 
     def self_need(self):
         return True
+
+
+def subtree(root):
+    return SubTree(core, root)
+
+
+# Объект ядра с которым библиотеки работают по умолчанию.
+core = Core()
