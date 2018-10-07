@@ -11,7 +11,7 @@ from licant.util import error
 
 import licant.scripter
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 
 def subtree(tgt):
