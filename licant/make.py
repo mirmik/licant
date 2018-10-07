@@ -23,9 +23,9 @@ def do_execute(target, rule, msgfield, prefix=None):
 
     message = getattr(target, msgfield, None)
 
-    if not core.runtime["debug"] and message != None:
+    if not core.runtime["debug"] and message is not None:
         if not isinstance(message, quite):
-            if prefix != None:
+            if prefix is not None:
                 sprint(prefix, message.format(**target.__dict__))
             else:
                 sprint(message.format(**target.__dict__))

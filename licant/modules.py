@@ -52,7 +52,7 @@ class ModuleLibrary:
             exit(-1)
 
         m = self.modules[name]
-        if impl == None:
+        if impl is None:
             if isinstance(m, VariantModule):
                 print("Need implementation: {}".format(red(name)))
                 exit(-1)
@@ -74,7 +74,7 @@ mlibrary = ModuleLibrary()
 
 
 def module(name, impl=None, **kwargs):
-    if impl != None:
+    if impl is not None:
         implementation(name, impl, **kwargs)
         return
     mlibrary.register(Module(name, script=scriptq.last(

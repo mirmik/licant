@@ -47,7 +47,7 @@ def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.cor
         print("PRINT RUNTIME:", core.runtime)
 
     if len(args) == 0:
-        if default == None:
+        if default is None:
             licant.util.error("default target isn't set")
 
         try:

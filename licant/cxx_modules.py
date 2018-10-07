@@ -24,27 +24,27 @@ def base(base, local, solver, tbase, tlocal):
 
 
 def local(base, local, solver, tbase, tlocal):
-    if local == None:
+    if local is None:
         return solver.default
     return local
 
 
 def concat(base, local, solver, tbase, tlocal):
-    if local == None:
+    if local is None:
         local = []
-    if base == None:
+    if base is None:
         base = []
     return base + local
 
 
 def strconcat(base, local, solver, tbase, tlocal):
-    if local == None:
+    if local is None:
         return base
     return base + " " + local
 
 
 def concat_add_srcdir(base, local, solver, tbase, tlocal):
-    if local == None:
+    if local is None:
         local = []
     else:
         if "srcdir" in tlocal.opts:
@@ -65,13 +65,13 @@ def local_add_srcdir(base, local, solver, tbase, tlocal):
         srcdir = ""
     if isinstance(local, type("str")):
         local = [local]
-    if local == None:
+    if local is None:
         return []
     return list(map(lambda p: os.path.join(tlocal.opts["__dir__"], srcdir, os.path.expanduser(p)), local))
 
 
 def concat_add_locdir(base, local, solver, tbase, tlocal):
-    if local == None:
+    if local is None:
         return base
 
     if isinstance(local, type("str")):
@@ -84,7 +84,7 @@ def concat_add_locdir(base, local, solver, tbase, tlocal):
 def concat_add_locdir_second(base, local, solver, tbase, tlocal):
     """Добавить локальный путь ко всем вторым элементам локального массива. 
     Для поддержки локальных заголовков."""
-    if local == None:
+    if local is None:
         return base
     local = [(pl[0], os.path.join(tlocal.opts["__dir__"], pl[1]))
              for pl in local]
@@ -96,9 +96,9 @@ def local_if_exist(base, local, solver, tbase, tlocal):
 
 
 def concat_to_submodule(base, local, solver, tbase, tlocal):
-    if local == None:
+    if local is None:
         local = []
-    if base == None:
+    if base is None:
         base = []
     lm = [licant.modules.submodule(l) for l in local]
     return base + lm
@@ -230,8 +230,8 @@ def link_objects(srcs, objs, deps, cxxopts, adddeps):
             licant.make.source(s)
 
         headers = cxx_read_depends(d)
-        force = headers == None
-        if headers == None:
+        force = headers is None
+        if headers is None:
             headers = []
         else:
             for h in headers:
@@ -355,7 +355,7 @@ def make(name, impl=None, **kwargs):
 
 
 def task(name, target, impl, type, **kwargs):
-    if target == None:
+    if target is None:
         target = name
     else:
         licant.make.fileset(tgt=name, targets=[target])

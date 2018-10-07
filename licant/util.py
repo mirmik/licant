@@ -182,7 +182,7 @@ def flag_prefix(pref, lst):
 def find_recursive(root, pattern, hide, debug):
     result = []
 
-    if hide == None:
+    if hide is None:
         for d, dirs, files in os.walk(root):
             for f in files:
                 if pattern in f:

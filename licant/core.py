@@ -244,7 +244,7 @@ class Target:
 
         if (isinstance(func, str)):
             func = getattr(self, func, None)
-            if (func == None):
+            if (func is None):
                 if (critical):
                     raise WrongAction(func)
                 return None
@@ -262,7 +262,7 @@ class Target:
 
 class Routine(Target):
     def __init__(self, func, deps=[], tgt=None, **kwargs):
-        if tgt == None:
+        if tgt is None:
             tgt = func.__name__
         Target.__init__(self, tgt=tgt, deps=deps, func=func,
                         default_action=func, **kwargs

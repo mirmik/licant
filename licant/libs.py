@@ -19,7 +19,7 @@ def merge_two_dicts(x, y):
 
 def include(lib):
     global libs
-    if libs == None:
+    if libs is None:
         glibs = {}
         llibs = {}
 

@@ -51,10 +51,10 @@ asm_ext_list = ["asm", "s", "S"]
 
 
 def object(src, tgt, opts=options(), type=None, deps=None, message="OBJECT {tgt}"):
-    if deps == None:
+    if deps is None:
         deps = [src]
 
-    if type == None:
+    if type is None:
         ext = os.path.basename(src).split('.')[-1]
 
         if ext in cxx_ext_list:
@@ -86,7 +86,7 @@ def object(src, tgt, opts=options(), type=None, deps=None, message="OBJECT {tgt}
 
 
 def moc(src, tgt, opts=options(), type=None, deps=None, message="MOC {tgt}"):
-    if deps == None:
+    if deps is None:
         deps = [src]
 
     core.add(licant.make.FileTarget(
@@ -100,10 +100,10 @@ def moc(src, tgt, opts=options(), type=None, deps=None, message="MOC {tgt}"):
 
 
 def depend(src, tgt, opts=options(), type=None, deps=None, message="DEPENDS {tgt}", **kwargs):
-    if deps == None:
+    if deps is None:
         deps = [src]
 
-    if type == None:
+    if type is None:
         ext = os.path.basename(src).split('.')[-1]
 
         if ext in cxx_ext_list:
