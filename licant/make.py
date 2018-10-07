@@ -41,6 +41,15 @@ def do_execute(target, rule, msgfield, prefix=None):
     return True if ret == 0 else False
 
 
+class Executor:
+    def __init__(self, rule, msgfield='message'):
+        self.rule = rule
+        self.msgfield = msgfield
+
+    def __call__(self, target, **kwargs):
+        return do_execute(target, self.rule, self.msgfield, **kwargs)
+
+
 class MakeFileTarget(UpdatableTarget):
     def __init__(self, tgt, deps, **kwargs):
         UpdatableTarget.__init__(self, tgt, deps, **kwargs)
@@ -153,15 +162,6 @@ class FileSet(MakeFileTarget):
             self.__mtime = maxtime
 
         return self.__mtime
-
-
-class Executor:
-    def __init__(self, rule, msgfield='message'):
-        self.rule = rule
-        self.msgfield = msgfield
-
-    def __call__(self, target, **kwargs):
-        return do_execute(target, self.rule, self.msgfield, **kwargs)
 
 
 def source(tgt, deps=[]):
