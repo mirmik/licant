@@ -71,13 +71,13 @@ class SubTree:
 
         for d in self.depset:
             target = self.core.get(d)
-            if cond == None:
+            if cond is None:
                 ret = target.invoke(ops)
             else:
-                if cond(self, target):
+                if cond(target):
                     ret = target.invoke(ops)
 
-            if ret != None:
+            if ret is not None:
                 sum += 1
 
         return sum

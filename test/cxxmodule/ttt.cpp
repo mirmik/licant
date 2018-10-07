@@ -1,1 +1,1 @@
-int ttt() {}
+int ttt() { }

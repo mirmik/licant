@@ -56,8 +56,7 @@ class MakeFileTarget(UpdatableTarget):
 
     def clean(self):
         stree = subtree(self.tgt)
-        stree.invoke_foreach(ops="need_if_exist")
-        return stree.invoke_foreach(ops="clr", cond=if_need_and_file)
+        return stree.invoke_foreach(ops="clr", cond=if_file_and_exist)
 
     def makefile(self):
         stree = subtree(self.tgt)
@@ -96,16 +95,6 @@ class FileTarget(MakeFileTarget):
     def is_exist(self):
         curinfo = fcache.get_info(self.tgt)
         return curinfo.exist
-
-    def need_if_exist(self):
-        """Mark file with 'need' field if it exist."""
-        curinfo = fcache.get_info(self.tgt)
-        if curinfo.exist:
-            self.need = True
-        else:
-            self.need = False
-
-        return 0
 
     def warn_if_not_exist(self):
         """Print warn if file isn't exist"""
@@ -196,8 +185,9 @@ def fileset(tgt, targets):
     ))
 
 
-def if_need_and_file(context, target):
-    need = getattr(target, "need", None)
-    if need is None:
+def if_file_and_exist(target):
+    if not isinstance(target, FileTarget):
         return False
-    return need and isinstance(target, FileTarget)
+
+    curinfo = fcache.get_info(target.tgt)
+    return curinfo.exist
