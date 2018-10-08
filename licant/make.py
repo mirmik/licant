@@ -163,7 +163,7 @@ def source(tgt, deps=[]):
         tgt=tgt,
     )
     target.clr = None
-    target.dirkeep = None
+    target.dirkeep = licant.util.do_nothing
     target.update_status = UpdateStatus.Keeped
     core.add(target)
 

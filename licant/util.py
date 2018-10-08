@@ -164,9 +164,14 @@ def white(str):
     return textblock("[37;1m" + str)
 
 
-def always_true(work):
+def always_true(*args, **kwargs):
     return True
 
+def always_false(*args, **kwargs):
+    return False
+
+def do_nothing(*args, **kwargs):
+    pass
 
 def changeext(path, newext):
     return os.path.splitext(path)[0]+"."+newext
