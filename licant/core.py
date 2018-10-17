@@ -1,4 +1,4 @@
-#coding: utf-8
+# coding: utf-8
 
 import licant.util
 import threading
@@ -94,7 +94,8 @@ class SubTree:
 
     def reverse_recurse_invoke_single(self, ops, threads=None, cond=licant.util.always_true):
         if core.runtime["debug"]:
-            print("SINGLETHREAD MODE(root={}, ops={}, cond={})".format(self.root, ops, cond))
+            print("SINGLETHREAD MODE(root={}, ops={}, cond={})".format(
+                self.root, ops, cond))
         targets = [self.core.get(t) for t in self.depset]
 
         self.__generate_rdepends_lists(targets)
@@ -120,12 +121,12 @@ class SubTree:
                     works.put(r)
 
     def reverse_recurse_invoke_threads(
-        self, ops, threads,
-        cond=licant.util.always_true
+            self, ops, threads,
+            cond=licant.util.always_true
     ):
         if core.runtime["debug"]:
             print("MULTITHREAD MODE(root={}, threads={}, ops={}, cond={})"
-            	.format(self.root, threads, ops, cond))
+                  .format(self.root, threads, ops, cond))
 
         targets = [self.core.get(t) for t in self.depset]
 
@@ -157,7 +158,8 @@ class SubTree:
                     lock.release()
 
                     if core.runtime["trace"]:
-                        print("TRACE: THREAD {0} get work {1}".format(index, w))
+                        print(
+                            "TRACE: THREAD {0} get work {1}".format(index, w))
 
                     if cond(w):
                         try:
@@ -179,7 +181,8 @@ class SubTree:
                     info.have_done += 1
 
                     if core.runtime["trace"]:
-                        print("TRACE: THREAD {0} finished with work {1}".format(index, w))
+                        print(
+                            "TRACE: THREAD {0} finished with work {1}".format(index, w))
 
                     continue
                 lock.release()
@@ -267,10 +270,11 @@ class UpdateStatus(Enum):
 
 class UpdatableTarget(Target):
     def __init__(
-        self, tgt, deps, default_action="recurse_update", 
-        update_status=UpdateStatus.Waiting, **kwargs
+            self, tgt, deps, default_action="recurse_update",
+            update_status=UpdateStatus.Waiting, **kwargs
     ):
-        Target.__init__(self, tgt, deps, default_action=default_action, **kwargs)
+        Target.__init__(self, tgt, deps,
+                        default_action=default_action, **kwargs)
         self.update_status = update_status
 
     def update(self):

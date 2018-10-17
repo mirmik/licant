@@ -6,6 +6,7 @@ from licant.core import WrongAction
 import sys
 from optparse import OptionParser
 
+import os
 import inspect
 
 def routine_decorator(func=None, deps=None):
@@ -42,9 +43,12 @@ def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.cor
 
     opts, args = cli_argv_parse(argv)
 
+
     core.runtime["debug"] = opts.debug or opts.trace
     core.runtime["trace"] = opts.trace
-    core.runtime["threads"] = int(opts.threads)
+
+    cpu_count = os.cpu_count()
+    core.runtime["threads"] = cpu_count if opts.threads == 'j' else int(opts.threads)
 
     if opts.printruntime:
         print("PRINT RUNTIME:", core.runtime)
