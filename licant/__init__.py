@@ -11,6 +11,8 @@ from licant.util import error
 
 import licant.scripter
 
+from licant.cxx_modules import application as cxx_application
+
 __version__ = '1.0.3'
 
 
