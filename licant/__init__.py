@@ -6,6 +6,7 @@ from licant.core import core as default_core
 
 from licant.make import copy, fileset
 from licant.cxx_modules import application as cxx_application
+from licant.cxx_modules import shared_library as cxx_shared_library
 
 from licant.modules import module, submodule
 from licant.util import error
