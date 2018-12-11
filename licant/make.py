@@ -15,181 +15,182 @@ _rlock = threading.RLock()
 
 
 def do_execute(target, rule, msgfield, prefix=None):
-    def sprint(*args, **kwargs):
-        with _rlock:
-            print(*args, **kwargs)
+	def sprint(*args, **kwargs):
+		with _rlock:
+			print(*args, **kwargs)
 
-    rule = rule.format(**target.__dict__)
+	rule = rule.format(**target.__dict__)
 
-    message = getattr(target, msgfield, None)
+	message = getattr(target, msgfield, None)
 
-    if not core.runtime["debug"] and message is not None:
-        if not isinstance(message, quite):
-            if prefix is not None:
-                sprint(prefix, message.format(**target.__dict__))
-            else:
-                sprint(message.format(**target.__dict__))
+	if not core.runtime["quite"]:
+		if not core.runtime["debug"] and message is not None:
+			if not isinstance(message, quite):
+				if prefix is not None:
+					sprint(prefix, message.format(**target.__dict__))
+				else:
+					sprint(message.format(**target.__dict__))
+	
+		else:
+			sprint(rule)
 
-    else:
-        sprint(rule)
+	ret = os.system(rule)
 
-    ret = os.system(rule)
+	if target.isfile == True:
+		target.update_info(target)
 
-    if target.isfile == True:
-        target.update_info(target)
-
-    return True if ret == 0 else False
+	return True if ret == 0 else False
 
 
 class Executor:
-    def __init__(self, rule, msgfield='message'):
-        self.rule = rule
-        self.msgfield = msgfield
+	def __init__(self, rule, msgfield='message'):
+		self.rule = rule
+		self.msgfield = msgfield
 
-    def __call__(self, target, **kwargs):
-        return do_execute(target, self.rule, self.msgfield, **kwargs)
+	def __call__(self, target, **kwargs):
+		return do_execute(target, self.rule, self.msgfield, **kwargs)
 
 
 class MakeFileTarget(UpdatableTarget):
-    def __init__(self, tgt, deps, **kwargs):
-        UpdatableTarget.__init__(self, tgt, deps, **kwargs)
+	def __init__(self, tgt, deps, **kwargs):
+		UpdatableTarget.__init__(self, tgt, deps, **kwargs)
 
-    def clean(self):
-        stree = self.core.subtree(self.tgt)
-        return stree.invoke_foreach(ops="clr", cond=if_file_and_exist)
+	def clean(self):
+		stree = self.core.subtree(self.tgt)
+		return stree.invoke_foreach(ops="clr", cond=if_file_and_exist)
 
-    def makefile(self):
-        return self.recurse_update()
-        #stree = subtree(self.tgt)
-        #stree.invoke_foreach(ops="dirkeep")
-        #stree.reverse_recurse_invoke(
-        #    ops="update_if_need", threads=core.runtime["threads"])
+	def makefile(self):
+		return self.recurse_update()
+		#stree = subtree(self.tgt)
+		#stree.invoke_foreach(ops="dirkeep")
+		#stree.reverse_recurse_invoke(
+		#    ops="update_if_need", threads=core.runtime["threads"])
 
 
 class FileTarget(MakeFileTarget):
-    def __init__(self, tgt, deps, force=False, **kwargs):
-        MakeFileTarget.__init__(self, tgt, deps, **kwargs)
-        self.isfile = True
-        self.force = force
-        self.clrmsg = "DELETE {tgt}"
-        self.default_action = "makefile"
+	def __init__(self, tgt, deps, force=False, **kwargs):
+		MakeFileTarget.__init__(self, tgt, deps, **kwargs)
+		self.isfile = True
+		self.force = force
+		self.clrmsg = "DELETE {tgt}"
+		self.default_action = "makefile"
 
-    def update_info(self, _self):
-        fcache.update_info(self.tgt)
-        return True
+	def update_info(self, _self):
+		fcache.update_info(self.tgt)
+		return True
 
-    def mtime(self):
-        curinfo = fcache.get_info(self.tgt)
-        if curinfo.exist == False:
-            return 0
-        else:
-            return curinfo.mtime
+	def mtime(self):
+		curinfo = fcache.get_info(self.tgt)
+		if curinfo.exist == False:
+			return 0
+		else:
+			return curinfo.mtime
 
-    def dirkeep(self):
-        """Create directory tree for this file if needed."""
-        dr = os.path.normpath(os.path.dirname(self.tgt))
-        if (not os.path.exists(dr)):
-            print("MKDIR %s" % dr)
-            os.system("mkdir -p {0}".format(dr))
-        return True
+	def dirkeep(self):
+		"""Create directory tree for this file if needed."""
+		dr = os.path.normpath(os.path.dirname(self.tgt))
+		if (not os.path.exists(dr)):
+			print("MKDIR %s" % dr)
+			os.system("mkdir -p {0}".format(dr))
+		return True
 
-    def is_exist(self):
-        curinfo = fcache.get_info(self.tgt)
-        return curinfo.exist
+	def is_exist(self):
+		curinfo = fcache.get_info(self.tgt)
+		return curinfo.exist
 
-    def warn_if_not_exist(self):
-        """Print warn if file isn't exist"""
-        info = fcache.get_info(self.tgt)
-        if info.exist == False:
-            print("Warn: file {} isn`t exist".format(purple(self.tgt)))
+	def warn_if_not_exist(self):
+		"""Print warn if file isn't exist"""
+		info = fcache.get_info(self.tgt)
+		if info.exist == False:
+			print("Warn: file {} isn`t exist".format(purple(self.tgt)))
 
-    def clr(self):
-        """Delete this file."""
-        do_execute(self, "rm -f {tgt}", "clrmsg")
+	def clr(self):
+		"""Delete this file."""
+		do_execute(self, "rm -f {tgt}", "clrmsg")
 
-    def self_need(self):
-        if self.force or self.is_exist() == False:
-            return True
+	def self_need(self):
+		if self.force or self.is_exist() == False:
+			return True
 
-        maxtime = 0
-        for dep in self.get_deplist():
-            if dep.mtime() > maxtime:
-                maxtime = dep.mtime()
+		maxtime = 0
+		for dep in self.get_deplist():
+			if dep.mtime() > maxtime:
+				maxtime = dep.mtime()
 
-        if maxtime > self.mtime():
-            return True
+		if maxtime > self.mtime():
+			return True
 
-        return False
+		return False
 
-    def update(self):
-        self.dirkeep()
-        return self.invoke("build")
+	def update(self):
+		self.dirkeep()
+		return self.invoke("build")
 
 
 class FileSet(MakeFileTarget):
-    """Virtual file target`s set.
+	"""Virtual file target`s set.
 
-    For link a set of file objects to the licant tree
-    without depend`s overhead."""
+	For link a set of file objects to the licant tree
+	without depend`s overhead."""
 
-    def __init__(self, tgt, targets):
-        MakeFileTarget.__init__(
-            self, tgt=tgt, deps=targets, default_action="makefile")
-        self.targets = targets
-        self.__mtime = None
+	def __init__(self, tgt, targets):
+		MakeFileTarget.__init__(
+			self, tgt=tgt, deps=targets, default_action="makefile")
+		self.targets = targets
+		self.__mtime = None
 
-    def self_need(self):
-        return False
+	def self_need(self):
+		return False
 
-    def update(self):
-        pass
+	def update(self):
+		pass
 
-    def mtime(self):
-        if (self.__mtime is None):
-            maxtime = 0
-            for dep in self.get_deplist():
-                if dep.mtime() > maxtime:
-                    maxtime = dep.mtime()
-            self.__mtime = maxtime
+	def mtime(self):
+		if (self.__mtime is None):
+			maxtime = 0
+			for dep in self.get_deplist():
+				if dep.mtime() > maxtime:
+					maxtime = dep.mtime()
+			self.__mtime = maxtime
 
-        return self.__mtime
+		return self.__mtime
 
 
 def source(tgt, deps=[]):
-    """Index source file by licant core."""
-    target = FileTarget(
-        build=lambda self: self.warn_if_not_exist(),
-        deps=deps,
-        tgt=tgt,
-    )
-    target.clr = None
-    target.dirkeep = licant.util.do_nothing
-    target.update_status = UpdateStatus.Keeped
-    core.add(target)
+	"""Index source file by licant core."""
+	target = FileTarget(
+		build=lambda self: self.warn_if_not_exist(),
+		deps=deps,
+		tgt=tgt,
+	)
+	target.clr = None
+	target.dirkeep = licant.util.do_nothing
+	target.update_status = UpdateStatus.Keeped
+	core.add(target)
 
 
 def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
-    """Make the file copy target."""
-    core.add(FileTarget(
-        tgt=tgt,
-        build=Executor("cp {src} {tgt}"),
-        src=src,
-        deps=[src] + adddeps,
-        message=message
-    ))
+	"""Make the file copy target."""
+	core.add(FileTarget(
+		tgt=tgt,
+		build=Executor("cp {src} {tgt}"),
+		src=src,
+		deps=[src] + adddeps,
+		message=message
+	))
 
 
 def fileset(tgt, targets):
-    """Make a fileset."""
-    core.add(FileSet(
-        tgt=tgt,
-        targets=targets
-    ))
+	"""Make a fileset."""
+	core.add(FileSet(
+		tgt=tgt,
+		targets=targets
+	))
 
 
 def if_file_and_exist(target):
-    if not isinstance(target, FileTarget):
-        return False
+	if not isinstance(target, FileTarget):
+		return False
 
-    curinfo = fcache.get_info(target.tgt)
-    return curinfo.exist
+	curinfo = fcache.get_info(target.tgt)
+	return curinfo.exist

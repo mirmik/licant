@@ -1,5 +1,6 @@
 from licant.scripter import scriptq
 from licant.util import yellow
+import licant.core
 
 import os
 import sys
@@ -12,28 +13,49 @@ libs = None
 
 
 def merge_two_dicts(x, y):
-    z = x.copy()   # start with x's keys and values
-    z.update(y)    # modifies z with y's keys and values & returns None
-    return z
+	z = x.copy()   # start with x's keys and values
+	z.update(y)    # modifies z with y's keys and values & returns None
+	return z
 
+
+def init():
+	global libs
+
+	glibs = {}
+	llibs = {}
+
+	if os.path.exists(gpath):
+		glibs = json.load(open(gpath))
+
+	if os.path.exists(lpath):
+		llibs = json.load(open(lpath))
+
+	libs = merge_two_dicts(glibs, llibs)
 
 def include(lib):
-    global libs
-    if libs is None:
-        glibs = {}
-        llibs = {}
+	if libs is None:
+		init()
 
-        if os.path.exists(gpath):
-            glibs = json.load(open(gpath))
+	if not lib in libs:
+		print("Unregistred library {}. Use licant-config utility or manually edit {} or {} file.".format(
+			yellow(lib), yellow(lpath), yellow(gpath)))
+		exit(-1)
 
-        if os.path.exists(lpath):
-            llibs = json.load(open(lpath))
+	scriptq.execute(libs[lib])
 
-        libs = merge_two_dicts(glibs, llibs)
+def print_libs(taget, *args):
+	if libs is None:
+		init()
+		
+	keys = sorted(libs.keys())
+	for k in keys:
+		print("{}: {}".format(k,libs[k]))
 
-    if not lib in libs:
-        print("Unregistred library {}. Use licant-config utility or manually edit {} or {} file.".format(
-            yellow(lib), yellow(lpath), yellow(gpath)))
-        exit(-1)
 
-    scriptq.execute(libs[lib])
+libs_target = licant.core.Target(
+	tgt="l",
+	deps=[],
+	list=print_libs
+)
+
+licant.core.core.add(libs_target)

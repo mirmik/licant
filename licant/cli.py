@@ -13,10 +13,12 @@ def cli_argv_parse(argv):
     parser = OptionParser()
     parser.add_option("-d", "--debug", action="store_true",
                       default=False, help="print full system commands")
-    parser.add_option("-j", "--threads", default=1,
-                      help="amount of threads for executor")
     parser.add_option("-t", "--trace", action="store_true",
                       default=False, help="print trace information")
+    parser.add_option("-j", "--threads", default=1,
+                      help="amount of threads for executor")
+    parser.add_option("-q", "--quite", action="store_true",
+                      default=False, help="don`t print shell operations")
 
     parser.add_option("--printruntime", action="store_true", default=False)
 
@@ -32,6 +34,7 @@ def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.cor
 
     core.runtime["debug"] = opts.debug or opts.trace
     core.runtime["trace"] = opts.trace
+    core.runtime["quite"] = opts.quite
 
     cpu_count = os.cpu_count()
     core.runtime["threads"] = cpu_count if opts.threads == 'j' else int(opts.threads)
@@ -55,6 +58,9 @@ def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.cor
         if fnd in core.targets:
             try:
                 target = core.get(fnd)
+                if not hasattr(target, "default_action"):
+                    licant.util.error("target {} hasn't default_action"
+                        .format(licant.util.yellow(args[0])))
                 ret = target.invoke(target.default_action, critical=True)
             except licant.core.WrongAction as e:
                 licant.util.error("target.default_action")
@@ -72,7 +78,7 @@ def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.cor
         act_args = args[2:] 
 
         if core.runtime["debug"]:
-            print("Target: tgt:{}, act:{}, args:{}".format(tgt, act, act_args))
+            print("licant.ex: tgt:{}, act:{}, args:{}".format(tgt, act, act_args))
 
         try:
             target = licant.core.core.get(tgt)

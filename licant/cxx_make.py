@@ -166,3 +166,18 @@ def make_gcc_binutils(pref):
         ar=pref + "-ar",
         objdump=pref + "-objdump"
     )
+
+def disassembler(target, *args):
+    _target = core.get(args[0])
+    os.system("{} -D {} > {}"
+        .format(_target.opts.binutils.objdump, _target.tgt, args[1]))
+
+
+binutils_target = licant.core.Target(
+    tgt="binutils",
+    deps=[],
+    disasm=disassembler,
+)
+
+core.add(binutils_target)
+
