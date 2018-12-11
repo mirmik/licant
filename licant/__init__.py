@@ -14,7 +14,7 @@ from licant.util import error
 import licant.scripter
 from licant.libs import include
 
-__version__ = '1.0.3'
+__version__ = '1.1.0'
 
 
 def subtree(tgt):
