@@ -129,7 +129,8 @@ def print_modules_list(target, *args):
 modules_target = licant.core.Target(
     tgt="m",
     deps=[],
-    list=print_modules_list
+    list=print_modules_list,
+    actions={"list"}
 )
 
 licant.core.core.add(modules_target)

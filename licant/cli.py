@@ -59,8 +59,8 @@ def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.cor
             try:
                 target = core.get(fnd)
                 if not hasattr(target, "default_action"):
-                    licant.util.error("target {} hasn't default_action"
-                        .format(licant.util.yellow(args[0])))
+                    licant.util.error("target {} hasn't default_action (actions: {})"
+                        .format(licant.util.yellow(args[0]), licant.util.get_actions(target)))
                 ret = target.invoke(target.default_action, critical=True)
             except licant.core.WrongAction as e:
                 licant.util.error("target.default_action")

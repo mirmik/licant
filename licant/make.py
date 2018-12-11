@@ -50,8 +50,9 @@ class Executor:
 	def __call__(self, target, **kwargs):
 		return do_execute(target, self.rule, self.msgfield, **kwargs)
 
-
 class MakeFileTarget(UpdatableTarget):
+	__actions__ = UpdatableTarget.__actions__.union({"clean", "makefile"})
+
 	def __init__(self, tgt, deps, **kwargs):
 		UpdatableTarget.__init__(self, tgt, deps, **kwargs)
 
@@ -68,6 +69,8 @@ class MakeFileTarget(UpdatableTarget):
 
 
 class FileTarget(MakeFileTarget):
+	__actions__ = MakeFileTarget.__actions__.union({"build", "clr"})
+
 	def __init__(self, tgt, deps, force=False, **kwargs):
 		MakeFileTarget.__init__(self, tgt, deps, **kwargs)
 		self.isfile = True
@@ -124,7 +127,7 @@ class FileTarget(MakeFileTarget):
 
 	def update(self):
 		self.dirkeep()
-		return self.invoke("build")
+		return self.build(self)
 
 
 class FileSet(MakeFileTarget):

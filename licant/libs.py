@@ -55,7 +55,8 @@ def print_libs(taget, *args):
 libs_target = licant.core.Target(
 	tgt="l",
 	deps=[],
-	list=print_libs
+	list=print_libs,
+	actions={"list"}
 )
 
 licant.core.core.add(libs_target)

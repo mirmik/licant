@@ -228,16 +228,24 @@ class SubTree:
 
 
 class Target:
-	def __init__(self, tgt, deps, **kwargs):
+	__actions__ = {"actlist"}
+
+	def __init__(self, tgt, deps, actions=None, **kwargs):
 		self.tgt = tgt
 		self.deps = set(deps)
 		for k, v in kwargs.items():
 			setattr(self, k, v)
 
+		if actions is not None:
+			self.__actions__ = self.__actions__.union(set(actions))
+
 	def get_deplist(self):
 		return [self.core.get(d) for d in self.deps]
 
-	def invoke(self, func, *args, critical=False, **kwargs):
+	def actlist(self):
+		print(licant.util.get_actions(self))
+
+	def invoke(self, funcname, *args, critical=False, **kwargs):
 		"""Invoke func function or method, or mthod with func name for this target
 
 		Поддерживается несколько разных типов func.
@@ -247,15 +255,17 @@ class Target:
 		то в зависимости от данного параметра может быть возвращен None или выброшено исключение.
 		"""
 		if core.runtime["trace"]:
-			print("TRACE: Invoke: tgt:{}, act:{}, args:{}, kwargs:{}".format(self.tgt, func, args, kwargs))
+			print("TRACE: Invoke: tgt:{}, act:{}, args:{}, kwargs:{}".format(self.tgt, funcname, args, kwargs))
 
-		if (isinstance(func, str)):
-			func = getattr(self, func, None)
-			if (func is None):
-				if (critical):
-					raise WrongAction(func)
-				return None
+		if funcname not in self.__actions__:
+			licant.error("Isn't action {}".format(licant.util.yellow(funcname)))
 
+		func = getattr(self, funcname, None)
+		if (func is None):
+			if (critical):
+				raise WrongAction(func)
+			return None
+		
 		if isinstance(func, types.MethodType):
 			#return licant.util.cutinvoke(func, *args, **kwargs)
 			return func(*args, **kwargs)
@@ -276,6 +286,8 @@ class UpdateStatus(Enum):
 
 
 class UpdatableTarget(Target):
+	__actions__ = Target.__actions__.union({"recurse_update", "update", "update_if_need"})
+
 	def __init__(
 			self, tgt, deps, default_action="recurse_update",
 			update_status=UpdateStatus.Waiting, **kwargs
@@ -304,9 +316,9 @@ class UpdatableTarget(Target):
 		return False
 
 	def update_if_need(self):
-		if self.has_updated_depends() or self.invoke("self_need"):
+		if self.has_updated_depends() or self.self_need(): #self.invoke("self_need"):
 			self.update_status = UpdateStatus.Updated
-			return self.invoke("update")
+			return self.update() #self.invoke("update")
 		else:
 			self.update_status = UpdateStatus.Keeped
 			return True
@@ -363,8 +375,8 @@ def print_target_info(taget, *args):
 	if len(args) == 0:
 		licant.error("Need target mnemo")
 
-	print(core.get(args[0]))
-	print(sorted(core.get(args[0]).deps))
+	print("name:", core.get(args[0]))
+	print("deps:", sorted(core.get(args[0]).deps))
 
 
 
@@ -372,7 +384,8 @@ corediag_target = Target(
 	tgt="corediag",
 	deps=[],
 	targets=print_targets_list,
-	tgtinfo=print_target_info
+	tgtinfo=print_target_info,
+	actions={"targets", "tgtinfo"}
 )
 
 core.add(corediag_target)
