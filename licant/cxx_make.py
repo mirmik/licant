@@ -168,15 +168,22 @@ def make_gcc_binutils(pref):
     )
 
 def disassembler(target, *args):
+    if len(args) <= 1:
+        print("usage: disasm object_path asmlist_path")
+
     _target = core.get(args[0])
-    os.system("{} -D {} > {}"
-        .format(_target.opts.binutils.objdump, _target.tgt, args[1]))
+    _target.makefile()
+
+    cmd = "{} -D {} > {}".format(_target.opts.binutils.objdump, _target.tgt, args[1])
+    print(cmd)
+    os.system(cmd)
 
 
 binutils_target = licant.core.Target(
     tgt="binutils",
     deps=[],
     disasm=disassembler,
+    actions={"disasm"}
 )
 
 core.add(binutils_target)
