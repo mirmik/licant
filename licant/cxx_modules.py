@@ -268,7 +268,7 @@ def virtual(srcs, opts):
     return opts["target"]
 
 
-def make(name, impl=None, **kwargs):
+def prepare_targets(name, impl=None, **kwargs):
     opts = CXXModuleOptions(**kwargs)
     opts.set_default_if_empty()
 
@@ -360,7 +360,7 @@ def task(name, target, impl, type, **kwargs):
     else:
         licant.make.fileset(tgt=name, targets=[target])
     licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
-    make(name)
+    prepare_targets(name)
 
 
 def application(name, target=None, impl=None, type="application", **kwargs):
