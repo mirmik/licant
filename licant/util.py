@@ -227,7 +227,7 @@ def cxx_read_depends(path):
 
 def get_actions(target):
     clsactions = list(target.__actions__)
-    objactions = [k for k in target.__dict__.keys() if callable(target.__dict__[k])]
-    return sorted(clsactions + objactions)
+    #objactions = [k for k in target.__dict__.keys() if callable(target.__dict__[k])]
+    return sorted(clsactions)
 
     #return target.__dict__
