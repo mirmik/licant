@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 sys.path.insert(0, "../..")
@@ -13,8 +13,8 @@ def routine1():
 def routine2():
 	print("2")
 
-@licant.routine(deps = ["routine1", "routine2"])
+@licant.routine(deps = ["routine2"])
 def routine3():
 	print("3")
 
-licant.ex("routine1")
+licant.ex("routine3")

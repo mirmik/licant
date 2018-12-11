@@ -3,6 +3,7 @@
 import licant.util
 import threading
 import types
+import inspect
 from enum import Enum
 
 
@@ -56,14 +57,18 @@ class Core:
         return sorted(res)
 
 
+# Объект ядра с которым библиотеки работают по умолчанию.
+core = Core()
+
+
 class SubTree:
     def __init__(self, core, root):
         self.root = root
         self.core = core
         self.depset = core.depends_as_set(root)
 
-    def update(self):
-        SubTree.__init__(self, root)
+#    def update(self):
+#        SubTree.__init__(self, root)
 
     def invoke_foreach(self, ops, cond=licant.util.always_true):
         if core.runtime["debug"]:
@@ -232,7 +237,7 @@ class Target:
     def get_deplist(self):
         return [self.core.get(d) for d in self.deps]
 
-    def invoke(self, func, critical=False, **kwargs):
+    def invoke(self, func, *args, critical=False, **kwargs):
         """Invoke func function or method, or mthod with func name for this target
 
         Поддерживается несколько разных типов func.
@@ -242,7 +247,7 @@ class Target:
         то в зависимости от данного параметра может быть возвращен None или выброшено исключение.
         """
         if core.runtime["trace"]:
-            print("TRACE: invoke {} with action {}".format(self.tgt, func))
+            print("TRACE: Invoke: tgt:{}, act:{}, args:{}, kwargs:{}".format(self.tgt, func, args, kwargs))
 
         if (isinstance(func, str)):
             func = getattr(self, func, None)
@@ -252,10 +257,12 @@ class Target:
                 return None
 
         if isinstance(func, types.MethodType):
-            return licant.util.cutinvoke(func, **kwargs)
+            #return licant.util.cutinvoke(func, *args, **kwargs)
+            return func(*args, **kwargs)
 
         else:
-            return licant.util.cutinvoke(func, self, **kwargs)
+            #return licant.util.cutinvoke(func, self, *args, **kwargs)
+            return func(self, *args, **kwargs)
 
     def __repr__(self):
         """По умолчанию вывод Target на печать возвращает идентификатор цели"""
@@ -323,6 +330,14 @@ class Routine(UpdatableTarget):
     def self_need(self):
         return True
 
+def routine_decorator(func=None, deps=None):
+    if inspect.isfunction(func):
+        core.add(Routine(func))
+        return func
 
-# Объект ядра с которым библиотеки работают по умолчанию.
-core = Core()
+    else:
+        def decorator(func):
+            core.add(Routine(func, deps=deps))
+            return func
+            
+        return decorator

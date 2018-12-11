@@ -7,19 +7,6 @@ import sys
 from optparse import OptionParser
 
 import os
-import inspect
-
-def routine_decorator(func=None, deps=None):
-    if inspect.isfunction(func):
-        licant.core.core.add(licant.core.Routine(func))
-        return func
-
-    else:
-        def decorator(func):
-            licant.core.core.add(licant.core.Routine(func, deps=deps))
-            return func
-            
-        return decorator
 
 
 def cli_argv_parse(argv):
@@ -42,7 +29,6 @@ def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.cor
         print(licant.util.green("[start]"))
 
     opts, args = cli_argv_parse(argv)
-
 
     core.runtime["debug"] = opts.debug or opts.trace
     core.runtime["trace"] = opts.trace
@@ -80,10 +66,17 @@ def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.cor
                 licant.util.error("Can't find routine " + licant.util.yellow(fnd) +
                                   ". Enough target or default target action with same name.")
 
-    if len(args) == 2:
+    if len(args) >= 2:
+        tgt = args[0]
+        act = args[1]
+        act_args = args[2:] 
+
+        if core.runtime["debug"]:
+            print("Target: tgt:{}, act:{}, args:{}".format(tgt, act, act_args))
+
         try:
-            target = licant.core.core.get(args[0])
-            ret = target.invoke(args[1], critical=True)
+            target = licant.core.core.get(tgt)
+            ret = target.invoke(act, *act_args, critical=True)
         except licant.core.WrongAction as e:
             licant.util.error("Can't find action " + licant.util.yellow(args[1]) +
                               " in target " + licant.util.yellow(args[0]))

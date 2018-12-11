@@ -1,5 +1,8 @@
 from licant.util import red
 from licant.scripter import scriptq
+import licant.core
+
+import re
 
 special = ["__script__", "__dir__"]
 
@@ -103,3 +106,30 @@ class submodule:
 
     def __repr__(self):
         return "subm(" + self.name + ")"
+
+
+def print_modules_list(target, *args):
+    if len(mlibrary.modules) == 0:
+        print("modules doesn't founded")
+        return
+
+    mkeys = sorted(mlibrary.modules.keys())
+
+    if len(args) > 0:
+        mkeys = [m for m in mkeys if re.search(args[0], m)]
+
+    for k in mkeys:
+        v = mlibrary.modules[k]
+        if isinstance(v, VariantModule):
+            print("{}: {}".format(k, list(v.impls.keys())))
+        else:
+            print(k)
+
+
+modules_target = licant.core.Target(
+    tgt="m",
+    deps=[],
+    list=print_modules_list
+)
+
+licant.core.core.add(modules_target)
