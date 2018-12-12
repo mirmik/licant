@@ -245,6 +245,9 @@ class Target:
 	def actlist(self):
 		print(licant.util.get_actions(self))
 
+	def hasaction(self, act):
+		return act in self.__actions__
+
 	def invoke(self, funcname, *args, critical=False, **kwargs):
 		"""Invoke func function or method, or mthod with func name for this target
 
