@@ -1,3 +1,1 @@
-rm -rf dist
-rm -rf build
-rm -rf *.egg-info
+git clean -xfd
