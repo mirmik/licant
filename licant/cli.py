@@ -29,8 +29,41 @@ def cli_argv_parse(argv):
 def execute_with_default_action(target):
 	if not hasattr(target, "default_action"):
 		licant.util.error("target {} hasn't default_action (actions: {})"
-			.format(licant.util.yellow(args[0]), licant.util.get_actions(target)))
+			.format(licant.util.yellow(target.tgt), licant.util.get_actions(target)))
 	return target.invoke(target.default_action, critical=True)
+
+def	__cliexecute(args, default, core):
+	if len(args) == 0:
+		if default is None:
+			licant.util.error("default target isn't set")
+
+		target = core.get(default)
+		return execute_with_default_action(target)
+
+	fnd = args[0]
+
+	# Try look up fnd in targets
+	if fnd in core.targets:
+		target = core.get(fnd)
+
+		if len(args) == 1:
+			return execute_with_default_action(target)
+
+		act = args[1]
+
+		if not target.hasaction(act):
+			licant.util.error("H")
+
+		return target.invoke(act, *args[2:], critical=True)
+
+	# Try look up fnd in actions of default_target
+	dtarget = core.get(default)
+	if dtarget.hasaction(fnd):
+		return dtarget.invoke(fnd, *args[1:], critical=True)
+
+	# Can't look fnd. 
+	licant.util.error("Can't find routine " + licant.util.yellow(fnd) +
+		". Enough target or default target's action with same name.")
 	
 
 def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.core):
@@ -49,43 +82,7 @@ def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.cor
 	if opts.printruntime:
 		print("PRINT RUNTIME:", core.runtime)
 
-	if len(args) == 0:
-		if default is None:
-			licant.util.error("default target isn't set")
-
-		target = core.get(default)
-		execute_with_default_action(target)
-
-	elif len(args) == 1:
-		fnd = args[0]
-		if fnd in core.targets:
-			target = core.get(fnd)
-			execute_with_default_action(target)
-		else:
-			target = core.get(default)
-			
-			if not target.hasaction(fnd):
-				licant.util.error("Can't find routine " + licant.util.yellow(fnd) +
-				  ". Enough target or default target's action with same name.")
-
-
-			target.invoke(fnd, critical=True)
-			
-	elif len(args) >= 2:
-		tgt = args[0]
-		act = args[1]
-		act_args = args[2:] 
-
-		if core.runtime["debug"]:
-			print("licant.ex: tgt:{}, act:{}, args:{}".format(tgt, act, act_args))
-
-		target = licant.core.core.get(tgt)
+	__cliexecute(args, default=default, core=core)		
 		
-		if not target.hasaction(act):
-			licant.util.error("Can't find action " + licant.util.yellow(args[1]) +
-				" in target " + licant.util.yellow(args[0]))
-
-		target.invoke(act, *act_args, critical=True)
-			
 	if colorwrap:
 		print(licant.util.yellow("[finish]"))
