@@ -4,14 +4,26 @@
 import sys
 sys.path.insert(0, "../..")
 
-from licant.cxx_modules import application
+from licant.cxx_modules import application, shared_library, objects
 import licant
 
-application("target",
+aret = application("app",
 	sources = ["main.cpp", "ttt.cpp"]
 )
 
-licant.ex("target")
+dret = shared_library("lib",
+	sources = ["main.cpp", "ttt.cpp"]
+)
+
+oret = objects("obj",
+	sources = ["main.cpp", "ttt.cpp"]
+)
+
+print(aret)
+print(dret)
+print(oret)
+
+licant.ex()
 
 #print("stree:")
 #print(licant.subtree("target"))

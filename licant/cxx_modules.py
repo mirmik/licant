@@ -355,12 +355,17 @@ def prepare_targets(name, impl=None, **kwargs):
 
 
 def task(name, target, impl, type, **kwargs):
-    if target is None:
-        target = name
-    else:
-        licant.make.fileset(tgt=name, targets=[target])
-    licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
-    prepare_targets(name)
+    if type != "objects":
+        if target is None:
+            target = name
+        else:
+            licant.make.fileset(tgt=name, targets=[target])
+        licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
+        return prepare_targets(name)
+
+    licant.modules.module(name, impl=impl, type=type, **kwargs)
+    objs = prepare_targets(name)
+    return licant.make.fileset(tgt=name, targets=objs)
 
 
 def application(name, target=None, impl=None, type="application", **kwargs):
@@ -368,4 +373,8 @@ def application(name, target=None, impl=None, type="application", **kwargs):
 
 
 def shared_library(name, target=None, impl=None, type="shared_library", **kwargs):
+    return task(name, target, impl, type, **kwargs)
+
+
+def objects(name, target=None, impl=None, type="objects", **kwargs):
     return task(name, target, impl, type, **kwargs)

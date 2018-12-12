@@ -57,16 +57,17 @@ def	__cliexecute(args, default, core):
 		return target.invoke(act, *args[2:], critical=True)
 
 	# Try look up fnd in actions of default_target
-	dtarget = core.get(default)
-	if dtarget.hasaction(fnd):
-		return dtarget.invoke(fnd, *args[1:], critical=True)
+	if default is not None:
+		dtarget = core.get(default)
+		if dtarget.hasaction(fnd):
+			return dtarget.invoke(fnd, *args[1:], critical=True)
 
 	# Can't look fnd. 
 	licant.util.error("Can't find routine " + licant.util.yellow(fnd) +
 		". Enough target or default target's action with same name.")
 	
 
-def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.core):
+def cliexecute(default=None, colorwrap=False, argv=sys.argv[1:], core=licant.core.core):
 	if colorwrap:
 		print(licant.util.green("[start]"))
 
