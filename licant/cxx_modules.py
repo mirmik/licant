@@ -341,9 +341,9 @@ def prepare_targets(name, impl=None, **kwargs):
             submodules_results += modmake(smod.name, smod.impl, locopts)
 
         if locopts["type"] == "application":
-            return executable(locobjs + submodules_results, locopts)
+            return [executable(locobjs + submodules_results, locopts)]
         if locopts["type"] == "shared_library":
-            return dynlib(locobjs + submodules_results, locopts)
+            return [dynlib(locobjs + submodules_results, locopts)]
         elif locopts["type"] == "objects":
             return locobjs + submodules_results
         else:
@@ -357,15 +357,13 @@ def prepare_targets(name, impl=None, **kwargs):
 def task(name, target, impl, type, **kwargs):
     if type != "objects":
         if target is None:
-            target = name
-        else:
-            licant.make.fileset(tgt=name, targets=[target])
+            target = "./" + name
         licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
-        return prepare_targets(name)
-
-    licant.modules.module(name, impl=impl, type=type, **kwargs)
-    objs = prepare_targets(name)
-    return licant.make.fileset(tgt=name, targets=objs)
+    else:
+        licant.modules.module(name, impl=impl, type=type, **kwargs)
+    ret = prepare_targets(name)
+    licant.make.fileset(tgt=name, targets=ret)
+    return ret
 
 
 def application(name, target=None, impl=None, type="application", **kwargs):
