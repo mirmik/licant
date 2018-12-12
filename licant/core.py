@@ -260,8 +260,8 @@ class Target:
 		if core.runtime["trace"]:
 			print("TRACE: Invoke: tgt:{}, act:{}, args:{}, kwargs:{}".format(self.tgt, funcname, args, kwargs))
 
-		if funcname not in self.__actions__:
-			licant.error("Isn't action {}".format(licant.util.yellow(funcname)))
+		#if funcname not in self.__actions__:
+		#	licant.error("Isn't action {}".format(licant.util.yellow(funcname)))
 
 		func = getattr(self, funcname, None)
 		if (func is None):
@@ -333,6 +333,8 @@ class UpdatableTarget(Target):
 
 
 class Routine(UpdatableTarget):
+	__actions__ = {"recurse_update", "update", "actlist"}
+
 	def __init__(self, func, deps=[], tgt=None, **kwargs):
 		if tgt is None:
 			tgt = func.__name__

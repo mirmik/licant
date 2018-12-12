@@ -52,7 +52,9 @@ def	__cliexecute(args, default, core):
 		act = args[1]
 
 		if not target.hasaction(act):
-			licant.util.error("H")
+			licant.util.error("{} is not action of target {}".format(
+				licant.util.yellow(act),
+				licant.util.yellow(fnd)))
 
 		return target.invoke(act, *args[2:], critical=True)
 
