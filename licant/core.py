@@ -378,14 +378,16 @@ def print_target_info(taget, *args):
 	print("name:", core.get(args[0]))
 	print("deps:", sorted(core.get(args[0]).deps))
 
-
+def print_subtree(target, tgt):
+	print(core.subtree(tgt))
 
 corediag_target = Target(
 	tgt="corediag",
 	deps=[],
 	targets=print_targets_list,
 	tgtinfo=print_target_info,
-	actions={"targets", "tgtinfo"}
+	subtree=print_subtree,
+	actions={"targets", "tgtinfo", "subtree"}
 )
 
 core.add(corediag_target)

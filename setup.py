@@ -18,7 +18,7 @@ setup(
 	keywords = ['testing', 'make'],
 	classifiers = [],
 
-	scripts = ["configurator/licant-config"],
+	scripts = ["configurator/licant-libs"],
 #	package_data={'licant': [
 #   	'templates/cxx/make.py',
 #	  	'templates/cxx/main.cpp',
