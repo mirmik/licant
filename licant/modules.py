@@ -23,11 +23,13 @@ class VariantModule:
 
     def addimpl(self, impl, mod):
         self.impls[impl] = mod
+        mod.impl = impl
 
 
 class ModuleLibrary:
     def __init__(self):
         self.modules = {}
+        self.defimpls = {}
 
     def register(self, mod):
         if mod.name in self.modules:
@@ -72,6 +74,18 @@ class ModuleLibrary:
                     print("Unregistred implementation: {}".format(red(impl)))
                     exit(-1)
 
+    def set_defimpl(self, mod, impl):
+        self.defimpls[mod] = impl
+
+    def is_variant(self, name):
+        return isinstance(self.modules[name], VariantModule)
+
+    def get_default(self, name):
+        if name not in self.defimpls:
+            licant.error("Doesn`t have default impl of that module ({})".format(licant.util.yellow(name)))
+
+        return self.get(name, self.defimpls[name])
+
 
 mlibrary = ModuleLibrary()
 
@@ -106,6 +120,11 @@ class submodule:
 
     def __repr__(self):
         return "subm(" + self.name + ")"
+
+
+def module_default_implementation(mod, impl):
+    mlibrary.set_defimpl(mod, impl)
+
 
 
 def print_modules_list(target, *args):
