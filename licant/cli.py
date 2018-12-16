@@ -10,82 +10,82 @@ import os
 
 
 def cli_argv_parse(argv):
-    parser = OptionParser()
-    parser.add_option("-d", "--debug", action="store_true",
-                      default=False, help="print full system commands")
-    parser.add_option("-t", "--trace", action="store_true",
-                      default=False, help="print trace information")
-    parser.add_option("-j", "--threads", default=1,
-                      help="amount of threads for executor")
-    parser.add_option("-q", "--quite", action="store_true",
-                      default=False, help="don`t print shell operations")
+	parser = OptionParser()
+	parser.add_option("-d", "--debug", action="store_true",
+					  default=False, help="print full system commands")
+	parser.add_option("-t", "--trace", action="store_true",
+					  default=False, help="print trace information")
+	parser.add_option("-j", "--threads", default=1,
+					  help="amount of threads for executor")
+	parser.add_option("-q", "--quite", action="store_true",
+					  default=False, help="don`t print shell operations")
 
-    parser.add_option("--printruntime", action="store_true", default=False)
+	parser.add_option("--printruntime", action="store_true", default=False)
 
-    opts, args = parser.parse_args(argv)
-    return opts, args
+	opts, args = parser.parse_args(argv)
+	return opts, args
 
 
-def cliexecute(default, colorwrap=False, argv=sys.argv[1:], core=licant.core.core):
-    if colorwrap:
-        print(licant.util.green("[start]"))
+def execute_with_default_action(target):
+	if not hasattr(target, "default_action"):
+		licant.util.error("target {} hasn't default_action (actions: {})"
+			.format(licant.util.yellow(target.tgt), licant.util.get_actions(target)))
+	return target.invoke(target.default_action, critical=True)
 
-    opts, args = cli_argv_parse(argv)
+def	__cliexecute(args, default, core):
+	if len(args) == 0:
+		if default is None:
+			licant.util.error("default target isn't set")
 
-    core.runtime["debug"] = opts.debug or opts.trace
-    core.runtime["trace"] = opts.trace
-    core.runtime["quite"] = opts.quite
+		target = core.get(default)
+		return execute_with_default_action(target)
 
-    cpu_count = os.cpu_count()
-    core.runtime["threads"] = cpu_count if opts.threads == 'j' else int(opts.threads)
+	fnd = args[0]
 
-    if opts.printruntime:
-        print("PRINT RUNTIME:", core.runtime)
+	# Try look up fnd in targets
+	if fnd in core.targets:
+		target = core.get(fnd)
 
-    if len(args) == 0:
-        if default is None:
-            licant.util.error("default target isn't set")
+		if len(args) == 1:
+			return execute_with_default_action(target)
 
-        try:
-            target = core.get(default)
-            ret = target.invoke(target.default_action, critical=True)
-        except licant.core.WrongAction as e:
-            licant.util.error("Enough default action " + licant.util.yellow(
-                target.default_action) + " in default target " + licant.util.yellow(_default))
+		act = args[1]
 
-    if len(args) == 1:
-        fnd = args[0]
-        if fnd in core.targets:
-            try:
-                target = core.get(fnd)
-                if not hasattr(target, "default_action"):
-                    licant.util.error("target {} hasn't default_action (actions: {})"
-                        .format(licant.util.yellow(args[0]), licant.util.get_actions(target)))
-                ret = target.invoke(target.default_action, critical=True)
-            except licant.core.WrongAction as e:
-                licant.util.error("target.default_action")
-        else:
-            try:
-                target = core.get(default)
-                ret = target.invoke(fnd, critical=True)
-            except licant.core.WrongAction as e:
-                licant.util.error("Can't find routine " + licant.util.yellow(fnd) +
-                                  ". Enough target or default target action with same name.")
+		if not target.hasaction(act):
+			licant.util.error("{} is not action of target {}".format(
+				licant.util.yellow(act),
+				licant.util.yellow(fnd)))
 
-    if len(args) >= 2:
-        tgt = args[0]
-        act = args[1]
-        act_args = args[2:] 
+		return target.invoke(act, *args[2:], critical=True)
 
-        if core.runtime["debug"]:
-            print("licant.ex: tgt:{}, act:{}, args:{}".format(tgt, act, act_args))
+	# Try look up fnd in actions of default_target
+	if default is not None:
+		dtarget = core.get(default)
+		if dtarget.hasaction(fnd):
+			return dtarget.invoke(fnd, *args[1:], critical=True)
 
-        try:
-            target = licant.core.core.get(tgt)
-            ret = target.invoke(act, *act_args, critical=True)
-        except licant.core.WrongAction as e:
-            licant.util.error("Can't find action " + licant.util.yellow(args[1]) +
-                              " in target " + licant.util.yellow(args[0]))
+	# Can't look fnd. 
+	licant.util.error("Can't find routine " + licant.util.yellow(fnd) +
+		". Enough target or default target's action with same name.")
+	
 
-    if colorwrap:
-        print(licant.util.yellow("[finish]"))
+def cliexecute(default=None, colorwrap=False, argv=sys.argv[1:], core=licant.core.core):
+	if colorwrap:
+		print(licant.util.green("[start]"))
+
+	opts, args = cli_argv_parse(argv)
+
+	core.runtime["debug"] = opts.debug or opts.trace
+	core.runtime["trace"] = opts.trace
+	core.runtime["quite"] = opts.quite
+
+	cpu_count = os.cpu_count()
+	core.runtime["threads"] = cpu_count if opts.threads == 'j' else int(opts.threads)
+
+	if opts.printruntime:
+		print("PRINT RUNTIME:", core.runtime)
+
+	__cliexecute(args, default=default, core=core)		
+		
+	if colorwrap:
+		print(licant.util.yellow("[finish]"))

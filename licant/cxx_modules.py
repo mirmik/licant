@@ -422,27 +422,30 @@ def prepare_targets(name, impl=None, **kwargs):
 		for smod in locopts["modules"]:
 			submodules_results += modmake(smod.name, smod.impl, locopts)
 
-		if locopts["type"] == "application":
-			return executable(locobjs + submodules_results, locopts)
-		if locopts["type"] == "shared_library":
-			return dynlib(locobjs + submodules_results, locopts)
-		elif locopts["type"] == "objects":
-			return locobjs + submodules_results
-		else:
-			print("Wrong type of assemble: {}", gu.red(locopts["type"]))
-			exit(-1)
+        if locopts["type"] == "application":
+            return [executable(locobjs + submodules_results, locopts)]
+        if locopts["type"] == "shared_library":
+            return [dynlib(locobjs + submodules_results, locopts)]
+        elif locopts["type"] == "objects":
+            return locobjs + submodules_results
+        else:
+            print("Wrong type of assemble: {}", gu.red(locopts["type"]))
+            exit(-1)
 
 	res = modmake(name, impl, opts)
 	return res
 
 
 def task(name, target, impl, type, **kwargs):
-	if target is None:
-		target = name
-	else:
-		licant.make.fileset(tgt=name, targets=[target])
-	licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
-	prepare_targets(name)
+    if type != "objects":
+        if target is None:
+            target = "./" + name
+        licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
+    else:
+        licant.modules.module(name, impl=impl, type=type, **kwargs)
+    ret = prepare_targets(name)
+    licant.make.fileset(tgt=name, targets=ret)
+    return ret
 
 
 def application(name, target=None, impl=None, type="application", **kwargs):
@@ -451,6 +454,9 @@ def application(name, target=None, impl=None, type="application", **kwargs):
 
 def shared_library(name, target=None, impl=None, type="shared_library", **kwargs):
 	return task(name, target, impl, type, **kwargs)
+
+def objects(name, target=None, impl=None, type="objects", **kwargs):
+    return task(name, target, impl, type, **kwargs)
 
 
 def print_collect_list(target, *args):
@@ -468,3 +474,4 @@ modules_target = licant.core.Target(
 )
 
 licant.core.core.add(modules_target)
+

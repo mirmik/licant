@@ -245,6 +245,9 @@ class Target:
 	def actlist(self):
 		print(licant.util.get_actions(self))
 
+	def hasaction(self, act):
+		return act in self.__actions__
+
 	def invoke(self, funcname, *args, critical=False, **kwargs):
 		"""Invoke func function or method, or mthod with func name for this target
 
@@ -257,8 +260,8 @@ class Target:
 		if core.runtime["trace"]:
 			print("TRACE: Invoke: tgt:{}, act:{}, args:{}, kwargs:{}".format(self.tgt, funcname, args, kwargs))
 
-		if funcname not in self.__actions__:
-			licant.error("Isn't action {}".format(licant.util.yellow(funcname)))
+		#if funcname not in self.__actions__:
+		#	licant.error("Isn't action {}".format(licant.util.yellow(funcname)))
 
 		func = getattr(self, funcname, None)
 		if (func is None):
@@ -330,6 +333,8 @@ class UpdatableTarget(Target):
 
 
 class Routine(UpdatableTarget):
+	__actions__ = {"recurse_update", "update", "actlist"}
+
 	def __init__(self, func, deps=[], tgt=None, **kwargs):
 		if tgt is None:
 			tgt = func.__name__
@@ -378,14 +383,16 @@ def print_target_info(taget, *args):
 	print("name:", core.get(args[0]))
 	print("deps:", sorted(core.get(args[0]).deps))
 
-
+def print_subtree(target, tgt):
+	print(core.subtree(tgt))
 
 corediag_target = Target(
 	tgt="corediag",
 	deps=[],
 	targets=print_targets_list,
 	tgtinfo=print_target_info,
-	actions={"targets", "tgtinfo"}
+	subtree=print_subtree,
+	actions={"targets", "tgtinfo", "subtree"}
 )
 
 core.add(corediag_target)

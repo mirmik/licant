@@ -51,10 +51,11 @@ class Executor:
 		return do_execute(target, self.rule, self.msgfield, **kwargs)
 
 class MakeFileTarget(UpdatableTarget):
-	__actions__ = UpdatableTarget.__actions__.union({"clean", "makefile"})
+	__actions__ = {"actlist", "build", "makefile", "clean", "clr"}
 
 	def __init__(self, tgt, deps, **kwargs):
 		UpdatableTarget.__init__(self, tgt, deps, **kwargs)
+		self.default_action = "makefile"
 
 	def clean(self):
 		stree = self.core.subtree(self.tgt)
@@ -76,8 +77,7 @@ class FileTarget(MakeFileTarget):
 		self.isfile = True
 		self.force = force
 		self.clrmsg = "DELETE {tgt}"
-		self.default_action = "makefile"
-
+	
 	def update_info(self, _self):
 		fcache.update_info(self.tgt)
 		return True
@@ -138,7 +138,7 @@ class FileSet(MakeFileTarget):
 
 	def __init__(self, tgt, targets):
 		MakeFileTarget.__init__(
-			self, tgt=tgt, deps=targets, default_action="makefile")
+			self, tgt=tgt, deps=targets)
 		self.targets = targets
 		self.__mtime = None
 
