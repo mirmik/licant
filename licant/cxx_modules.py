@@ -172,6 +172,9 @@ class CXXModuleOptions:
 		self.table = table
 		self.check()
 
+	def __str__(self):
+		return str(self.opts)
+
 
 def cxx_options_from_modopts(modopts):
 	cxxstd = "-std=" + modopts["cxxstd"]
@@ -422,55 +425,58 @@ def prepare_targets(name, impl=None, **kwargs):
 		for smod in locopts["modules"]:
 			submodules_results += modmake(smod.name, smod.impl, locopts)
 
-        if locopts["type"] == "application":
-            return [executable(locobjs + submodules_results, locopts)]
-        if locopts["type"] == "shared_library":
-            return [dynlib(locobjs + submodules_results, locopts)]
-        elif locopts["type"] == "objects":
-            return locobjs + submodules_results
-        else:
-            print("Wrong type of assemble: {}", gu.red(locopts["type"]))
-            exit(-1)
+		if locopts["type"] == "application":
+			return ([executable(locobjs + submodules_results, locopts)], locopts)
+		if locopts["type"] == "shared_library":
+			return ([dynlib(locobjs + submodules_results, locopts)], locopts)
+		elif locopts["type"] == "objects":
+			return (locobjs + submodules_results, locopts)
+		else:
+			print("Wrong type of assemble: {}", gu.red(locopts["type"]))
+			exit(-1)
 
-	res = modmake(name, impl, opts)
-	return res
+	res, locopts = modmake(name, impl, opts)
+	return (res, locopts)
 
 
 def task(name, target, impl, type, **kwargs):
-    if type != "objects":
-        if target is None:
-            target = "./" + name
-        licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
-    else:
-        licant.modules.module(name, impl=impl, type=type, **kwargs)
-    ret = prepare_targets(name)
-    licant.make.fileset(tgt=name, targets=ret)
-    return ret
+	if type != "objects":
+		if target is None:
+			target = "./" + name
+		licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
+	else:
+		licant.modules.module(name, impl=impl, type=type, **kwargs)
+	ret, opts = prepare_targets(name)
+	licant.make.fileset(tgt=name, targets=ret, lopts=opts)
+	return ret
 
 
 def application(name, target=None, impl=None, type="application", **kwargs):
 	return task(name, target, impl, type, **kwargs)
 
-
 def shared_library(name, target=None, impl=None, type="shared_library", **kwargs):
 	return task(name, target, impl, type, **kwargs)
 
 def objects(name, target=None, impl=None, type="objects", **kwargs):
-    return task(name, target, impl, type, **kwargs)
+	return task(name, target, impl, type, **kwargs)
 
 
 def print_collect_list(target, *args):
-    for m in collect_modules(mlibrary.get(args[0])):
-    	if hasattr(m, "impl"):
-    		print("{} impl:{}".format(m.name, m.impl))
-    	else:
-    		print(m.name)
+	for m in collect_modules(mlibrary.get(args[0])):
+		if hasattr(m, "impl"):
+			print("{} impl:{}".format(m.name, m.impl))
+		else:
+			print(m.name)
+
+def print_finalopts(target, *args):
+	print(licant.core.core.get(args[0]).lopts)
 
 modules_target = licant.core.Target(
-    tgt="cxxm",
-    deps=[],
-    collect_modules=print_collect_list,
-    actions={"collect_modules"}
+	tgt="cxxm",
+	deps=[],
+	collect_modules=print_collect_list,
+	finalopts=print_finalopts,
+	actions={"collect_modules", "finalopts"}
 )
 
 licant.core.core.add(modules_target)

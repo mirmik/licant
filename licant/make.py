@@ -136,9 +136,9 @@ class FileSet(MakeFileTarget):
 	For link a set of file objects to the licant tree
 	without depend`s overhead."""
 
-	def __init__(self, tgt, targets):
+	def __init__(self, tgt, targets, **kwargs):
 		MakeFileTarget.__init__(
-			self, tgt=tgt, deps=targets)
+			self, tgt=tgt, deps=targets, **kwargs)
 		self.targets = targets
 		self.__mtime = None
 
@@ -183,11 +183,12 @@ def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
 	))
 
 
-def fileset(tgt, targets):
+def fileset(tgt, targets, **kwargs):
 	"""Make a fileset."""
 	core.add(FileSet(
 		tgt=tgt,
-		targets=targets
+		targets=targets,
+		**kwargs
 	))
 
 

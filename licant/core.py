@@ -397,3 +397,5 @@ corediag_target = Target(
 
 core.add(corediag_target)
 
+def do(lst):
+	core.get(lst[0]).invoke(lst[1], *lst[2:])
