@@ -8,7 +8,7 @@ special = ["__script__", "__dir__"]
 
 
 class Module:
-    def __init__(self, name, script, dir, stack, **kwargs):
+    def __init__(self, name, script=None, dir=None, stack=None, **kwargs):
         self.name = name
         self.script = script
         self.stack = stack
@@ -71,8 +71,9 @@ class ModuleLibrary:
                 if impl in m.impls:
                     return m.impls[impl]
                 else:
-                    if impl = "__none__":
-                        return Module(name, "__none__")
+                    if impl == "__none__":
+                        m.addimpl(impl="__none__", mod=Module(name))
+                        return m.impls[impl]
 
                     print("Unregistred implementation: {}".format(red(impl)))
                     exit(-1)
