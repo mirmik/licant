@@ -11,6 +11,7 @@ lpath = os.path.expanduser("~/.licant")
 
 libs = None
 
+included = set()
 
 def merge_two_dicts(x, y):
 	z = x.copy()   # start with x's keys and values
@@ -41,6 +42,10 @@ def include(lib):
 			yellow(lib), yellow(lpath), yellow(gpath)))
 		exit(-1)
 
+	if lib in included:
+		return
+
+	included.add(lib)
 	scriptq.execute(libs[lib])
 
 def print_libs(taget, *args):

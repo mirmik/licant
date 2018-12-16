@@ -98,9 +98,12 @@ def module(name, impl=None, **kwargs):
     ), dir=scriptq.curdir(), stack=list(scriptq.stack), **kwargs))
 
 
-def implementation(name, impl, **kwargs):
+def implementation(name, impl, default=False, **kwargs):
     mlibrary.register_impl(Module(name, script=scriptq.last(
     ), dir=scriptq.curdir(), stack=list(scriptq.stack), **kwargs), impl=impl)
+    
+    if default:
+        module_default_implementation(name, impl)
 
 
 class submodule:
