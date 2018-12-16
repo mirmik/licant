@@ -269,6 +269,81 @@ def virtual(srcs, opts):
 	licant.core.target(tgt=opts["target"], deps=srcs)
 	return opts["target"]
 
+def collect_modules(mod):
+	#Альтернативная система модулей.
+	mdepends_default = queue.Queue()
+	mdepends = dict()
+	
+	
+	class SortKey():
+		def __init__(self): self.sortkey = 0
+		def __call__(self, mod): mod.__sortkey = self.sortkey; self.sortkey += 1
+		
+	setsortkey = SortKey()
+
+	def collect_modules(mod):
+		if licant.core.core.runtime["trace"]:
+			print("trace: collect_modules( {} )".format(mod.name))
+
+		for md in mod.opts["mdepends"]:
+			if isinstance(md, str):
+				# Проверяем, не добавлен ли модуль ранее
+				if md in mdepends:
+						continue
+	
+				if mlibrary.is_variant(md):
+					# Если модуль требует имплементацию отправляем в список неразрешенных
+					mdepends_default.put(md)
+	
+				else:
+					# Если имплементация одна, активируем ее
+					nmod = mlibrary.get(md)
+	
+					if md in mdepends and mdepends[md] is not nmod:
+						licant.error("This module added early and it's different")
+	
+					mdepends[md] = nmod
+					setsortkey(nmod)
+	
+					if "mdepends" in nmod.opts:
+						# Сразу же выполняем обход по данному модулю
+						collect_modules(nmod) 
+			elif isinstance(md, tuple):
+				nmod = mlibrary.get(md[0], md[1])
+
+				if md[0] in mdepends and mdepends[md[0]] is not nmod:
+					licant.error("This module added early and it's different: mod:{} now:{} early:{}"
+						.format(
+							licant.util.yellow(nmod.name), 
+							licant.util.yellow(nmod.impl), 
+							licant.util.yellow(mdepends[md[0]].impl)))
+
+				mdepends[md[0]] = nmod
+				setsortkey(nmod)
+	
+				if "mdepends" in nmod.opts:
+					# Сразу же выполняем обход по данному модулю
+					collect_modules(nmod) 
+
+			else:
+				licant.error("Very strange mpdepend")
+
+	if "mdepends" in mod.opts:
+		collect_modules(mod)
+	
+	
+	while not mdepends_default.empty():
+		name = mdepends_default.get()
+		defmod = mlibrary.get_default(name)
+
+		mdepends[name] = defmod
+		setsortkey(defmod)
+
+		if "mdepends" in defmod.opts:
+			collect_modules(defmod)
+
+	return [mdepends[x] for x in sorted(mdepends, key=lambda x: mdepends[x]._SortKey__sortkey)]
+
 
 def prepare_targets(name, impl=None, **kwargs):
 	opts = CXXModuleOptions(**kwargs)
@@ -296,85 +371,12 @@ def prepare_targets(name, impl=None, **kwargs):
 						retopts, imod.opts["include_modules"])
 
 			return retopts
+
 		locopts = include_modules(locopts, locopts["include_modules"])
 
-		#Альтернативная система модулей.
-		mdepends_default = queue.Queue()
-		mdepends = dict()
-		
-		
-		class SortKey():
-			def __init__(self): self.sortkey = 0
-			def __call__(self, mod): mod.__sortkey = self.sortkey; self.sortkey += 1
-			
-		setsortkey = SortKey()
-
-		def collect_modules(mod):
-			if licant.core.core.runtime["trace"]:
-				print("trace: collect_modules( {} )".format(mod.name))
-
-			for md in mod.opts["mdepends"]:
-				if isinstance(md, str):
-					# Проверяем, не добавлен ли модуль ранее
-					if md in mdepends:
-							continue
-		
-					if mlibrary.is_variant(md):
-						# Если модуль требует имплементацию отправляем в список неразрешенных
-						mdepends_default.put(md)
-		
-					else:
-						# Если имплементация одна, активируем ее
-						nmod = mlibrary.get(md)
-		
-						if md in mdepends and mdepends[md] is not nmod:
-							licant.error("This module added early and it's different")
-		
-						mdepends[md] = nmod
-						setsortkey(nmod)
-		
-						if "mdepends" in nmod.opts:
-							# Сразу же выполняем обход по данному модулю
-							collect_modules(nmod) 
-				elif isinstance(md, tuple):
-					nmod = mlibrary.get(md[0], md[1])
-
-					if md[0] in mdepends and mdepends[md[0]] is not nmod:
-						licant.error("This module added early and it's different: mod:{} now:{} early:{}"
-							.format(
-								licant.util.yellow(nmod.name), 
-								licant.util.yellow(nmod.impl), 
-								licant.util.yellow(mdepends[md[0]].impl)))
-
-					mdepends[md[0]] = nmod
-					setsortkey(nmod)
-		
-					if "mdepends" in nmod.opts:
-						# Сразу же выполняем обход по данному модулю
-						collect_modules(nmod) 
-
-				else:
-					licant.error("Very strange mpdepend")
-
-		if "mdepends" in mod.opts:
-			collect_modules(mod)
-		
-		
-		while not mdepends_default.empty():
-			name = mdepends_default.get()
-			defmod = mlibrary.get_default(name)
-
-			mdepends[name] = defmod
-			setsortkey(defmod)
-
-			if "mdepends" in defmod.opts:
-				collect_modules(defmod)
-
-		for imod in sorted(mdepends, key=lambda x: mdepends[x]._SortKey__sortkey):
-			locopts = locopts.merge(mdepends[imod], "include")
-
-
-		#print(mdepends)
+		#Система модулей mdepends
+		for imod in collect_modules(mod):
+			locopts = locopts.merge(imod, "include")
 
 		local_headers_targets = []
 		if len(locopts["local_headers"]):
@@ -449,3 +451,20 @@ def application(name, target=None, impl=None, type="application", **kwargs):
 
 def shared_library(name, target=None, impl=None, type="shared_library", **kwargs):
 	return task(name, target, impl, type, **kwargs)
+
+
+def print_collect_list(target, *args):
+    for m in collect_modules(mlibrary.get(args[0])):
+    	if hasattr(m, "impl"):
+    		print("{} impl:{}".format(m.name, m.impl))
+    	else:
+    		print(m.name)
+
+modules_target = licant.core.Target(
+    tgt="cxxm",
+    deps=[],
+    collect_modules=print_collect_list,
+    actions={"collect_modules"}
+)
+
+licant.core.core.add(modules_target)
