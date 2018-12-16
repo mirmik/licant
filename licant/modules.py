@@ -71,6 +71,9 @@ class ModuleLibrary:
                 if impl in m.impls:
                     return m.impls[impl]
                 else:
+                    if impl = "__none__":
+                        return Module(name, "__none__")
+
                     print("Unregistred implementation: {}".format(red(impl)))
                     exit(-1)
 
