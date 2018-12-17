@@ -447,7 +447,7 @@ def task(name, target, impl, type, **kwargs):
 	else:
 		licant.modules.module(name, impl=impl, type=type, **kwargs)
 	ret, opts = prepare_targets(name)
-	licant.make.fileset(tgt=name, targets=ret, lopts=opts)
+	licant.make.fileset(tgt=name, targets=ret, finalopts=opts)
 	return ret
 
 
@@ -469,7 +469,7 @@ def print_collect_list(target, *args):
 			print(m.name)
 
 def print_finalopts(target, *args):
-	print(licant.core.core.get(args[0]).lopts)
+	print(licant.core.core.get(args[0]).finalopts)
 
 modules_target = licant.core.Target(
 	tgt="cxxm",

@@ -5,6 +5,7 @@ from licant.core import core as default_core
 from licant.core import routine_decorator as routine
 
 from licant.core import do
+from licant.core import get_target
 
 from licant.make import copy, fileset
 from licant.cxx_modules import application as cxx_application
