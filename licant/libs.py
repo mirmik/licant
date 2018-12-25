@@ -11,7 +11,7 @@ lpath = os.path.expanduser("~/.licant")
 
 libs = None
 
-included = set()
+included = dict()
 
 def merge_two_dicts(x, y):
 	z = x.copy()   # start with x's keys and values
@@ -33,9 +33,14 @@ def init():
 
 	libs = merge_two_dicts(glibs, llibs)
 
-def include(lib):
+def include(lib, path = None):
 	if libs is None:
 		init()
+
+	if path is not None:
+		included[lib] = path	
+		scriptq.execute(path)
+		return
 
 	if not lib in libs:
 		print("Unregistred library {}. Use licant-config utility or manually edit {} or {} file.".format(
@@ -45,7 +50,7 @@ def include(lib):
 	if lib in included:
 		return
 
-	included.add(lib)
+	included[lib] = libs[lib]
 	scriptq.execute(libs[lib])
 
 def print_libs(taget, *args):
