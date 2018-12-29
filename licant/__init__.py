@@ -21,6 +21,8 @@ from licant.libs import include
 
 __version__ = '1.1.0'
 
+def directory():
+	return licant.scripter.scriptq.curdir()
 
 def subtree(tgt):
 	return default_core.subtree(tgt)

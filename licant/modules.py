@@ -82,6 +82,8 @@ class ModuleLibrary:
         self.defimpls[mod] = impl
 
     def is_variant(self, name):
+        if name not in self.modules:
+            licant.error("Isn't registred as module ({})".format(licant.util.yellow(name)))
         return isinstance(self.modules[name], VariantModule)
 
     def get_default(self, name):
