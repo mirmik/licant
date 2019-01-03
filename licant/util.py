@@ -208,10 +208,7 @@ def find_recursive(root, pattern, hide, debug):
 
     return result
 
-
-pattern = re.compile(r"[\w./-]+")
-
-
+cxx_read_depends_pattern = re.compile(r"[\w./-]+")
 def cxx_read_depends(path):
     if not os.path.exists(path):
         return None
@@ -222,7 +219,7 @@ def cxx_read_depends(path):
         if len(text) == 0:
             return None
 
-        lst = pattern.findall(text)
+        lst = cxx_read_depends_pattern.findall(text)
         return lst[2:]
 
 def get_actions(target):
