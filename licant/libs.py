@@ -33,7 +33,7 @@ def init():
 
 	libs = merge_two_dicts(glibs, llibs)
 
-def include(lib, path = None):
+def include(lib, path = None, local_tunel=None):
 	if libs is None:
 		init()
 
@@ -48,6 +48,17 @@ def include(lib, path = None):
 		exit(-1)
 
 	if lib in included:
+		return
+
+	if local_tunel != None:
+		rawdir = os.path.dirname(libs[lib])
+		rawbase = os.path.basename(libs[lib])
+
+		if not os.path.exists(local_tunel):
+			os.symlink(rawdir, local_tunel)
+
+		included[lib] = os.path.join(local_tunel, rawbase)
+		scriptq.execute(os.path.join(local_tunel, rawbase))
 		return
 
 	included[lib] = libs[lib]
