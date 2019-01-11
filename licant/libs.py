@@ -51,6 +51,9 @@ def include(lib, path = None, local_tunel=None):
 		return
 
 	if local_tunel != None:
+		if os.path.exists(os.path.dirname(local_tunel)):
+			os.makedirs(os.path.dirname(local_tunel))
+
 		rawdir = os.path.dirname(libs[lib])
 		rawbase = os.path.basename(libs[lib])
 
