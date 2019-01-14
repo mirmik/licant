@@ -13,7 +13,10 @@ class ScriptQueue:
     def __execute(self, path):
         licant.make.source(path)
         self.stack.append(path)
-        exec(open(path).read(), globals())
+        try:
+            exec(open(path).read(), globals())
+        except Exception as e:
+            licant.error("Error in file {}: {}: {}".format(path, e.__class__, e))
         self.stack.pop()
 
     def execute(self, path):
