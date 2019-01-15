@@ -441,7 +441,7 @@ def prepare_targets(name, impl=None, **kwargs):
 
 def task(name, target, impl, type, **kwargs):
 	if type != "objects":
-		if target is None:
+		if target is None or target == name:
 			target = "./" + name
 		licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
 	else:
