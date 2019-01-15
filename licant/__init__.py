@@ -19,7 +19,7 @@ from licant.util import error
 import licant.scripter
 from licant.libs import include
 
-__version__ = '1.2.0'
+__version__ = '1.3.0'
 
 def directory():
 	return licant.scripter.scriptq.curdir()
