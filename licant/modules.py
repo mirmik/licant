@@ -86,6 +86,7 @@ class ModuleLibrary:
 		self.defimpls[mod] = impl
 
 	def is_variant(self, name):
+		licant.error("deprecated with 'always implementation concept'")
 		if name not in self.modules:
 			licant.error("Isn't registred as module ({})".format(licant.util.yellow(name)))
 		return isinstance(self.modules[name], VariantModule)
@@ -155,8 +156,8 @@ def print_modules_list(target, *args):
 		v = mlibrary.modules[k]
 		if isinstance(v, VariantModule):
 			print("{}: {}".format(k, list(v.impls.keys())))
-		else:
-			print(k)
+#		else:
+#			print(k)
 
 
 modules_target = licant.core.Target(
