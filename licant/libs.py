@@ -36,6 +36,9 @@ def init():
 def include(lib, path = None, local_tunel=None):
 	if libs is None:
 		init()
+	
+	if lib in included:
+		return
 
 	if path is not None:
 		included[lib] = path	
@@ -46,9 +49,6 @@ def include(lib, path = None, local_tunel=None):
 		print("Unregistred library {}. Use licant-config utility or manually edit {} or {} file.".format(
 			yellow(lib), yellow(lpath), yellow(gpath)))
 		exit(-1)
-
-	if lib in included:
-		return
 
 	if local_tunel != None:
 		if not os.path.exists(os.path.dirname(local_tunel)):
