@@ -88,6 +88,13 @@ def error(str):
     print(red("LicantError: ") + str)
     exit(-1)
 
+def error_exception(str, ex):
+    import traceback
+    print(red("LicantException: ") + str)
+    print(ex.__class__)
+    traceback.print_exc()
+    exit(-1)
+
 
 def cutinvoke(func, *args, **kwargs):
     if isinstance(func, types.FunctionType):

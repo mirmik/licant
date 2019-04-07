@@ -80,10 +80,10 @@ class ModuleLibrary:
 					print("Unregistred implementation: {}".format(red(impl)))
 					exit(-1)
 
-	def set_defimpl(self, mod, impl):
-		if mod in self.defimpls:
-			licant.error("Default implementation for module {} setted twice", licant.util.yellow(mod.name))
-		self.defimpls[mod] = impl
+	def set_defimpl(self, modname, impl):
+		if modname in self.defimpls:
+			licant.error("Default implementation for module {} setted twice".format(licant.util.yellow(modname)))
+		self.defimpls[modname] = impl
 
 	def is_variant(self, name):
 		licant.error("deprecated with 'always implementation concept'")

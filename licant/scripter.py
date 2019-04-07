@@ -16,7 +16,7 @@ class ScriptQueue:
         try:
             exec(open(path).read(), globals())
         except Exception as e:
-            licant.error("Error in file {}: {}: {}".format(path, e.__class__, e))
+            licant.util.error_exception("Exception in file {}".format(path), e)
         self.stack.pop()
 
     def execute(self, path):
