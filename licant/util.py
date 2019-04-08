@@ -8,7 +8,7 @@ import functools
 import inspect
 import warnings
 
-string_types = (type(b''), type(u''))
+string_types = (type(b""), type(u""))
 
 
 def deprecated(reason):
@@ -37,13 +37,13 @@ def deprecated(reason):
 
             @functools.wraps(func1)
             def new_func1(*args, **kwargs):
-                warnings.simplefilter('always', DeprecationWarning)
+                warnings.simplefilter("always", DeprecationWarning)
                 warnings.warn(
                     fmt1.format(name=func1.__name__, reason=reason),
                     category=DeprecationWarning,
-                    stacklevel=2
+                    stacklevel=2,
                 )
-                warnings.simplefilter('default', DeprecationWarning)
+                warnings.simplefilter("default", DeprecationWarning)
                 return func1(*args, **kwargs)
 
             return new_func1
@@ -69,13 +69,13 @@ def deprecated(reason):
 
         @functools.wraps(func2)
         def new_func2(*args, **kwargs):
-            warnings.simplefilter('always', DeprecationWarning)
+            warnings.simplefilter("always", DeprecationWarning)
             warnings.warn(
                 fmt2.format(name=func2.__name__),
                 category=DeprecationWarning,
-                stacklevel=2
+                stacklevel=2,
             )
-            warnings.simplefilter('default', DeprecationWarning)
+            warnings.simplefilter("default", DeprecationWarning)
             return func2(*args, **kwargs)
 
         return new_func2
@@ -88,8 +88,10 @@ def error(str):
     print(red("LicantError: ") + str)
     exit(-1)
 
+
 def error_exception(str, ex):
     import traceback
+
     print(red("LicantException: ") + str)
     print(ex.__class__)
     traceback.print_exc()
@@ -121,7 +123,7 @@ class queue:
         self.lst.append(obj)
 
     def get(self):
-        if (len(self.lst) == 0):
+        if len(self.lst) == 0:
             raise DontHaveArg()
 
         ret = self.lst[self.rdr]
@@ -174,19 +176,22 @@ def white(str):
 def always_true(*args, **kwargs):
     return True
 
+
 def always_false(*args, **kwargs):
     return False
+
 
 def do_nothing(*args, **kwargs):
     pass
 
+
 def changeext(path, newext):
-    return os.path.splitext(path)[0]+"."+newext
+    return os.path.splitext(path)[0] + "." + newext
 
 
 def flag_prefix(pref, lst):
     if lst and lst != []:
-        return " ".join(map(lambda x: pref+x, lst))
+        return " ".join(map(lambda x: pref + x, lst))
     else:
         return ""
 
@@ -215,7 +220,10 @@ def find_recursive(root, pattern, hide, debug):
 
     return result
 
+
 cxx_read_depends_pattern = re.compile(r"[\w./-]+")
+
+
 def cxx_read_depends(path):
     if not os.path.exists(path):
         return None
@@ -229,9 +237,10 @@ def cxx_read_depends(path):
         lst = cxx_read_depends_pattern.findall(text)
         return lst[2:]
 
+
 def get_actions(target):
     clsactions = list(target.__actions__)
-    #objactions = [k for k in target.__dict__.keys() if callable(target.__dict__[k])]
+    # objactions = [k for k in target.__dict__.keys() if callable(target.__dict__[k])]
     return sorted(clsactions)
 
-    #return target.__dict__
+    # return target.__dict__

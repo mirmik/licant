@@ -17,17 +17,22 @@ class binutils:
 
 
 host_binutils = binutils(
-    cxx="c++",
-    cc="cc",
-    ld="ld",
-    ar="ar",
-    objdump="objdump",
-    moc="moc"  # Qt support
+    cxx="c++", cc="cc", ld="ld", ar="ar", objdump="objdump", moc="moc"  # Qt support
 )
 
 
 class options:
-    def __init__(self, binutils=host_binutils, include_paths=None, defines=None, cxx_flags="", cc_flags="", ld_flags="", ld_srcs_add="", ldscripts=None):
+    def __init__(
+        self,
+        binutils=host_binutils,
+        include_paths=None,
+        defines=None,
+        cxx_flags="",
+        cc_flags="",
+        ld_flags="",
+        ld_srcs_add="",
+        ldscripts=None,
+    ):
         self.binutils = binutils
         self.incopt = licant.util.flag_prefix("-I", include_paths)
         self.defopt = licant.util.flag_prefix("-D", defines)
@@ -55,7 +60,7 @@ def object(src, tgt, opts=options(), type=None, deps=None, message="OBJECT {tgt}
         deps = [src]
 
     if type is None:
-        ext = os.path.basename(src).split('.')[-1]
+        ext = os.path.basename(src).split(".")[-1]
 
         if ext in cxx_ext_list:
             type = "cxx"
@@ -75,36 +80,37 @@ def object(src, tgt, opts=options(), type=None, deps=None, message="OBJECT {tgt}
     else:
         print(licant.util.red("Unrecognized extention"))
         exit(-1)
-    core.add(licant.make.FileTarget(
-        opts=opts,
-        tgt=tgt,
-        src=src,
-        deps=deps,
-        build=build,
-        message=message
-    ))
+    core.add(
+        licant.make.FileTarget(
+            opts=opts, tgt=tgt, src=src, deps=deps, build=build, message=message
+        )
+    )
 
 
 def moc(src, tgt, opts=options(), type=None, deps=None, message="MOC {tgt}"):
     if deps is None:
         deps = [src]
 
-    core.add(licant.make.FileTarget(
-        opts=opts,
-        tgt=tgt,
-        src=src,
-        deps=deps,
-        build=licant.make.Executor(opts.mocrule),
-        message=message
-    ))
+    core.add(
+        licant.make.FileTarget(
+            opts=opts,
+            tgt=tgt,
+            src=src,
+            deps=deps,
+            build=licant.make.Executor(opts.mocrule),
+            message=message,
+        )
+    )
 
 
-def depend(src, tgt, opts=options(), type=None, deps=None, message="DEPENDS {tgt}", **kwargs):
+def depend(
+    src, tgt, opts=options(), type=None, deps=None, message="DEPENDS {tgt}", **kwargs
+):
     if deps is None:
         deps = [src]
 
     if type is None:
-        ext = os.path.basename(src).split('.')[-1]
+        ext = os.path.basename(src).split(".")[-1]
 
         if ext in cxx_ext_list:
             type = "cxx"
@@ -125,37 +131,43 @@ def depend(src, tgt, opts=options(), type=None, deps=None, message="DEPENDS {tgt
         print(licant.util.red("Unrecognized extention"))
         exit(-1)
 
-    core.add(licant.make.FileTarget(
-        opts=opts,
-        tgt=tgt,
-        src=src,
-        deps=deps,
-        build=build,
-        message=message,
-        **kwargs
-    ))
+    core.add(
+        licant.make.FileTarget(
+            opts=opts,
+            tgt=tgt,
+            src=src,
+            deps=deps,
+            build=build,
+            message=message,
+            **kwargs
+        )
+    )
 
 
 def executable(tgt, srcs, opts=options(), message="EXECUTABLE {tgt}"):
-    core.add(licant.make.FileTarget(
-        opts=opts,
-        tgt=tgt,
-        build=licant.make.Executor(opts.execrule),
-        srcs=" ".join(srcs),
-        deps=srcs,
-        message=message
-    ))
+    core.add(
+        licant.make.FileTarget(
+            opts=opts,
+            tgt=tgt,
+            build=licant.make.Executor(opts.execrule),
+            srcs=" ".join(srcs),
+            deps=srcs,
+            message=message,
+        )
+    )
 
 
 def dynamic_library(tgt, srcs, opts=options(), message="DYNLIB {tgt}"):
-    core.add(licant.make.FileTarget(
-        opts=opts,
-        tgt=tgt,
-        build=licant.make.Executor(opts.dynlibrule),
-        srcs=" ".join(srcs),
-        deps=srcs,
-        message=message
-    ))
+    core.add(
+        licant.make.FileTarget(
+            opts=opts,
+            tgt=tgt,
+            build=licant.make.Executor(opts.dynlibrule),
+            srcs=" ".join(srcs),
+            deps=srcs,
+            message=message,
+        )
+    )
 
 
 def make_gcc_binutils(pref):
@@ -164,8 +176,9 @@ def make_gcc_binutils(pref):
         cc=pref + "-gcc",
         ld=pref + "-ld",
         ar=pref + "-ar",
-        objdump=pref + "-objdump"
+        objdump=pref + "-objdump",
     )
+
 
 def disassembler(target, *args):
     if len(args) <= 1:
@@ -180,11 +193,7 @@ def disassembler(target, *args):
 
 
 binutils_target = licant.core.Target(
-    tgt="binutils",
-    deps=[],
-    disasm=disassembler,
-    actions={"disasm"}
+    tgt="binutils", deps=[], disasm=disassembler, actions={"disasm"}
 )
 
 core.add(binutils_target)
-

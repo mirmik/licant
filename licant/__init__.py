@@ -19,13 +19,15 @@ from licant.util import error
 import licant.scripter
 from licant.libs import include
 
-__version__ = '1.3.0'
+__version__ = "1.3.0"
+
 
 def directory():
-	return licant.scripter.scriptq.curdir()
+    return licant.scripter.scriptq.curdir()
+
 
 def subtree(tgt):
-	return default_core.subtree(tgt)
+    return default_core.subtree(tgt)
 
 
 def execute(path):
