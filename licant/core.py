@@ -416,6 +416,17 @@ def print_target_info(taget, *args):
     print("deps:", sorted(core.get(args[0]).deps))
 
 
+def print_deps(taget, *args):
+    if len(args) == 0:
+        name = licant.cli.default_target
+    else:
+        name = args[0]
+
+    lst = sorted(core.depends_as_set(name))
+    for l in lst:
+        print(l)
+
+
 def print_subtree(target, tgt):
     print(core.subtree(tgt))
 
@@ -426,7 +437,8 @@ corediag_target = Target(
     targets=print_targets_list,
     tgtinfo=print_target_info,
     subtree=print_subtree,
-    actions={"targets", "tgtinfo", "subtree"},
+    printdeps=print_deps,
+    actions={"targets", "tgtinfo", "subtree", "printdeps"},
     __help__="Core state info",
 )
 

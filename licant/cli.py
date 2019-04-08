@@ -9,6 +9,7 @@ from licant.core import WrongAction
 import sys
 import os
 
+default_target = None
 
 def make_freeargs_help(core):
     ret = """Specify target with format [target [action [args*]]]\n\nList of internal targets:\n"""
@@ -66,6 +67,9 @@ def execute_with_default_action(target):
 
 
 def __cliexecute(args, default, core):
+    global default_target
+    default_target = default
+
     if len(args) == 0:
         if default is None:
             licant.util.error("default target isn't set")

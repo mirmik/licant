@@ -100,7 +100,7 @@ def concat_add_locdir(base, local, solver, tbase, tlocal):
 
 def concat_add_locdir_second(base, local, solver, tbase, tlocal):
     """Добавить локальный путь ко всем вторым элементам локального массива. 
-	Для поддержки локальных заголовков."""
+    Для поддержки локальных заголовков."""
     if local is None:
         return base
     local = [(pl[0], os.path.join(tlocal.opts["__dir__"], pl[1])) for pl in local]
@@ -121,7 +121,7 @@ def concat_to_submodule(base, local, solver, tbase, tlocal):
 
 
 cxx_module_field_list = {
-    #                                       # merge						#include 					#default
+    #                                       # merge                     #include                    #default
     "srcdir": solver("str", local, base, "."),
     "objects": solver("list", local_add_srcdir, concat_add_srcdir, []),
     "sources": solver("list", local_add_srcdir, concat_add_srcdir, []),
@@ -330,17 +330,17 @@ def collect_modules(mod):
 
                 # else:
                 # Если имплементация одна, активируем ее
-                # 	nmod = mlibrary.get(md)
+                #   nmod = mlibrary.get(md)
 
-                # 	if md in mdepends and mdepends[md] is not nmod:
-                # 		licant.error("This module added early and it's different")
+                #   if md in mdepends and mdepends[md] is not nmod:
+                #       licant.error("This module added early and it's different")
 
-                # 	mdepends[md] = nmod
-                # 	setsortkey(nmod)
+                #   mdepends[md] = nmod
+                #   setsortkey(nmod)
 
-                # 	if "mdepends" in nmod.opts:
+                #   if "mdepends" in nmod.opts:
                 # Сразу же выполняем обход по данному модулю
-                # 		collect_modules(nmod)
+                #       collect_modules(nmod)
             elif isinstance(md, tuple):
                 nmod = mlibrary.get(md[0], md[1])
 
@@ -497,7 +497,12 @@ def objects(name, target=None, impl=None, type="objects", **kwargs):
 
 
 def print_collect_list(target, *args):
-    for m in sorted(collect_modules(mlibrary.get(args[0])), key=lambda x: x.name):
+    if len(args) > 0:
+        name = args[0]
+    else:
+        print("You should specify target name")
+        return 
+    for m in sorted(collect_modules(mlibrary.get(name)), key=lambda x: x.name):
         if hasattr(m, "impl"):
             print("{}:{}".format(m.name, m.impl))
         else:
@@ -505,7 +510,11 @@ def print_collect_list(target, *args):
 
 
 def print_finalopts(target, *args):
-    print(licant.core.core.get(args[0]).finalopts)
+    if len(args) > 0:
+        name = args[0]
+    else:
+        name = licant.cli.default_target
+    print(licant.core.core.get(name).finalopts)
 
 
 modules_target = licant.core.Target(
