@@ -164,7 +164,8 @@ modules_target = licant.core.Target(
 	tgt="m",
 	deps=[],
 	list=print_modules_list,
-	actions={"list"}
+	actions={"list"},
+	__help__="Info about modules"
 )
 
 licant.core.core.add(modules_target)

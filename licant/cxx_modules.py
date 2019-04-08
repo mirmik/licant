@@ -462,9 +462,9 @@ def objects(name, target=None, impl=None, type="objects", **kwargs):
 
 
 def print_collect_list(target, *args):
-	for m in collect_modules(mlibrary.get(args[0])):
+	for m in sorted(collect_modules(mlibrary.get(args[0])), key=lambda x: x.name):
 		if hasattr(m, "impl"):
-			print("{} impl:{}".format(m.name, m.impl))
+			print("{}:{}".format(m.name, m.impl))
 		else:
 			print(m.name)
 
@@ -476,7 +476,8 @@ modules_target = licant.core.Target(
 	deps=[],
 	collect_modules=print_collect_list,
 	finalopts=print_finalopts,
-	actions={"collect_modules", "finalopts"}
+	actions={"collect_modules", "finalopts"},
+	__help__="Info about collected modules"
 )
 
 licant.core.core.add(modules_target)

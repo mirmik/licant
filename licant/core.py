@@ -24,12 +24,16 @@ class NoneDictionary(dict):
 class Core:
 	def __init__(self):
 		self.targets = {}
+		self.help_showed_targets = []
 		self.runtime = NoneDictionary()
 
 	def add(self, target):
 		"""Add new target"""
 		target.core = self
 		self.targets[target.tgt] = target
+		
+		if target.__help__ is not None:
+			self.help_showed_targets.append(target)
 
 	def get(self, tgt):
 		"""Get target object"""
@@ -230,7 +234,7 @@ class SubTree:
 class Target:
 	__actions__ = {"actlist"}
 
-	def __init__(self, tgt, deps, actions=None, **kwargs):
+	def __init__(self, tgt, deps, actions=None, __help__=None, **kwargs):
 		self.tgt = tgt
 		self.deps = set(deps)
 		for k, v in kwargs.items():
@@ -238,6 +242,8 @@ class Target:
 
 		if actions is not None:
 			self.__actions__ = self.__actions__.union(set(actions))
+
+		self.__help__ = __help__
 
 	def get_deplist(self):
 		return [self.core.get(d) for d in self.deps]
@@ -392,7 +398,8 @@ corediag_target = Target(
 	targets=print_targets_list,
 	tgtinfo=print_target_info,
 	subtree=print_subtree,
-	actions={"targets", "tgtinfo", "subtree"}
+	actions={"targets", "tgtinfo", "subtree"},
+	__help__="Core state info"
 )
 
 core.add(corediag_target)

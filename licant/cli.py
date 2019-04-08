@@ -1,28 +1,41 @@
 #coding: utf-8
 
+from argparse import ArgumentParser
+from argparse import RawTextHelpFormatter
+
 import licant.util
 from licant.core import WrongAction
 
 import sys
-from optparse import OptionParser
-
 import os
 
+def make_freeargs_help(core):
+	ret = """Specify target with format [target [action [args*]]]\n\nList of internal targets:\n"""
 
-def cli_argv_parse(argv):
-	parser = OptionParser()
-	parser.add_option("-d", "--debug", action="store_true",
+	for t in sorted(core.help_showed_targets, key=lambda x: x.tgt):
+		ret += "{}: {}\n".format(t.tgt, t.__help__)
+
+	return ret
+
+
+def cli_argv_parse(argv, core):
+	parser = ArgumentParser(formatter_class=RawTextHelpFormatter)
+	parser.add_argument("-d", "--debug", action="store_true",
 					  default=False, help="print full system commands")
-	parser.add_option("-t", "--trace", action="store_true",
+	parser.add_argument("-t", "--trace", action="store_true",
 					  default=False, help="print trace information")
-	parser.add_option("-j", "--threads", default=1,
+	parser.add_argument("-j", "--threads", default=1,
 					  help="amount of threads for executor")
-	parser.add_option("-q", "--quite", action="store_true",
+	parser.add_argument("-q", "--quite", action="store_true",
 					  default=False, help="don`t print shell operations")
+	parser.add_argument('freeargs', type=str, nargs='*', 
+		help=make_freeargs_help(core))
 
-	parser.add_option("--printruntime", action="store_true", default=False)
+	parser.add_argument("--printruntime", action="store_true", default=False)
 
-	opts, args = parser.parse_args(argv)
+	opts = parser.parse_args(argv)
+	args = opts.freeargs
+
 	return opts, args
 
 
@@ -73,7 +86,7 @@ def cliexecute(default=None, colorwrap=False, argv=sys.argv[1:], core=licant.cor
 	if colorwrap:
 		print(licant.util.green("[start]"))
 
-	opts, args = cli_argv_parse(argv)
+	opts, args = cli_argv_parse(argv, core)
 
 	core.runtime["debug"] = opts.debug or opts.trace
 	core.runtime["trace"] = opts.trace
