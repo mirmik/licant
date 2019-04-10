@@ -99,11 +99,19 @@ class ModuleLibrary:
 
     def get_default(self, name):
         if name not in self.defimpls:
-            licant.error(
-                "Doesn`t have default impl of that module ({})".format(
-                    licant.util.yellow(name)
+            if name not in self.modules:
+                licant.error(
+                    "Unregistred module ({})".format(
+                        licant.util.yellow(name)
+                    )
                 )
-            )
+
+            else:
+                licant.error(
+                    "Doesn`t have default impl of that module ({})".format(
+                        licant.util.yellow(name)
+                    )
+                )
 
         return self.get(name, self.defimpls[name])
 
