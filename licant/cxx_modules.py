@@ -320,27 +320,11 @@ def collect_modules(mod):
 
         for md in mod.opts["mdepends"]:
             if isinstance(md, str):
-                # Проверяем, не добавлен ли модуль ранее
                 if md in mdepends:
                     continue
 
-                # if mlibrary.is_variant(md):
-                # Если модуль требует имплементацию отправляем в список неразрешенных
                 mdepends_default.put(md)
 
-                # else:
-                # Если имплементация одна, активируем ее
-                #   nmod = mlibrary.get(md)
-
-                #   if md in mdepends and mdepends[md] is not nmod:
-                #       licant.error("This module added early and it's different")
-
-                #   mdepends[md] = nmod
-                #   setsortkey(nmod)
-
-                #   if "mdepends" in nmod.opts:
-                # Сразу же выполняем обход по данному модулю
-                #       collect_modules(nmod)
             elif isinstance(md, tuple):
                 nmod = mlibrary.get(md[0], md[1])
 
