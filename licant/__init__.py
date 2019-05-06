@@ -40,3 +40,12 @@ def execute_recursive(*argv, **kwargs):
 
 def about():
     return "I'm Licant"
+
+class Object(object):
+	pass
+
+glbfunc = Object()
+
+def global_function(var):
+	setattr(glbfunc, var.__name__, var)
+

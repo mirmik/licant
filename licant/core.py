@@ -368,12 +368,17 @@ class Routine(UpdatableTarget):
             tgt = func.__name__
         UpdatableTarget.__init__(self, tgt=tgt, deps=deps, **kwargs)
         self.func = func
+        self.args = []
 
     def update(self):
-        return self.func()
+        return self.func(*self.args)
 
     def self_need(self):
         return True
+
+    def recurse_update(self, *args):
+        self.args = args
+        super().recurse_update()
 
 
 def routine_decorator(func=None, deps=None):

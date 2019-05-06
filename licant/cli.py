@@ -56,14 +56,14 @@ def cli_argv_parse(argv, core):
     return opts, args
 
 
-def execute_with_default_action(target):
+def execute_with_default_action(target, args):
     if not hasattr(target, "default_action"):
         licant.util.error(
             "target {} hasn't default_action (actions: {})".format(
                 licant.util.yellow(target.tgt), licant.util.get_actions(target)
             )
         )
-    return target.invoke(target.default_action, critical=True)
+    return target.invoke(target.default_action, *args, critical=True)
 
 
 def __cliexecute(args, default, core):
@@ -75,7 +75,7 @@ def __cliexecute(args, default, core):
             licant.util.error("default target isn't set")
 
         target = core.get(default)
-        return execute_with_default_action(target)
+        return execute_with_default_action(target, [])
 
     fnd = args[0]
 
@@ -83,8 +83,8 @@ def __cliexecute(args, default, core):
     if fnd in core.targets:
         target = core.get(fnd)
 
-        if len(args) == 1:
-            return execute_with_default_action(target)
+        if len(args) == 1 or isinstance(target, licant.core.Routine):
+            return execute_with_default_action(target, args[1:])
 
         act = args[1]
 
