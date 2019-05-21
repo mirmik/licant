@@ -8,6 +8,16 @@ from optparse import OptionParser
 
 import licant.libs
 
+def add_record(name, path):
+	abspath = os.path.abspath(path)
+	exists = os.path.exists(abspath)
+
+	if not exists:
+		print("File {} is not exists".format(path))
+		exit(-1)
+
+	paths[name] = abspath
+
 usage = "usage: %prog [options] lib path"
 parser = OptionParser(usage = usage)
 parser.add_option("-u", "--user", action = "store_true", default = False)
@@ -37,29 +47,36 @@ if opts.list:
 		print(k, v)
 	exit(0)
 
-if not ((len(args) == 2) or (opts.remove and len(args) == 1)):
+if len(args) > 2 or (opts.remove and len(args) != 1):
 	#parser.print_help()
 	parser.error("incorrect numbers of argument")
 	exit(0)
 
-name = args[0]
+if len(args) == 0:
+	parser.help()
+	exit(0)
+
+path = None
+name = None
+if len(args) == 2 and opts.remove == False:
+	name = args[0]
+	path = args[1]
+	add_record(name, path)
+	
+if len(args) == 1 and opts.remove == False:
+	import glob
+	ret = glob.glob(os.path.join(args[0], "*.g.py"))
+	for f in ret:
+		fname = os.path.basename(f)
+		name = fname.split('.')[0]
+		path = f
+		add_record(name, path)
 
 if opts.remove:
 	try:
 		del paths[name]
 	except:
 		print("Unregistred library {}".format(name))
-
-else:
-	path = args[1]
-	abspath = os.path.abspath(path)
-	exists = os.path.exists(abspath)
-
-	if not exists:
-		print("File {} is not exists".format(path))
-		exit(-1)
-
-	paths[name] = abspath
 
 try:
 	json.dump(paths, open(paths_file, "w"))
