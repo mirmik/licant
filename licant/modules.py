@@ -31,13 +31,6 @@ class ModuleLibrary:
         self.modules = {}
         self.defimpls = {}
 
-    #    def register(self, mod):
-    #        if mod.name in self.modules:
-    #            print("Attempt to register the module {} again".format(red(mod.name)))
-    #            exit(-1)
-    #        else:
-    #            self.modules[mod.name] = mod
-
     def register_impl(self, mod, impl):
         if mod.name in self.modules:
             if not isinstance(self.modules[mod.name], VariantModule):
@@ -58,17 +51,10 @@ class ModuleLibrary:
 
         m = self.modules[name]
         if impl is None:
-            # if isinstance(m, VariantModule):
-            #   print("Need implementation: {}".format(red(name)))
-            #    exit(-1)
             return self.get_default(name)
-            # else:
-            # 	return m
         else:
             if isinstance(m, Module):
                 licant.error("stand by module is deprecated")
-                # print("This modile have only one implementation: {}".format(red(name)))
-                # exit(-1)
             else:
                 if impl in m.impls:
                     return m.impls[impl]
@@ -124,8 +110,6 @@ def module(name, impl=None, **kwargs):
         implementation(name, impl, **kwargs)
         return
     implementation(name, "__default__", default=True, **kwargs)
-    # mlibrary.register(Module(name, script=scriptq.last(
-    # ), dir=scriptq.curdir(), stack=list(scriptq.stack), **kwargs))
 
 
 def implementation(name, impl, default=False, **kwargs):
@@ -181,10 +165,6 @@ def print_modules_list(target, *args):
         v = mlibrary.modules[k]
         if isinstance(v, VariantModule):
             print("{}: {}".format(k, list(v.impls.keys())))
-
-
-# 		else:
-# 			print(k)
 
 
 modules_target = licant.core.Target(

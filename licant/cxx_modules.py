@@ -129,7 +129,7 @@ cxx_module_field_list = {
     "libs": solver("list", concat, concat, []),
     "target": solver("str", local_if_exist, base, "target"),
     "include_paths": solver("list", concat_add_locdir, concat_add_locdir, []),
-    "cxxstd": solver("str", local_if_exist, local_if_exist, "c++14"),
+    "cxxstd": solver("str", local_if_exist, local_if_exist, "c++17"),
     "ccstd": solver("str", local_if_exist, local_if_exist, "c11"),
     "cxx_flags": solver("str", strconcat, strconcat, ""),
     "cc_flags": solver("str", strconcat, strconcat, ""),
