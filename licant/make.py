@@ -180,6 +180,16 @@ def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
         )
     )
 
+def makefile(tgt, deps, do, **kwargs):
+    """Make the file copy target."""
+    core.add(
+        FileTarget(
+            tgt=tgt,
+            build=Executor(do),
+            deps=deps,
+            **kwargs
+        )
+    )
 
 def fileset(tgt, targets, **kwargs):
     """Make a fileset."""
