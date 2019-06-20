@@ -7,7 +7,7 @@ from licant.core import routine_decorator as routine
 from licant.core import do
 from licant.core import get_target
 
-from licant.make import copy, fileset
+from licant.make import copy, fileset, makefile, source
 from licant.cxx_modules import application as cxx_application
 from licant.cxx_modules import shared_library as cxx_shared_library
 from licant.cxx_modules import objects as cxx_objects
@@ -20,7 +20,6 @@ import licant.scripter
 from licant.libs import include
 
 __version__ = "1.5.0"
-
 
 def directory():
     return licant.scripter.scriptq.curdir()
