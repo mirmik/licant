@@ -47,6 +47,31 @@ def include(lib, path=None, local_tunel=None):
         scriptq.execute(path)
         return
 
+    if local_tunel != None:
+        # Local tunel is special technique for use licant 
+        # with python packages. Local tunel create link 
+        # for setup.py can find sources by relative path. 
+
+        if not os.path.exists(local_tunel[0]):
+            # Убеждаемся, что директории до тунеля существуют
+            if not os.path.exists(os.path.dirname(local_tunel[0])):
+                os.makedirs(os.path.dirname(local_tunel[0]))
+
+            rawdir = os.path.dirname(libs[lib])
+            rawbase = os.path.basename(libs[lib])
+
+            if not os.path.exists(local_tunel[0]):
+                os.symlink(rawdir, local_tunel[0])
+
+            included[lib] = os.path.join(local_tunel[0], local_tunel[1])
+            scriptq.execute(os.path.join(local_tunel[0], local_tunel[1]))
+            return
+
+        else:
+            included[lib] = os.path.join(local_tunel[0], local_tunel[1])
+            scriptq.execute(os.path.join(local_tunel[0], local_tunel[1]))
+            return            
+
     if not lib in libs:
         print(
             "Unregistred library {}. Use licant-config utility or manually edit {} or {} file.".format(
@@ -54,20 +79,6 @@ def include(lib, path=None, local_tunel=None):
             )
         )
         exit(-1)
-
-    if local_tunel != None:
-        if not os.path.exists(os.path.dirname(local_tunel)):
-            os.makedirs(os.path.dirname(local_tunel))
-
-        rawdir = os.path.dirname(libs[lib])
-        rawbase = os.path.basename(libs[lib])
-
-        if not os.path.exists(local_tunel):
-            os.symlink(rawdir, local_tunel)
-
-        included[lib] = os.path.join(local_tunel, rawbase)
-        scriptq.execute(os.path.join(local_tunel, rawbase))
-        return
 
     included[lib] = libs[lib]
     scriptq.execute(libs[lib])
