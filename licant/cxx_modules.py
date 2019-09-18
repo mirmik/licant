@@ -1,7 +1,7 @@
 # coding: utf-8
 
 from licant.modules import mlibrary
-from licant.cxx_make import host_binutils, binutils
+from licant.cxx_make import host_toolchain
 from licant.util import red, yellow, cxx_read_depends
 
 import os
@@ -137,7 +137,7 @@ cxx_module_field_list = {
     "modules": solver("list", local, concat, []),
     "type": solver("str", local, base, "objects"),
     "builddir": solver("str", local_if_exist, base, "build"),
-    "binutils": solver("binutils", local_if_exist, base, host_binutils),
+    "toolchain": solver("toolchain", local_if_exist, base, host_toolchain),
     "include_modules": solver("list", concat_to_submodule, base, []),
     "defines": solver("list", concat, concat, []),
     "ldscripts": solver("list", concat_add_locdir, concat_add_locdir, []),
@@ -197,6 +197,8 @@ class CXXModuleOptions:
 
 
 def cxx_options_from_modopts(modopts):
+    """Конвертировать информацию из модуля в структуру опций cxx_make"""
+
     cxxstd = "-std=" + modopts["cxxstd"]
     ccstd = "-std=" + modopts["ccstd"]
 
@@ -206,7 +208,7 @@ def cxx_options_from_modopts(modopts):
     ld_srcs_add = "".join([" -l" + l for l in modopts["libs"]])
 
     return licant.cxx_make.options(
-        binutils=modopts["binutils"],
+        toolchain=modopts["toolchain"],
         include_paths=modopts["include_paths"],
         cc_flags=cc_flags,
         cxx_flags=cxx_flags,

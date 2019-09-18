@@ -3,7 +3,7 @@ import licant.make
 import os
 
 
-class binutils:
+class toolchain:
     def __init__(self, cxx, cc, ld, ar, objdump, moc=None):
         self.cc = cc
         self.cxx = cxx
@@ -16,15 +16,23 @@ class binutils:
         return str(self.__dict__)
 
 
-host_binutils = binutils(
+host_toolchain = toolchain(
     cxx="c++", cc="cc", ld="ld", ar="ar", objdump="objdump", moc="moc"  # Qt support
 )
 
+def toolchain_gcc(prefix):
+    return toolchain(
+        cc=prefix+"gcc",
+        cxx=prefix+"g++",
+        ld=prefix+"ld",
+        ar=prefix+"ar",
+        objdump=prefix+"objdump",
+        moc="moc")
 
 class options:
     def __init__(
         self,
-        binutils=host_binutils,
+        toolchain=host_toolchain,
         include_paths=None,
         defines=None,
         cxx_flags="",
@@ -33,7 +41,7 @@ class options:
         ld_srcs_add="",
         ldscripts=None,
     ):
-        self.binutils = binutils
+        self.toolchain = toolchain
         self.incopt = licant.util.flag_prefix("-I", include_paths)
         self.defopt = licant.util.flag_prefix("-D", defines)
         self.ldscripts = licant.util.flag_prefix("-T", ldscripts)
@@ -41,13 +49,13 @@ class options:
         self.cc_flags = cc_flags
         self.ld_flags = ld_flags
         self.ld_srcs_add = ld_srcs_add
-        self.execrule = "{opts.binutils.cxx} {opts.ld_flags} -Wl,--start-group {srcs} {opts.ld_srcs_add} -Wl,--end-group -o {tgt} {opts.ldscripts}"
-        self.dynlibrule = "{opts.binutils.cxx} --shared {opts.ld_flags} -Wl,--start-group {srcs} {opts.ld_srcs_add} -Wl,--end-group -o {tgt} {opts.ldscripts}"
-        self.cxxobjrule = "{opts.binutils.cxx} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cxx_flags}"
-        self.ccobjrule = "{opts.binutils.cc} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cc_flags}"
-        self.cxxdeprule = "{opts.binutils.cxx} -MM {src} > {tgt} {opts.incopt} {opts.defopt} {opts.cxx_flags}"
-        self.ccdeprule = "{opts.binutils.cc} -MM {src} > {tgt} {opts.incopt} {opts.defopt} {opts.cc_flags}"
-        self.mocrule = "{opts.binutils.moc} {src} > {tgt}"
+        self.execrule = "{opts.toolchain.cxx} {opts.ld_flags} -Wl,--start-group {srcs} {opts.ld_srcs_add} -Wl,--end-group -o {tgt} {opts.ldscripts}"
+        self.dynlibrule = "{opts.toolchain.cxx} --shared {opts.ld_flags} -Wl,--start-group {srcs} {opts.ld_srcs_add} -Wl,--end-group -o {tgt} {opts.ldscripts}"
+        self.cxxobjrule = "{opts.toolchain.cxx} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cxx_flags}"
+        self.ccobjrule = "{opts.toolchain.cc} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cc_flags}"
+        self.cxxdeprule = "{opts.toolchain.cxx} -MM {src} > {tgt} {opts.incopt} {opts.defopt} {opts.cxx_flags}"
+        self.ccdeprule = "{opts.toolchain.cc} -MM {src} > {tgt} {opts.incopt} {opts.defopt} {opts.cc_flags}"
+        self.mocrule = "{opts.toolchain.moc} {src} > {tgt}"
 
 
 cxx_ext_list = ["cpp", "cxx"]
