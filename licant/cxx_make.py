@@ -61,6 +61,7 @@ class options:
 		self.ld_srcs_add = ld_srcs_add
 		self.execrule = "{opts.toolchain.cxx} {opts.ld_flags} -Wl,--start-group {srcs} {opts.ld_srcs_add} -Wl,--end-group -o {tgt} {opts.ldscripts}"
 		self.dynlibrule = "{opts.toolchain.cxx} --shared {opts.ld_flags} -Wl,--start-group {srcs} {opts.ld_srcs_add} -Wl,--end-group -o {tgt} {opts.ldscripts}"
+		self.statlibrule = "{opts.toolchain.ar} rcs {tgt} {srcs}"
 		self.cxxobjrule = "{opts.toolchain.cxx} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cxx_flags}"
 		self.ccobjrule = "{opts.toolchain.cc} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cc_flags}"
 		self.cxxdeprule = "{opts.toolchain.cxx} -MM {src} > {tgt} {opts.incopt} {opts.defopt} {opts.cxx_flags}"
@@ -187,9 +188,20 @@ def dynamic_library(tgt, srcs, opts=options(), message="DYNLIB {tgt}"):
 		)
 	)
 
+def static_library(tgt, srcs, opts=options(), message="STATLIB {tgt}"):
+	core.add(
+		licant.make.FileTarget(
+			opts=opts,
+			tgt=tgt,
+			build=licant.make.Executor(opts.statlibrule),
+			srcs=" ".join(srcs),
+			deps=srcs,
+			message=message,
+		)
+	)
 
 def make_gcc_binutils(pref):
-	return binutils(
+	return toolchain(
 		cxx=pref + "-g++",
 		cc=pref + "-gcc",
 		ld=pref + "-ld",

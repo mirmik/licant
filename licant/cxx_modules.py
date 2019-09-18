@@ -295,6 +295,10 @@ def dynlib(srcs, opts):
     licant.cxx_make.dynamic_library(tgt=opts["target"], srcs=srcs, opts=cxxopts)
     return opts["target"]
 
+def statlib(srcs, opts):
+    cxxopts = cxx_options_from_modopts(opts)
+    licant.cxx_make.static_library(tgt=opts["target"], srcs=srcs, opts=cxxopts)
+    return opts["target"]
 
 def virtual(srcs, opts):
     licant.core.target(tgt=opts["target"], deps=srcs)
@@ -446,12 +450,14 @@ def prepare_targets(name, impl=None, **kwargs):
 
         if locopts["type"] == "application":
             return ([executable(locobjs + submodules_results, locopts)], locopts)
-        if locopts["type"] == "shared_library":
+        elif locopts["type"] == "shared_library":
             return ([dynlib(locobjs + submodules_results, locopts)], locopts)
+        elif locopts["type"] == "static_library":
+            return ([statlib(locobjs + submodules_results, locopts)], locopts)
         elif locopts["type"] == "objects":
             return (locobjs + submodules_results, locopts)
         else:
-            print("Wrong type of assemble: {}", gu.red(locopts["type"]))
+            print("Wrong type of assemble: {}".format(gu.red(locopts["type"])))
             exit(-1)
 
     res, locopts = modmake(name, impl, opts)
@@ -473,14 +479,20 @@ def task(name, target, impl, type, **kwargs):
 def application(name, target=None, impl=None, type="application", **kwargs):
     return task(name, target, impl, type, **kwargs)
 
-
 def shared_library(name, target=None, impl=None, type="shared_library", **kwargs):
     return task(name, target, impl, type, **kwargs)
 
+def static_library(name, target=None, impl=None, type="static_library", **kwargs):
+    return task(name, target, impl, type, **kwargs)
 
 def objects(name, target=None, impl=None, type="objects", **kwargs):
     return task(name, target, impl, type, **kwargs)
 
+def library(*args, shared=True, **kwargs):
+    if shared:
+        return shared_library(*args, **kwargs)
+    else:
+        return static_library(*args, **kwargs)
 
 def print_collect_list(target, *args):
     if len(args) > 0:

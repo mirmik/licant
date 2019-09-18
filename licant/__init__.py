@@ -10,6 +10,8 @@ from licant.core import get_target
 from licant.make import copy, fileset, makefile, source
 from licant.cxx_modules import application as cxx_application
 from licant.cxx_modules import shared_library as cxx_shared_library
+from licant.cxx_modules import static_library as cxx_static_library
+from licant.cxx_modules import library as cxx_library
 from licant.cxx_modules import objects as cxx_objects
 
 from licant.modules import module, implementation, submodule
