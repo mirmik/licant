@@ -16,6 +16,7 @@ from licant.cxx_modules import objects as cxx_objects
 
 from licant.modules import module, implementation, submodule
 from licant.modules import module_default_implementation as module_defimpl
+from licant.modules import module_default_implementation
 from licant.util import error
 
 import licant.scripter
