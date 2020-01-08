@@ -4,7 +4,7 @@ import licant.make
 import glob
 
 error_in_install_library = False
-termux_dir = "/data/data/com.termux/files/home"
+termux_dir = "/data/data/com.termux/files"
 
 is_termux = "ANDROID_ROOT" in os.environ
 is_windows = sys.platform == 'win32'
