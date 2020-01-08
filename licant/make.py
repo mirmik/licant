@@ -166,6 +166,7 @@ def source(tgt, deps=[]):
     target.dirkeep = licant.util.do_nothing
     target.update_status = UpdateStatus.Keeped
     core.add(target)
+    return tgt
 
 
 def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
@@ -179,6 +180,7 @@ def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
             message=message,
         )
     )
+    return tgt
 
 def makefile(tgt, deps, do, **kwargs):
     """Make the file copy target."""
@@ -194,6 +196,7 @@ def makefile(tgt, deps, do, **kwargs):
 def fileset(tgt, targets, **kwargs):
     """Make a fileset."""
     core.add(FileSet(tgt=tgt, targets=targets, **kwargs))
+    return tgt
 
 
 def if_file_and_exist(target):
