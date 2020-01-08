@@ -64,17 +64,18 @@ path = find_application_path()
 headers_path = find_headers_path()
 libraries_path = find_libraries_path()
 		
-def install_application(src, newname=None):
+def install_application(src, dst, tgt=None):
 	if error_in_install_library:
 		return None
 
-	if newname is None:
-		newname = os.path.basename(src)
+	#if newname is None:
+	#	newname = os.path.basename(src)
 
-	tgt = os.path.join(path, newname)
-	licant.make.copy(tgt=tgt, src=src)
-
-	return tgt
+	apptgt = os.path.join(path, dst)
+	if tgt is None:
+		tgt = apptgt
+	licant.make.copy(tgt=apptgt, src=src)
+	return licant.fileset(tgt=tgt, targets=[ apptgt ])
 
 def install_headers(tgtdir, srcdir, patterns=("*.h", "*.hxx")):
 	srcdir = os.path.abspath(srcdir)
