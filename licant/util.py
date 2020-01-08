@@ -4,6 +4,7 @@ import inspect
 import types
 import re
 
+import fnmatch
 import functools
 import inspect
 import warnings
@@ -244,3 +245,10 @@ def get_actions(target):
     return sorted(clsactions)
 
     # return target.__dict__
+
+def recursive_glob(treeroot, pattern):
+    results = []
+    for base, dirs, files in os.walk(treeroot):
+        goodfiles = fnmatch.filter(files, pattern)
+        results.extend(os.path.join(base, f) for f in goodfiles)
+    return results

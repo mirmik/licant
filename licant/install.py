@@ -2,6 +2,7 @@ import os
 import sys
 import licant.make
 import glob
+import licant.util
 
 error_in_install_library = False
 termux_dir = "/data/data/com.termux/files"
@@ -76,7 +77,7 @@ def install_application(src, newname=None):
 	return tgt
 
 def install_headers(tgtdir, srcdir, patterns=("*.h", "*.hxx")):
-	lsts = [ glob.glob(os.path.join(os.path.abspath(srcdir), "**", p)) for p in patterns ]
+	lsts = [ licant.util.recursive_glob(os.path.abspath(srcdir), p) for p in patterns ]
 	
 	headers = []
 	for lst in lsts:
