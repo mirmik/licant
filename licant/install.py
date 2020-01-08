@@ -78,6 +78,7 @@ def install_application(src, newname=None):
 
 def install_headers(tgtdir, srcdir, patterns=("*.h", "*.hxx")):
 	lsts = [ licant.util.recursive_glob(os.path.abspath(srcdir), p) for p in patterns ]
+	print(lsts)
 	
 	headers = []
 	for lst in lsts:
