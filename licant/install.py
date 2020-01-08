@@ -12,7 +12,9 @@ else:
 	for p in path_list:
 		print(p)
 		if "/usr/bin" in p:
-			path = p 
+			path = p
+			print(f"path found: {path}")
+			break 
 	else:
 		print("Warning: Install path not found")
 		
