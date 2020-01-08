@@ -11,6 +11,7 @@ else:
 	print("DebugMode")
 	for p in path_list:
 		print(p)
+		print("/usr/bin" in p)
 		if "/usr/bin" in p:
 			path = p
 			print(f"path found: {path}")
