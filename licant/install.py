@@ -76,7 +76,7 @@ def install_application(src, newname=None):
 	return tgt
 
 def install_headers(tgtdir, srcdir, patterns=("*.h", "*.hxx")):
-	lsts = [ glob.glob(os.path.join(os.path.abspath(srcdir), p)) for p in patterns ]
+	lsts = [ glob.glob(os.path.join(os.path.abspath(srcdir), p), recursive=True) for p in patterns ]
 	
 	headers = []
 	for lst in lsts:
