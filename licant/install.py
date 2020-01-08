@@ -2,7 +2,7 @@ import os
 import sys
 import licant.make
 
-error_in_install_library = True
+error_in_install_library = False
 path_list = os.environ["PATH"].split(":")
 
 if "/usr/local/bin" in path_list:
@@ -18,6 +18,7 @@ else:
 			break 
 	else:
 		print("Warning: Install path not found")
+		error_in_install_library = True
 		
 def install_application(src, newname=None):
 	if error_in_install_library:
