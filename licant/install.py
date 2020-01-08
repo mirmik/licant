@@ -102,7 +102,7 @@ def install_shared_library(src, newname=None):
 
 	return tgt
 
-def install_library(libtgt, hroot, headers, headers_patterns=("*.h", "*.hxx")):
+def install_library(tgt, libtgt, hroot, headers, headers_patterns=("*.h", "*.hxx")):
 	if error_in_install_library:
 		return None
 
@@ -111,4 +111,4 @@ def install_library(libtgt, hroot, headers, headers_patterns=("*.h", "*.hxx")):
 
 	tgts = [ htgt, ltgt ]
 
-	return licant.fileset(tgt=libtgt+"with_headers", targets=tgts)
+	return licant.fileset(tgt=tgt, targets=tgts)
