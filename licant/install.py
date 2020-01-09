@@ -73,7 +73,7 @@ def install_application(src, dst, tgt=None):
 	licant.make.copy(tgt=apptgt, src=src)
 	return licant.fileset(tgt=tgt, targets=[ apptgt ])
 
-def install_headers(tgtdir, srcdir, patterns=("*.h", "*.hxx")):
+def install_headers(tgtdir, srcdir, patterns=("*.h", "*.hxx"), adddeps=[]):
 	srcdir = os.path.abspath(srcdir)
 	lsts = [ licant.util.recursive_glob(os.path.abspath(srcdir), p) for p in patterns ]
 	#print(lsts)
@@ -85,7 +85,7 @@ def install_headers(tgtdir, srcdir, patterns=("*.h", "*.hxx")):
 	for h in headers:
 		licant.source(h)
 
-	targets = [ licant.copy(src=h, tgt=os.path.join(headers_path, tgtdir, os.path.relpath(h, srcdir))) for h in headers ]
+	targets = [ licant.copy(src=h, tgt=os.path.join(headers_path, tgtdir, os.path.relpath(h, srcdir)), adddeps=adddeps) for h in headers ]
 	full_target = licant.fileset(tgt="headers://"+srcdir, targets=targets)	
 
 	return full_target
@@ -107,7 +107,7 @@ def install_library(tgt, libtgt, hroot, headers, headers_patterns=("*.h", "*.hxx
 		return None
 
 	ltgt = install_shared_library(libtgt)
-	htgt = install_headers(tgtdir=hroot, srcdir=headers, patterns=headers_patterns)
+	htgt = install_headers(tgtdir=hroot, srcdir=headers, patterns=headers_patterns, adddeps=[libtgt])
 
 	tgts = [ htgt, ltgt ]
 
