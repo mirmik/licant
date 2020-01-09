@@ -19,13 +19,9 @@ def find_application_path():
 		path = "/usr/local/bin"
 	
 	else:
-		print("DebugMode")
 		for p in path_list:
-			print(p)
-			print("/usr/bin" in p)
 			if "/usr/bin" in p:
 				path = p
-				print(f"path found: {path}")
 				break 
 		else:
 			print("Warning: Install path not found")
