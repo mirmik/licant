@@ -112,8 +112,12 @@ def install_library(tgt, libtgt, hroot, headers, headers_patterns=("*.h", "*.hxx
 	tgts = [ htgt, ltgt ]
 
 	if uninstall:
+		# Add uninstall target as fake makefile 
+		# with weak targets binding.
+		# makefile routine changed to 'clean'
+		# TODO: Create explicit Uninstall target in .make.py
 		licant.core.core.add(
-        licant.make.MakeFileTarget(
+        	licant.make.MakeFileTarget(
         	    tgt=uninstall,
         	    build=licant.make.MakeFileTarget.clean,
         	    makefile=licant.make.MakeFileTarget.clean,
