@@ -88,7 +88,7 @@ def install_headers(tgtdir, srcdir, patterns=("*.h", "*.hxx"), adddeps=[]):
 	targets = [ licant.copy(src=h, tgt=os.path.join(headers_path, tgtdir, os.path.relpath(h, srcdir)), adddeps=adddeps) for h in headers ]
 	full_target = licant.fileset(tgt="headers://"+srcdir, targets=targets)	
 
-	return full_target
+	return full_target, targets
 
 def install_shared_library(src, newname=None):
 	if error_in_install_library:
@@ -102,13 +102,24 @@ def install_shared_library(src, newname=None):
 
 	return tgt
 
-def install_library(tgt, libtgt, hroot, headers, headers_patterns=("*.h", "*.hxx")):
+def install_library(tgt, libtgt, hroot, headers, headers_patterns=("*.h", "*.hxx"), uninstall=None):
 	if error_in_install_library:
 		return None
 
 	ltgt = install_shared_library(libtgt)
-	htgt = install_headers(tgtdir=hroot, srcdir=headers, patterns=headers_patterns, adddeps=[libtgt])
+	htgt, rawtgts = install_headers(tgtdir=hroot, srcdir=headers, patterns=headers_patterns, adddeps=[libtgt])
 
 	tgts = [ htgt, ltgt ]
+
+	if uninstall:
+		licant.core.core.add(
+        licant.make.MakeFileTarget(
+        	    tgt=uninstall,
+        	    build=licant.make.MakeFileTarget.clean,
+        	    makefile=licant.make.MakeFileTarget.clean,
+        	    deps=[],
+        	    weakdeps=rawtgts + [ltgt]
+        	)
+    	)
 
 	return licant.fileset(tgt=tgt, targets=tgts)

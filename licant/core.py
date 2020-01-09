@@ -48,7 +48,7 @@ class Core:
         return SubTree(self, root)
 
     def depends_as_set(self, tgt, incroot=True):
-        """"""
+        """TODO: as_set, but list returned???"""
         res = set()
         if incroot:
             res.add(tgt)
@@ -72,6 +72,7 @@ class SubTree:
         self.root = root
         self.core = core
         self.depset = core.depends_as_set(root)
+        self.weakdepsset = list(get_target(root).weakdeps)
 
     #    def update(self):
     #        SubTree.__init__(self, root)
@@ -83,7 +84,7 @@ class SubTree:
         sum = 0
         ret = None
 
-        for d in self.depset:
+        for d in self.depset + self.weakdepsset:
             target = self.core.get(d)
             if cond(target):
                 ret = target.invoke(ops)
@@ -243,9 +244,10 @@ class SubTree:
 class Target:
     __actions__ = {"actlist"}
 
-    def __init__(self, tgt, deps, actions=None, __help__=None, **kwargs):
+    def __init__(self, tgt, deps, weakdeps=[], actions=None, __help__=None, **kwargs):
         self.tgt = tgt
         self.deps = set(deps)
+        self.weakdeps = set(weakdeps)
         for k, v in kwargs.items():
             setattr(self, k, v)
 
