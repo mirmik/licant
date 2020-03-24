@@ -38,6 +38,16 @@ def toolchain_gcc(prefix):
 		objdump=prefix+"objdump",
 		moc="moc")
 
+def clang_toolchain():
+	return toolchain(
+		cc="clang++",
+		cxx="clang",
+		ld="ld",
+		ar="ar",
+		objdump="objdump",
+		moc="moc")
+
+
 
 class options:
 	def __init__(

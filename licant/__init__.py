@@ -47,7 +47,13 @@ class Object(object):
 	pass
 
 glbfunc = Object()
+attribute_store = Object()
 
 def global_function(var):
 	setattr(glbfunc, var.__name__, var)
 
+def import_attribute(name, var):
+	setattr(attribute_store, name, var)
+
+def attribute(name):
+	return getattr(attribute_store, name)
