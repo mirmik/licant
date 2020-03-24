@@ -68,6 +68,9 @@ class options:
 		self.ccdeprule = "{opts.toolchain.cc} -MM {src} > {tgt} {opts.incopt} {opts.defopt} {opts.cc_flags}"
 		self.mocrule = "{opts.toolchain.moc} {src} > {tgt}"
 
+	def __str__(self):
+		return f"(toolchain:{self.toolchain}, incopt:{self.incopt}, defopt:{self.defopt}, cxx_flags:{self.cxx_flags}, cc_flags:{self.cc_flags}, ld_flags:{self.ld_flags}, ld_srcs_add:{self.ld_srcs_add}, ldscripts:{self.ldscripts})"
+
 
 cxx_ext_list = ["cpp", "cxx"]
 cc_ext_list = ["cc", "c"]
