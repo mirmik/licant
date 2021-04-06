@@ -166,12 +166,24 @@ def print_modules_list(target, *args):
         if isinstance(v, VariantModule):
             print("{}: {}".format(k, list(v.impls.keys())))
 
+def print_module(target, *args):
+    if len(args) == 0:
+        print("Usage: EXECUTABLE m print NAME\nUsage: EXECUTABLE m print NAME IMPL\n")
+        return
+
+    if len(args) == 1:
+        module = mlibrary.get_default(args[0])
+    else:
+        module = mlibrary.get(args[0], args[1])
+    
+    print(module.__dict__)    
 
 modules_target = licant.core.Target(
     tgt="m",
     deps=[],
     list=print_modules_list,
-    actions={"list"},
+    print=print_module,
+    actions={"list", "print"},
     __help__="Info about modules",
 )
 

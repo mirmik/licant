@@ -16,6 +16,7 @@ _rlock = threading.RLock()
 
 def do_execute(target, rule, msgfield, prefix=None):
     def sprint(*args, **kwargs):
+        """print for multithread build"""
         with _rlock:
             print(*args, **kwargs)
 
@@ -52,7 +53,7 @@ class Executor:
 
 
 class MakeFileTarget(UpdatableTarget):
-    __actions__ = {"actlist", "build", "makefile", "clean", "clr"}
+    __actions__ = UpdatableTarget.__actions__.union({"actlist", "makefile", "clean"})
 
     def __init__(self, tgt, deps, **kwargs):
         UpdatableTarget.__init__(self, tgt, deps, **kwargs)
@@ -64,11 +65,6 @@ class MakeFileTarget(UpdatableTarget):
 
     def makefile(self):
         return self.recurse_update()
-        # stree = subtree(self.tgt)
-        # stree.invoke_foreach(ops="dirkeep")
-        # stree.reverse_recurse_invoke(
-        #    ops="update_if_need", threads=core.runtime["threads"])
-
 
 class FileTarget(MakeFileTarget):
     __actions__ = MakeFileTarget.__actions__.union({"build", "clr"})

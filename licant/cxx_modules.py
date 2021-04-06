@@ -125,7 +125,8 @@ cxx_module_field_list = {
     "srcdir": solver("str", local, base, "."),
     "objects": solver("list", local_add_srcdir, concat_add_srcdir, []),
     "sources": solver("list", local_add_srcdir, concat_add_srcdir, []),
-    "moc": solver("list", local_add_srcdir, concat_add_srcdir, []),
+    "qt_moc": solver("list", local_add_srcdir, concat_add_srcdir, []),
+    "qt_ui": solver("list", local_add_srcdir, concat_add_srcdir, []),
     "libs": solver("list", concat, concat, []),
     "target": solver("str", local_if_exist, base, "target"),
     "include_paths": solver("list", concat_add_locdir, concat_add_locdir, []),
@@ -138,6 +139,7 @@ cxx_module_field_list = {
     "type": solver("str", local, base, "objects"),
     "builddir": solver("str", local_if_exist, base, "build"),
     "toolchain": solver("toolchain", local_if_exist, base, host_toolchain),
+    "optimize": solver("str", local_if_exist, base, ""),
     "include_modules": solver("list", concat_to_submodule, base, []),
     "defines": solver("list", concat, concat, []),
     "ldscripts": solver("list", concat_add_locdir, concat_add_locdir, []),
@@ -157,6 +159,7 @@ class CXXModuleOptions:
             if not k in licant.modules.special:
                 if not k in self.table:
                     print("Unresolved option: {}".format(red(k)))
+                    print("cxx_module_field_list:", cxx_module_field_list)
                     exit(-1)
 
                 if v.__class__.__name__ != self.table[k].type:
@@ -216,22 +219,32 @@ def cxx_options_from_modopts(modopts):
         ldscripts=modopts["ldscripts"],
         ld_flags=modopts["ld_flags"],
         ld_srcs_add=ld_srcs_add,
+        optimize=modopts["optimize"],
     )
 
 
-def build_paths(srcs, opts, ext):
+def build_paths(srcs, opts, ext, prefix=None, builddir=None):
+    if builddir is None:
+        builddir = opts.opts["builddir"]
+
     objs = []
+    
     for s in srcs:
+        if prefix:
+            split = os.path.split(s)
+            s = os.path.join(*split[:-1], prefix + split[-1])
         if os.path.isabs(s):
-            objs.append(opts.opts["builddir"] + gu.changeext(s, ext))
+            s = builddir + gu.changeext(s, ext)
+            objs.append(s)
         else:
             objs.append(
                 os.path.normpath(
                     os.path.join(
-                        opts.opts["builddir"], gu.changeext(s, ext).replace("..", "__")
+                        builddir, gu.changeext(s, ext).replace("..", "__")
                     )
                 )
             )
+    
     return objs
 
 
@@ -245,15 +258,23 @@ def sources_paths(opts):
     return ret
 
 
-def moc_paths(opts):
+def qt_moc_paths(opts):
     ret = []
-    for s in opts["moc"]:
+    for s in opts["qt_moc"]:
         if "*" in s:
             ret.extend(glob.glob(s))
         else:
             ret.append(s)
     return ret
 
+def qt_ui_paths(opts):
+    ret = []
+    for s in opts["qt_ui"]:
+        if "*" in s:
+            ret.extend(glob.glob(s))
+        else:
+            ret.append(s)
+    return ret
 
 def link_objects(srcs, objs, deps, cxxopts, adddeps):
 
@@ -278,11 +299,15 @@ def link_objects(srcs, objs, deps, cxxopts, adddeps):
         )
 
 
-def link_moc(mocs, srcs, cxxopts, adddeps):
+def link_qt_moc(mocs, srcs, cxxopts, adddeps):
     for m, s in zip(mocs, srcs):
         licant.make.source(m)
-        licant.cxx_make.moc(src=m, tgt=s, opts=cxxopts, deps=[m] + adddeps)
+        licant.cxx_make.qt_moc(src=m, tgt=s, opts=cxxopts, deps=[m] + adddeps)
 
+def link_qt_ui(uis, srcs, cxxopts, adddeps):
+    for m, s in zip(uis, srcs):
+        licant.make.source(m)
+        licant.cxx_make.qt_uic(src=m, tgt=s, opts=cxxopts, deps=[m] + adddeps)
 
 def executable(srcs, opts):
     cxxopts = cxx_options_from_modopts(opts)
@@ -419,23 +444,38 @@ def prepare_targets(name, impl=None, **kwargs):
         licant.make.fileset(name + "__local_headers__", local_headers_targets)
         adddeps.append(name + "__local_headers__")
 
-        cxxopts = cxx_options_from_modopts(locopts)
-
         locsrcs = sources_paths(locopts)
         locobjs = build_paths(locsrcs, locopts, "o")
         locdeps = build_paths(locsrcs, locopts, "d")
 
-        if len(locopts["moc"]) != 0:
-            locmoc = moc_paths(locopts)
+        cxxopts = cxx_options_from_modopts(locopts)
+
+        if len(locopts["qt_ui"]) != 0:
+            uidir = os.path.join(locopts.opts["builddir"], "ui")
+            locui = qt_ui_paths(locopts)
+            locuihxx = build_paths(locui, locopts, "h", 
+                builddir=uidir, 
+                prefix="ui_")
+            link_qt_ui(locui, locuihxx, cxxopts, adddeps)
+            adddeps.extend(locuihxx)
+
+            if uidir not in locopts.opts["include_paths"]:
+                locopts.opts["include_paths"].append(uidir)
+
+            # Recompile with ui include path
+            cxxopts = cxx_options_from_modopts(locopts)
+
+        if len(locopts["qt_moc"]) != 0:
+            locmoc = qt_moc_paths(locopts)
             locmoccxx = build_paths(locmoc, locopts, "h.cxx")
             locmocobjs = build_paths(locmoc, locopts, "h.cxx.o")
             locmocdeps = build_paths(locmoc, locopts, "h.cxx.d")
-            link_moc(locmoc, locmoccxx, cxxopts, adddeps)
+            link_qt_moc(locmoc, locmoccxx, cxxopts, adddeps)
 
             locsrcs.extend(locmoccxx)
             locobjs.extend(locmocobjs)
             locdeps.extend(locmocdeps)
-
+            
         link_objects(locsrcs, locobjs, locdeps, cxxopts, adddeps)
 
         if len(locopts["objects"]) != 0:

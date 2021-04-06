@@ -9,7 +9,12 @@ import re
 
 
 class WrongAction(Exception):
-    pass
+    def __init__(self, obj, actname):
+        self.obj = obj
+        self.actname = actname
+
+    def __str__(self):
+        return f"WrongAction: obj:{self.obj} actname:{self.actname} class:{self.obj.__class__} dict:{self.obj.__dict__}"
 
 
 class NoneDictionary(dict):
@@ -242,7 +247,7 @@ class SubTree:
 
 
 class Target:
-    __actions__ = {"actlist"}
+    __actions__ = {"actlist", "print"}
 
     def __init__(self, tgt, deps, weakdeps=[], actions=None, __help__=None, **kwargs):
         self.tgt = tgt
@@ -261,6 +266,9 @@ class Target:
 
     def actlist(self):
         print(licant.util.get_actions(self))
+
+    def print(self):
+        print(self.__dict__)
 
     def hasaction(self, act):
         return act in self.__actions__
@@ -287,7 +295,7 @@ class Target:
         func = getattr(self, funcname, None)
         if func is None:
             if critical:
-                raise WrongAction(func)
+                raise WrongAction(self, funcname)
             return None
 
         if isinstance(func, types.MethodType):

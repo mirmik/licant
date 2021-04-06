@@ -4,13 +4,14 @@ import os
 
 
 class toolchain:
-	def __init__(self, cxx, cc, ld, ar, objdump, moc=None):
+	def __init__(self, cxx, cc, ld, ar, objdump, moc=None, uic=None):
 		self.cc = cc
 		self.cxx = cxx
 		self.ld = ld
 		self.ar = ar
 		self.objdump = objdump
 		self.moc = moc
+		self.uic = uic
 
 	def __repr__(self):
 		return str(self.__dict__)
@@ -22,8 +23,9 @@ host_toolchain = toolchain(
 	ld="ld", 
 	ar="ar", 
 	objdump="objdump", 
-	moc="moc"  # Qt support
-)
+	moc="moc",
+	uic="uic"
+	)
 
 
 def toolchain_gcc(prefix):
@@ -36,7 +38,8 @@ def toolchain_gcc(prefix):
 		ld=prefix+"ld",
 		ar=prefix+"ar",
 		objdump=prefix+"objdump",
-		moc="moc")
+		moc="moc",
+		uic="uic")
 
 def clang_toolchain():
 	return toolchain(
@@ -45,7 +48,8 @@ def clang_toolchain():
 		ld="ld",
 		ar="ar",
 		objdump="objdump",
-		moc="moc")
+		moc="moc",
+		uic="uic")
 
 
 
@@ -60,6 +64,7 @@ class options:
 		ld_flags="",
 		ld_srcs_add="",
 		ldscripts=None,
+		optimize="",
 	):
 		self.toolchain = toolchain
 		self.incopt = licant.util.flag_prefix("-I", include_paths)
@@ -69,14 +74,16 @@ class options:
 		self.cc_flags = cc_flags
 		self.ld_flags = ld_flags
 		self.ld_srcs_add = ld_srcs_add
+		self.optimize = optimize
 		self.execrule = "{opts.toolchain.cxx} {opts.ld_flags} -Wl,--start-group {srcs} {opts.ld_srcs_add} -Wl,--end-group -o {tgt} {opts.ldscripts}"
 		self.dynlibrule = "{opts.toolchain.cxx} --shared {opts.ld_flags} -Wl,--start-group {srcs} {opts.ld_srcs_add} -Wl,--end-group -o {tgt} {opts.ldscripts}"
 		self.statlibrule = "{opts.toolchain.ar} rcs {tgt} {srcs}"
-		self.cxxobjrule = "{opts.toolchain.cxx} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cxx_flags}"
-		self.ccobjrule = "{opts.toolchain.cc} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cc_flags}"
+		self.cxxobjrule = "{opts.toolchain.cxx} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cxx_flags} {opts.optimize}"
+		self.ccobjrule = "{opts.toolchain.cc} -c {src} -o {tgt} {opts.incopt} {opts.defopt} {opts.cc_flags} {opts.optimize}"
 		self.cxxdeprule = "{opts.toolchain.cxx} -MM {src} > {tgt} {opts.incopt} {opts.defopt} {opts.cxx_flags}"
 		self.ccdeprule = "{opts.toolchain.cc} -MM {src} > {tgt} {opts.incopt} {opts.defopt} {opts.cc_flags}"
 		self.mocrule = "{opts.toolchain.moc} {src} > {tgt}"
+		self.uicrule = "{opts.toolchain.uic} {src} > {tgt}"
 
 	def __str__(self):
 		return f"(toolchain:{self.toolchain}, incopt:{self.incopt}, defopt:{self.defopt}, cxx_flags:{self.cxx_flags}, cc_flags:{self.cc_flags}, ld_flags:{self.ld_flags}, ld_srcs_add:{self.ld_srcs_add}, ldscripts:{self.ldscripts})"
@@ -119,7 +126,7 @@ def object(src, tgt, opts=options(), type=None, deps=None, message="OBJECT {tgt}
 	)
 
 
-def moc(src, tgt, opts=options(), type=None, deps=None, message="MOC {tgt}"):
+def qt_moc(src, tgt, opts=options(), type=None, deps=None, message="MOC {tgt}"):
 	if deps is None:
 		deps = [src]
 
@@ -134,6 +141,21 @@ def moc(src, tgt, opts=options(), type=None, deps=None, message="MOC {tgt}"):
 		)
 	)
 
+
+def qt_uic(src, tgt, opts=options(), type=None, deps=None, message="UIC {tgt}"):
+	if deps is None:
+		deps = [src]
+
+	core.add(
+		licant.make.FileTarget(
+			opts=opts,
+			tgt=tgt,
+			src=src,
+			deps=deps,
+			build=licant.make.Executor(opts.uicrule),
+			message=message,
+		)
+	)
 
 def depend(
 	src, tgt, opts=options(), type=None, deps=None, message="DEPENDS {tgt}", **kwargs
