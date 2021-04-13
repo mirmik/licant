@@ -2,14 +2,16 @@ from licant.core import core
 import licant.make
 import os
 
+class Options: pass
 
 class toolchain:
-	def __init__(self, cxx, cc, ld, ar, objdump, moc=None, uic=None):
+	def __init__(self, cxx, cc, ld, ar, objdump, moc=None, uic=None, objcopy="objcopy"):
 		self.cc = cc
 		self.cxx = cxx
 		self.ld = ld
 		self.ar = ar
 		self.objdump = objdump
+		self.objcopy = objcopy
 		self.moc = moc
 		self.uic = uic
 
@@ -24,7 +26,8 @@ host_toolchain = toolchain(
 	ar="ar", 
 	objdump="objdump", 
 	moc="moc",
-	uic="uic"
+	uic="uic",
+	objcopy="objcopy"
 	)
 
 
@@ -38,6 +41,7 @@ def toolchain_gcc(prefix):
 		ld=prefix+"ld",
 		ar=prefix+"ar",
 		objdump=prefix+"objdump",
+		objcopy=prefix+"objcopy",
 		moc="moc",
 		uic="uic")
 
@@ -48,6 +52,7 @@ def clang_toolchain():
 		ld="ld",
 		ar="ar",
 		objdump="objdump",
+		objcopy="objcopy",
 		moc="moc",
 		uic="uic")
 
@@ -255,6 +260,27 @@ def disassembler(target, *args):
 	cmd = "{} -D {} > {}".format(_target.opts.binutils.objdump, _target.tgt, args[1])
 	print(cmd)
 	os.system(cmd)
+
+def objcopy(toolchain, tgt, src, format, sections, message="OBJCOPY {tgt}"):
+	sections_str = " ".join([ f"-j {s}" for s in sections ])
+	rule = "{opts.toolchain.objcopy} -O {opts.format} {opts.sections_str} {opts.src} {opts.tgt}"
+
+	opts = Options()
+	opts.toolchain = toolchain
+	opts.sections_str = sections_str
+	opts.format = format
+	opts.src = src
+	opts.tgt = tgt
+
+	core.add(
+		licant.make.FileTarget(
+			opts = opts,
+			deps=[src],
+			tgt = tgt,
+			build=licant.make.Executor(rule),
+			message=message,
+		)
+	)
 
 
 binutils_target = licant.core.Target(

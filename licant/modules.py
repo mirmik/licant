@@ -63,7 +63,7 @@ class ModuleLibrary:
                         m.addimpl(impl="__none__", mod=Module(name))
                         return m.impls[impl]
 
-                    print("Unregistred implementation: {}".format(red(impl)))
+                    print("Unregistred implementation: {} (module:{})".format(red(impl), red(name)))
                     exit(-1)
 
     def set_defimpl(self, modname, impl):
