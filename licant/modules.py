@@ -66,8 +66,8 @@ class ModuleLibrary:
                     print("Unregistred implementation: {} (module:{})".format(red(impl), red(name)))
                     exit(-1)
 
-    def set_defimpl(self, modname, impl):
-        if modname in self.defimpls:
+    def set_defimpl(self, modname, impl, force=False):
+        if modname in self.defimpls and not force:
             licant.error(
                 "Default implementation for module {} setted twice : first:{}, second:{}".format(
                     licant.util.yellow(modname),
@@ -150,7 +150,7 @@ class submodule:
 
 
 def module_default_implementation(mod, impl):
-    mlibrary.set_defimpl(mod, impl)
+    mlibrary.set_defimpl(mod, impl, force=True)
 
 
 def print_modules_list(target, *args):
