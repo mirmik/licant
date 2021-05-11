@@ -40,6 +40,8 @@ def include(lib, path=None, local_tunel=None):
         init()
 
     if lib in included:
+        if path and path != included[lib]:
+            print(f"Warning: prevent library by path({path}) include becouse library been include early with another path({included[lib]})")        
         return
 
     if path is not None:

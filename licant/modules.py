@@ -67,12 +67,14 @@ class ModuleLibrary:
                     exit(-1)
 
     def set_defimpl(self, modname, impl):
-        #if modname in self.defimpls:
-        #    licant.error(
-        #        "Default implementation for module {} setted twice".format(
-        #            licant.util.yellow(modname)
-        #        )
-        #    )
+        if modname in self.defimpls:
+            licant.error(
+                "Default implementation for module {} setted twice : first:{}, second:{}".format(
+                    licant.util.yellow(modname),
+                    licant.util.yellow(self.defimpls[modname] + ":" + self.get(modname, self.defimpls[modname]).stack[-1]),
+                    licant.util.yellow(impl + ":" + self.get(modname, impl).stack[-1]),
+                )
+            )
         self.defimpls[modname] = impl
 
     def is_variant(self, name):
@@ -105,9 +107,9 @@ class ModuleLibrary:
 mlibrary = ModuleLibrary()
 
 
-def module(name, impl=None, **kwargs):
+def module(name, impl=None, default=False, **kwargs):
     if impl is not None:
-        implementation(name, impl, **kwargs)
+        implementation(name, impl, default=default, **kwargs)
         return
     implementation(name, "__default__", default=True, **kwargs)
 

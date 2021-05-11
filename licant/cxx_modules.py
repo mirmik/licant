@@ -334,6 +334,7 @@ def collect_modules(mod):
     # Альтернативная система модулей.
     mdepends_default = queue.Queue()
     mdepends = dict()
+    included_from = dict()
 
     class SortKey:
         def __init__(self):
@@ -345,6 +346,21 @@ def collect_modules(mod):
 
     setsortkey = SortKey()
 
+    def add_included_from(name, incfrom):
+        if name not in included_from:
+            included_from[name] = set()
+
+        included_from[name].add(incfrom)
+
+    def specify_implementation(name, mod, incfrom):
+        mdepends[name] = mod
+        setsortkey(mod)
+        add_included_from(name, incfrom)
+
+    def request_implementation(name, incfrom):
+        mdepends_default.put(name)
+        add_included_from(name, incfrom)
+
     def collect_modules(mod):
         if licant.core.core.runtime["trace"]:
             print("trace: collect_modules( {} )".format(mod.name))
@@ -354,7 +370,7 @@ def collect_modules(mod):
                 if md in mdepends:
                     continue
 
-                mdepends_default.put(md)
+                request_implementation(name=md, incfrom=mod.name)
 
             elif isinstance(md, tuple):
                 nmod = mlibrary.get(md[0], md[1])
@@ -368,8 +384,7 @@ def collect_modules(mod):
                         )
                     )
 
-                mdepends[md[0]] = nmod
-                setsortkey(nmod)
+                specify_implementation(name=md[0], mod=nmod, incfrom=mod.name)
 
                 if "mdepends" in nmod.opts:
                     # Сразу же выполняем обход по данному модулю
@@ -383,19 +398,22 @@ def collect_modules(mod):
 
     while not mdepends_default.empty():
         name = mdepends_default.get()
-        defmod = mlibrary.get_default(name)
+        if name in mdepends:
+            continue
 
-        mdepends[name] = defmod
-        setsortkey(defmod)
+        defmod = mlibrary.get_default(name)
+        specify_implementation(name, defmod, mod.name)
 
         if "mdepends" in defmod.opts:
             collect_modules(defmod)
+
+    for m in mdepends:
+        mdepends[m].included_from = included_from[m]
 
     return [
         mdepends[x]
         for x in sorted(mdepends, key=lambda x: mdepends[x]._SortKey__sortkey)
     ]
-
 
 def prepare_targets(name, impl=None, **kwargs):
     opts = CXXModuleOptions(**kwargs)
@@ -555,12 +573,24 @@ def print_finalopts(target, *args):
     print(licant.core.core.get(name).finalopts)
 
 
+def included_from(target, *args):
+    if len(args) > 0:
+        name = args[0]
+    else:
+        print("You should specify target name")
+        return 
+    
+    for m in sorted(collect_modules(mlibrary.get(name)), key=lambda x: x.name):
+        print(m.name, ":", m.included_from)
+
+
 modules_target = licant.core.Target(
     tgt="cxxm",
     deps=[],
     collect_modules=print_collect_list,
+    included_from=included_from,
     finalopts=print_finalopts,
-    actions={"collect_modules", "finalopts"},
+    actions={"collect_modules", "finalopts", "included_from"},
     __help__="Info about collected modules",
 )
 
