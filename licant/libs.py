@@ -44,6 +44,7 @@ def include(lib, path=None, local_tunel=None):
 
     if path is not None:
         included[lib] = path
+        print("LICANTLIB", lib, path)
         scriptq.execute(path)
         return
 
@@ -74,17 +75,18 @@ def include(lib, path=None, local_tunel=None):
 
     if not lib in libs:
         print(
-            "Unregistred library {}. Use licant-config utility or manually edit {} or {} file.".format(
+            "Unregistred library {}. Use licant-config utility or manually edit {} or {} file. NOTE: If you use local libraries, maybe you need to reorder your includes".format(
                 yellow(lib), yellow(lpath), yellow(gpath)
             )
         )
         exit(-1)
 
     included[lib] = libs[lib]
+    print("LICANTLIB", lib, included[lib])
     scriptq.execute(libs[lib])
 
 
-def print_libs(taget, *args):
+def print_system_libs(taget, *args):
     if libs is None:
         init()
 
@@ -93,8 +95,21 @@ def print_libs(taget, *args):
         print("{}: {}".format(k, libs[k]))
 
 
+def print_included_libs(taget, *args):
+    keys = sorted(included.keys())
+    for k in keys:
+        print("{}: {}".format(k, included[k]))
+
+
 libs_target = licant.core.Target(
-    tgt="l", deps=[], list=print_libs, actions={"list"}, __help__="Licant libs info"
+    tgt="l", 
+    deps=[], 
+    list=print_system_libs, 
+    included=print_included_libs, 
+    actions={
+        "list", 
+        "included"
+    }, __help__="Licant libs info"
 )
 
 licant.core.core.add(libs_target)

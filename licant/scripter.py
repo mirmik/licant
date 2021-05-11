@@ -11,6 +11,7 @@ class ScriptQueue:
         licant.make.source(sys.argv[0])
 
     def __execute(self, path):
+        print("SUBSCRIPT", path)
         licant.make.source(path)
         self.stack.append(path)
         try:
