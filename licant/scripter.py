@@ -1,8 +1,6 @@
 import sys
 import os
 import licant.util
-from licant.core import core
-from licant.make import source
 
 
 class ScriptQueue:

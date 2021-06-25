@@ -45,7 +45,7 @@ class ModuleLibrary:
         varmod.addimpl(impl, mod)
 
     def get(self, name, impl=None):
-        if not name in self.modules:
+        if name not in self.modules:
             print("The missing module {} was requested".format(red(name)))
             exit(-1)
 
@@ -63,7 +63,8 @@ class ModuleLibrary:
                         m.addimpl(impl="__none__", mod=Module(name))
                         return m.impls[impl]
 
-                    print("Unregistred implementation: {} (module:{})".format(red(impl), red(name)))
+                    print("Unregistred implementation: {} (module:{})".format(
+                        red(impl), red(name)))
                     exit(-1)
 
     def set_defimpl(self, modname, impl, force=False):
@@ -71,8 +72,10 @@ class ModuleLibrary:
             licant.error(
                 "Default implementation for module {} setted twice : first:{}, second:{}".format(
                     licant.util.yellow(modname),
-                    licant.util.yellow(self.defimpls[modname] + ":" + self.get(modname, self.defimpls[modname]).stack[-1]),
-                    licant.util.yellow(impl + ":" + self.get(modname, impl).stack[-1]),
+                    licant.util.yellow(
+                        self.defimpls[modname] + ":" + self.get(modname, self.defimpls[modname]).stack[-1]),
+                    licant.util.yellow(
+                        impl + ":" + self.get(modname, impl).stack[-1]),
                 )
             )
         self.defimpls[modname] = impl
@@ -81,7 +84,8 @@ class ModuleLibrary:
         licant.error("deprecated with 'always implementation concept'")
         if name not in self.modules:
             licant.error(
-                "Isn't registred as module ({})".format(licant.util.yellow(name))
+                "Isn't registred as module ({})".format(
+                    licant.util.yellow(name))
             )
         return isinstance(self.modules[name], VariantModule)
 
@@ -168,6 +172,7 @@ def print_modules_list(target, *args):
         if isinstance(v, VariantModule):
             print("{}: {}".format(k, list(v.impls.keys())))
 
+
 def print_module(target, *args):
     if len(args) == 0:
         print("Usage: EXECUTABLE m print NAME\nUsage: EXECUTABLE m print NAME IMPL\n")
@@ -177,8 +182,9 @@ def print_module(target, *args):
         module = mlibrary.get_default(args[0])
     else:
         module = mlibrary.get(args[0], args[1])
-    
-    print(module.__dict__)    
+
+    print(module.__dict__)
+
 
 modules_target = licant.core.Target(
     tgt="m",

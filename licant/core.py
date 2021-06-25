@@ -24,7 +24,7 @@ class NoneDictionary(dict):
     def __getitem__(self, idx):
         try:
             return dict.__getitem__(self, idx)
-        except:
+        except Exception:
             return None
 
 
@@ -61,7 +61,7 @@ class Core:
         target = self.get(tgt)
 
         for d in target.deps:
-            if not d in res:
+            if d not in res:
                 res.add(d)
                 subres = self.depends_as_set(d)
                 res = res.union(subres)
@@ -183,12 +183,13 @@ class SubTree:
                     lock.release()
 
                     if core.runtime["trace"]:
-                        print("TRACE: THREAD {0} get work {1}".format(index, w))
+                        print(
+                            "TRACE: THREAD {0} get work {1}".format(index, w))
 
                     if cond(w):
                         try:
                             ret = w.invoke(ops)
-                        except:
+                        except Exception:
                             info.err = True
                             return
                         if ret is False:
@@ -206,7 +207,8 @@ class SubTree:
 
                     if core.runtime["trace"]:
                         print(
-                            "TRACE: THREAD {0} finished with work {1}".format(index, w)
+                            "TRACE: THREAD {0} finished with work {1}".format(
+                                index, w)
                         )
 
                     continue
@@ -276,12 +278,12 @@ class Target:
     def invoke(self, funcname, *args, critical=False, **kwargs):
         """Invoke func function or method, or mthod with func name for this target
 
-		Поддерживается несколько разных типов func.
-		В качестве func может быть вызвана внешняя функция с параметром текущей цели,
-		или название локального метода.
-		critical -- Действует для строкового вызова. Если данный attr отсутствует у цели,
-		то в зависимости от данного параметра может быть возвращен None или выброшено исключение.
-		"""
+                Поддерживается несколько разных типов func.
+                В качестве func может быть вызвана внешняя функция с параметром текущей цели,
+                или название локального метода.
+                critical -- Действует для строкового вызова. Если данный attr отсутствует у цели,
+                то в зависимости от данного параметра может быть возвращен None или выброшено исключение.
+                """
         if core.runtime["trace"]:
             print(
                 "TRACE: Invoke: tgt:{}, act:{}, args:{}, kwargs:{}".format(
@@ -330,7 +332,8 @@ class UpdatableTarget(Target):
         update_status=UpdateStatus.Waiting,
         **kwargs
     ):
-        Target.__init__(self, tgt, deps, default_action=default_action, **kwargs)
+        Target.__init__(self, tgt, deps,
+                        default_action=default_action, **kwargs)
         self.update_status = update_status
 
     def update(self):
@@ -419,7 +422,6 @@ def print_targets_list(target, *args):
         keys = [m for m in keys if re.search(args[0], m)]
 
     for k in keys:
-        v = core.targets[k]
         print(k)
 
 

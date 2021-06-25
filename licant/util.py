@@ -1,4 +1,3 @@
-import sys
 import os
 import inspect
 import types
@@ -6,7 +5,6 @@ import re
 
 import fnmatch
 import functools
-import inspect
 import warnings
 
 string_types = (type(b""), type(u""))
@@ -125,7 +123,7 @@ class queue:
 
     def get(self):
         if len(self.lst) == 0:
-            raise DontHaveArg()
+            raise Exception("DontHaveArg")
 
         ret = self.lst[self.rdr]
 
@@ -211,7 +209,7 @@ def find_recursive(root, pattern, hide, debug):
 
     else:
         for d, dirs, files in os.walk(root):
-            if not hide in d:
+            if hide not in d:
                 for f in files:
                     if pattern in f:
                         path = os.path.join(d, f)
@@ -245,6 +243,7 @@ def get_actions(target):
     return sorted(clsactions)
 
     # return target.__dict__
+
 
 def recursive_glob(treeroot, pattern):
     results = []

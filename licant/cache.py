@@ -17,7 +17,7 @@ class FileCache:
         self.cache[path] = self.fileinfo(path)
 
     def get_info(self, path):
-        if not path in self.cache:
+        if path not in self.cache:
             self.update_info(path)
         return self.cache[path]
 
