@@ -96,7 +96,9 @@ class options:
         self.uicrule = "{opts.toolchain.uic} {src} > {tgt}"
 
     def __str__(self):
-        return f"(toolchain:{self.toolchain}, incopt:{self.incopt}, defopt:{self.defopt}, cxx_flags:{self.cxx_flags}, cc_flags:{self.cc_flags}, ld_flags:{self.ld_flags}, ld_srcs_add:{self.ld_srcs_add}, ldscripts:{self.ldscripts})"
+        return "(toolchain:{}, incopt:{}, defopt:{}, cxx_flags:{}, cc_flags:{}, ld_flags:{}, ld_srcs_add:{}, ldscripts:{})".format(
+                    self.toolchain, self.incopt, self.defopt, self.cxx_flags, self.cc_flags, self.ld_flags, self.ld_srcs_add, self.ldscripts
+                )
 
 
 cxx_ext_list = ["cpp", "cxx"]
@@ -272,7 +274,7 @@ def disassembler(target, *args):
 
 
 def objcopy(toolchain, tgt, src, format, sections, message="OBJCOPY {tgt}"):
-    sections_str = " ".join([f"-j {s}" for s in sections])
+    sections_str = " ".join(["-j {}".format(s) for s in sections])
     rule = "{opts.toolchain.objcopy} -O {opts.format} {opts.sections_str} {opts.src} {opts.tgt}"
 
     opts = Options()

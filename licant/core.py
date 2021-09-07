@@ -14,7 +14,7 @@ class WrongAction(Exception):
         self.actname = actname
 
     def __str__(self):
-        return f"WrongAction: obj:{self.obj} actname:{self.actname} class:{self.obj.__class__} dict:{self.obj.__dict__}"
+        return "WrongAction: obj:{} actname:{} class:{} dict:{self.obj.__dict__}".format(self.obj, self.actname, self.obj.__class__, self.obj.__dict__)
 
 
 class NoneDictionary(dict):

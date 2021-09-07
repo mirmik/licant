@@ -1,4 +1,5 @@
 import unittest
+import licant
 
 class MyTest(unittest.TestCase):
     def test_method1(self):
