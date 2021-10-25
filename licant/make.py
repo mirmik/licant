@@ -157,16 +157,11 @@ class FileSet(MakeFileTarget):
 
 def source(tgt, deps=[]):
     """Index source file by licant core."""
-<<<<<<< HEAD
     
     if core.exist(tgt):
         return
 
     target = FileTarget(build=lambda self: self.warn_if_not_exist(), deps=deps, tgt=tgt)
-=======
-    target = FileTarget(
-        build=lambda self: self.warn_if_not_exist(), deps=deps, tgt=tgt)
->>>>>>> fa064565e314f04615b389dd6d0cf9ee3aaa9572
     target.clr = None
     target.dirkeep = licant.util.do_nothing
     target.update_status = UpdateStatus.Keeped
