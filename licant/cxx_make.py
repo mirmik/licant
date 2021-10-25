@@ -1,11 +1,25 @@
 from licant.core import core
+from licant.util import yellow
 import licant.make
 import os
 
 
+<<<<<<< HEAD
+class toolchain:
+	def __init__(self, cxx=None, cc=None, ld=None, ar=None, objdump=None, moc=None, uic=None, objcopy="objcopy"):
+		self.cc = cc
+		self.cxx = cxx
+		self.ld = ld
+		self.ar = ar
+		self.objdump = objdump
+		self.objcopy = objcopy
+		self.moc = moc
+		self.uic = uic
+=======
 class Options:
     pass
 
+>>>>>>> fa064565e314f04615b389dd6d0cf9ee3aaa9572
 
 class toolchain:
     def __init__(
@@ -37,6 +51,24 @@ host_toolchain = toolchain(
 
 
 def toolchain_gcc(prefix):
+<<<<<<< HEAD
+	print(f"{yellow('toolchain_gcc')} is deprecated. Use {yellow('gcc_toolchain')} instead")
+	return gcc_toolchain(prefix)
+
+def gcc_toolchain(prefix):
+	if prefix is None:
+		return host_toolchain
+
+	return toolchain(
+		cc=prefix+"gcc",
+		cxx=prefix+"g++",
+		ld=prefix+"ld",
+		ar=prefix+"ar",
+		objdump=prefix+"objdump",
+		objcopy=prefix+"objcopy",
+		moc="moc",
+		uic="uic")
+=======
     if prefix is None:
         return host_toolchain
 
@@ -49,6 +81,7 @@ def toolchain_gcc(prefix):
         objcopy=prefix+"objcopy",
         moc="moc",
         uic="uic")
+>>>>>>> fa064565e314f04615b389dd6d0cf9ee3aaa9572
 
 
 def clang_toolchain():
