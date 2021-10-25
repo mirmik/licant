@@ -211,9 +211,10 @@ def cxx_options_from_modopts(modopts):
     cxx_flags = cxxstd + " " + modopts["cxx_flags"]
     cc_flags = ccstd + " " + modopts["cc_flags"]
 
-    ld_srcs_add  = "".join([" -L" + os.path.expanduser(l) for l in modopts["libdirs"]])
+    ld_srcs_add = "".join([" -L" + os.path.expanduser(l)
+                           for l in modopts["libdirs"]])
     ld_srcs_add += "".join([" -l" + l for l in modopts["libs"]])
-    
+
     return licant.cxx_make.options(
         toolchain=modopts["toolchain"],
         include_paths=modopts["include_paths"],

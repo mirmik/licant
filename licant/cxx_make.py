@@ -3,8 +3,10 @@ from licant.util import yellow
 import licant.make
 import os
 
+
 class Options:
     pass
+
 
 class toolchain:
     def __init__(
@@ -38,6 +40,7 @@ host_toolchain = toolchain(
 def toolchain_gcc(prefix):
     print(f"{yellow('toolchain_gcc')} is deprecated. Use {yellow('gcc_toolchain')} instead")
     return gcc_toolchain(prefix)
+
 
 def gcc_toolchain(prefix):
     if prefix is None:
@@ -100,8 +103,8 @@ class options:
 
     def __str__(self):
         return "(toolchain:{}, incopt:{}, defopt:{}, cxx_flags:{}, cc_flags:{}, ld_flags:{}, ld_srcs_add:{}, ldscripts:{})".format(
-                    self.toolchain, self.incopt, self.defopt, self.cxx_flags, self.cc_flags, self.ld_flags, self.ld_srcs_add, self.ldscripts
-                )
+            self.toolchain, self.incopt, self.defopt, self.cxx_flags, self.cc_flags, self.ld_flags, self.ld_srcs_add, self.ldscripts
+        )
 
 
 cxx_ext_list = ["cpp", "cxx"]
