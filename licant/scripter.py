@@ -1,8 +1,6 @@
 import sys
 import os
 import licant.util
-from licant.core import core
-from licant.make import source
 
 
 class ScriptQueue:
@@ -11,6 +9,7 @@ class ScriptQueue:
         licant.make.source(sys.argv[0])
 
     def __execute(self, path):
+        print("SUBSCRIPT", path)
         licant.make.source(path)
         self.stack.append(path)
         try:

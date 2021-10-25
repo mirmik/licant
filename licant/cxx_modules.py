@@ -92,18 +92,20 @@ def concat_add_locdir(base, local, solver, tbase, tlocal):
         local = [local]
     local = list(
         map(
-            lambda p: os.path.join(tlocal.opts["__dir__"], os.path.expanduser(p)), local
+            lambda p: os.path.join(
+                tlocal.opts["__dir__"], os.path.expanduser(p)), local
         )
     )
     return base + local
 
 
 def concat_add_locdir_second(base, local, solver, tbase, tlocal):
-    """Добавить локальный путь ко всем вторым элементам локального массива. 
+    """ Добавить локальный путь ко всем вторым элементам локального массива.
     Для поддержки локальных заголовков."""
     if local is None:
         return base
-    local = [(pl[0], os.path.join(tlocal.opts["__dir__"], pl[1])) for pl in local]
+    local = [(pl[0], os.path.join(tlocal.opts["__dir__"], pl[1]))
+             for pl in local]
     return base + local
 
 
@@ -157,8 +159,8 @@ class CXXModuleOptions:
 
     def check(self):
         for k, v in self.opts.items():
-            if not k in licant.modules.special:
-                if not k in self.table:
+            if k not in licant.modules.special:
+                if k not in self.table:
                     print("Unresolved option: {}".format(red(k)))
                     print("cxx_module_field_list:", cxx_module_field_list)
                     exit(-1)
@@ -173,7 +175,7 @@ class CXXModuleOptions:
 
     def set_default_if_empty(self, table=cxx_module_field_list):
         for k in table:
-            if not k in self.opts:
+            if k not in self.opts:
                 self.opts[k] = table[k].default
 
     def merge(self, other, fnc):
@@ -230,7 +232,7 @@ def build_paths(srcs, opts, ext, prefix=None, builddir=None):
         builddir = opts.opts["builddir"]
 
     objs = []
-    
+
     for s in srcs:
         if prefix:
             split = os.path.split(s)
@@ -246,7 +248,7 @@ def build_paths(srcs, opts, ext, prefix=None, builddir=None):
                     )
                 )
             )
-    
+
     return objs
 
 
@@ -269,6 +271,7 @@ def qt_moc_paths(opts):
             ret.append(s)
     return ret
 
+
 def qt_ui_paths(opts):
     ret = []
     for s in opts["qt_ui"]:
@@ -278,10 +281,11 @@ def qt_ui_paths(opts):
             ret.append(s)
     return ret
 
+
 def link_objects(srcs, objs, deps, cxxopts, adddeps):
 
     for s, o, d in zip(srcs, objs, deps):
-        if not s in licant.core.core.targets:
+        if s not in licant.core.core.targets:
             licant.make.source(s)
 
         headers = cxx_read_depends(d)
@@ -306,10 +310,12 @@ def link_qt_moc(mocs, srcs, cxxopts, adddeps):
         licant.make.source(m)
         licant.cxx_make.qt_moc(src=m, tgt=s, opts=cxxopts, deps=[m] + adddeps)
 
+
 def link_qt_ui(uis, srcs, cxxopts, adddeps):
     for m, s in zip(uis, srcs):
         licant.make.source(m)
         licant.cxx_make.qt_uic(src=m, tgt=s, opts=cxxopts, deps=[m] + adddeps)
+
 
 def executable(srcs, opts):
     cxxopts = cxx_options_from_modopts(opts)
@@ -319,13 +325,16 @@ def executable(srcs, opts):
 
 def dynlib(srcs, opts):
     cxxopts = cxx_options_from_modopts(opts)
-    licant.cxx_make.dynamic_library(tgt=opts["target"], srcs=srcs, opts=cxxopts)
+    licant.cxx_make.dynamic_library(
+        tgt=opts["target"], srcs=srcs, opts=cxxopts)
     return opts["target"]
+
 
 def statlib(srcs, opts):
     cxxopts = cxx_options_from_modopts(opts)
     licant.cxx_make.static_library(tgt=opts["target"], srcs=srcs, opts=cxxopts)
     return opts["target"]
+
 
 def virtual(srcs, opts):
     licant.core.target(tgt=opts["target"], deps=srcs)
@@ -336,6 +345,7 @@ def collect_modules(mod):
     # Альтернативная система модулей.
     mdepends_default = queue.Queue()
     mdepends = dict()
+    included_from = dict()
 
     class SortKey:
         def __init__(self):
@@ -347,6 +357,21 @@ def collect_modules(mod):
 
     setsortkey = SortKey()
 
+    def add_included_from(name, incfrom):
+        if name not in included_from:
+            included_from[name] = set()
+
+        included_from[name].add(incfrom)
+
+    def specify_implementation(name, mod, incfrom):
+        mdepends[name] = mod
+        setsortkey(mod)
+        add_included_from(name, incfrom)
+
+    def request_implementation(name, incfrom):
+        mdepends_default.put(name)
+        add_included_from(name, incfrom)
+
     def collect_modules(mod):
         if licant.core.core.runtime["trace"]:
             print("trace: collect_modules( {} )".format(mod.name))
@@ -356,7 +381,7 @@ def collect_modules(mod):
                 if md in mdepends:
                     continue
 
-                mdepends_default.put(md)
+                request_implementation(name=md, incfrom=mod.name)
 
             elif isinstance(md, tuple):
                 nmod = mlibrary.get(md[0], md[1])
@@ -370,8 +395,7 @@ def collect_modules(mod):
                         )
                     )
 
-                mdepends[md[0]] = nmod
-                setsortkey(nmod)
+                specify_implementation(name=md[0], mod=nmod, incfrom=mod.name)
 
                 if "mdepends" in nmod.opts:
                     # Сразу же выполняем обход по данному модулю
@@ -385,13 +409,17 @@ def collect_modules(mod):
 
     while not mdepends_default.empty():
         name = mdepends_default.get()
-        defmod = mlibrary.get_default(name)
+        if name in mdepends:
+            continue
 
-        mdepends[name] = defmod
-        setsortkey(defmod)
+        defmod = mlibrary.get_default(name)
+        specify_implementation(name, defmod, mod.name)
 
         if "mdepends" in defmod.opts:
             collect_modules(defmod)
+
+    for m in mdepends:
+        mdepends[m].included_from = included_from[m]
 
     return [
         mdepends[x]
@@ -406,8 +434,6 @@ def prepare_targets(name, impl=None, **kwargs):
     def modmake(name, impl, baseopts):
         mod = mlibrary.get(name, impl)
 
-        moddir = os.path.dirname(mod.script)
-
         modopts = CXXModuleOptions(**mod.opts)
         locopts = baseopts.merge(modopts, "merge")
 
@@ -421,7 +447,8 @@ def prepare_targets(name, impl=None, **kwargs):
                 retopts = retopts.merge(imod, "include")
 
                 if "include_modules" in imod.opts:
-                    retopts = include_modules(retopts, imod.opts["include_modules"])
+                    retopts = include_modules(
+                        retopts, imod.opts["include_modules"])
 
             return retopts
 
@@ -433,7 +460,8 @@ def prepare_targets(name, impl=None, **kwargs):
 
         local_headers_targets = []
         if len(locopts["local_headers"]):
-            locopts["include_paths"].append(locopts["builddir"] + "/__LOCAL_HEADERS__/")
+            locopts["include_paths"].append(
+                locopts["builddir"] + "/__LOCAL_HEADERS__/")
             for pair in locopts["local_headers"]:
                 licant.make.source(pair[1])
                 tgtpath = os.path.join(
@@ -455,9 +483,9 @@ def prepare_targets(name, impl=None, **kwargs):
         if len(locopts["qt_ui"]) != 0:
             uidir = os.path.join(locopts.opts["builddir"], "ui")
             locui = qt_ui_paths(locopts)
-            locuihxx = build_paths(locui, locopts, "h", 
-                builddir=uidir, 
-                prefix="ui_")
+            locuihxx = build_paths(locui, locopts, "h",
+                                   builddir=uidir,
+                                   prefix="ui_")
             link_qt_ui(locui, locuihxx, cxxopts, adddeps)
             adddeps.extend(locuihxx)
 
@@ -477,7 +505,7 @@ def prepare_targets(name, impl=None, **kwargs):
             locsrcs.extend(locmoccxx)
             locobjs.extend(locmocobjs)
             locdeps.extend(locmocdeps)
-            
+
         link_objects(locsrcs, locobjs, locdeps, cxxopts, adddeps)
 
         if len(locopts["objects"]) != 0:
@@ -510,7 +538,8 @@ def task(name, target, impl, type, **kwargs):
     if type != "objects":
         if target is None or target == name:
             target = "./" + name
-        licant.modules.module(name, impl=impl, type=type, target=target, **kwargs)
+        licant.modules.module(name, impl=impl, type=type,
+                              target=target, **kwargs)
     else:
         licant.modules.module(name, impl=impl, type=type, **kwargs)
     ret, opts = prepare_targets(name)
@@ -521,14 +550,18 @@ def task(name, target, impl, type, **kwargs):
 def application(name, target=None, impl=None, type="application", **kwargs):
     return task(name, target, impl, type, **kwargs)
 
+
 def shared_library(name, target=None, impl=None, type="shared_library", **kwargs):
     return task(name, target, impl, type, **kwargs)
+
 
 def static_library(name, target=None, impl=None, type="static_library", **kwargs):
     return task(name, target, impl, type, **kwargs)
 
+
 def objects(name, target=None, impl=None, type="objects", **kwargs):
     return task(name, target, impl, type, **kwargs)
+
 
 def library(*args, shared=True, **kwargs):
     if shared:
@@ -536,12 +569,13 @@ def library(*args, shared=True, **kwargs):
     else:
         return static_library(*args, **kwargs)
 
+
 def print_collect_list(target, *args):
     if len(args) > 0:
         name = args[0]
     else:
         print("You should specify target name")
-        return 
+        return
     for m in sorted(collect_modules(mlibrary.get(name)), key=lambda x: x.name):
         if hasattr(m, "impl"):
             print("{}:{}".format(m.name, m.impl))
@@ -557,12 +591,24 @@ def print_finalopts(target, *args):
     print(licant.core.core.get(name).finalopts)
 
 
+def included_from(target, *args):
+    if len(args) > 0:
+        name = args[0]
+    else:
+        print("You should specify target name")
+        return
+
+    for m in sorted(collect_modules(mlibrary.get(name)), key=lambda x: x.name):
+        print(m.name, ":", m.included_from)
+
+
 modules_target = licant.core.Target(
     tgt="cxxm",
     deps=[],
     collect_modules=print_collect_list,
+    included_from=included_from,
     finalopts=print_finalopts,
-    actions={"collect_modules", "finalopts"},
+    actions={"collect_modules", "finalopts", "included_from"},
     __help__="Info about collected modules",
 )
 

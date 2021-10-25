@@ -3,13 +3,11 @@
 from __future__ import print_function
 
 import licant
-from licant.core import Target, UpdatableTarget, UpdateStatus, core
+from licant.core import UpdatableTarget, UpdateStatus, core
 from licant.cache import fcache
-from licant.util import red, green, yellow, purple, quite
+from licant.util import purple, quite
 import threading
-from licant.util import deprecated
 import os
-import sys
 
 _rlock = threading.RLock()
 
@@ -37,7 +35,7 @@ def do_execute(target, rule, msgfield, prefix=None):
 
     ret = os.system(rule)
 
-    if target.isfile == True:
+    if target.isfile:
         target.update_info(target)
 
     return True if ret == 0 else False
@@ -53,7 +51,8 @@ class Executor:
 
 
 class MakeFileTarget(UpdatableTarget):
-    __actions__ = UpdatableTarget.__actions__.union({"actlist", "makefile", "clean"})
+    __actions__ = UpdatableTarget.__actions__.union(
+        {"actlist", "makefile", "clean"})
 
     def __init__(self, tgt, deps, **kwargs):
         UpdatableTarget.__init__(self, tgt, deps, **kwargs)
@@ -65,6 +64,7 @@ class MakeFileTarget(UpdatableTarget):
 
     def makefile(self):
         return self.recurse_update()
+
 
 class FileTarget(MakeFileTarget):
     __actions__ = MakeFileTarget.__actions__.union({"build", "clr"})
@@ -81,7 +81,7 @@ class FileTarget(MakeFileTarget):
 
     def mtime(self):
         curinfo = fcache.get_info(self.tgt)
-        if curinfo.exist == False:
+        if not curinfo.exist:
             return 0
         else:
             return curinfo.mtime
@@ -101,7 +101,7 @@ class FileTarget(MakeFileTarget):
     def warn_if_not_exist(self):
         """Print warn if file isn't exist"""
         info = fcache.get_info(self.tgt)
-        if info.exist == False:
+        if not info.exist:
             print("Warn: file {} isn`t exist".format(purple(self.tgt)))
 
     def clr(self):
@@ -109,7 +109,7 @@ class FileTarget(MakeFileTarget):
         do_execute(self, "rm -f {tgt}", "clrmsg")
 
     def self_need(self):
-        if self.force or self.is_exist() == False:
+        if self.force or not self.is_exist():
             return True
 
         maxtime = 0
@@ -130,8 +130,8 @@ class FileTarget(MakeFileTarget):
 class FileSet(MakeFileTarget):
     """Virtual file target`s set.
 
-	For link a set of file objects to the licant tree
-	without depend`s overhead."""
+        For link a set of file objects to the licant tree
+        without depend`s overhead."""
 
     def __init__(self, tgt, targets, deps, **kwargs):
         MakeFileTarget.__init__(self, tgt=tgt, deps=targets+deps, **kwargs)
@@ -157,11 +157,16 @@ class FileSet(MakeFileTarget):
 
 def source(tgt, deps=[]):
     """Index source file by licant core."""
+<<<<<<< HEAD
     
     if core.exist(tgt):
         return
 
     target = FileTarget(build=lambda self: self.warn_if_not_exist(), deps=deps, tgt=tgt)
+=======
+    target = FileTarget(
+        build=lambda self: self.warn_if_not_exist(), deps=deps, tgt=tgt)
+>>>>>>> fa064565e314f04615b389dd6d0cf9ee3aaa9572
     target.clr = None
     target.dirkeep = licant.util.do_nothing
     target.update_status = UpdateStatus.Keeped
@@ -186,6 +191,7 @@ def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
     )
     return tgt
 
+
 def makefile(tgt, deps, do, **kwargs):
     """Make the file copy target."""
     core.add(
@@ -196,6 +202,7 @@ def makefile(tgt, deps, do, **kwargs):
             **kwargs
         )
     )
+
 
 def fileset(tgt, targets, deps=[], **kwargs):
     """Make a fileset."""
