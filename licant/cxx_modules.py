@@ -128,6 +128,7 @@ cxx_module_field_list = {
     "qt_moc": solver("list", local_add_srcdir, concat_add_srcdir, []),
     "qt_ui": solver("list", local_add_srcdir, concat_add_srcdir, []),
     "libs": solver("list", concat, concat, []),
+    "libdirs": solver("list", concat, concat, []),
     "target": solver("str", local_if_exist, base, "target"),
     "include_paths": solver("list", concat_add_locdir, concat_add_locdir, []),
     "cxxstd": solver("str", local_if_exist, local_if_exist, "c++17"),
@@ -208,8 +209,9 @@ def cxx_options_from_modopts(modopts):
     cxx_flags = cxxstd + " " + modopts["cxx_flags"]
     cc_flags = ccstd + " " + modopts["cc_flags"]
 
-    ld_srcs_add = "".join([" -l" + l for l in modopts["libs"]])
-
+    ld_srcs_add  = "".join([" -L" + os.path.expanduser(l) for l in modopts["libdirs"]])
+    ld_srcs_add += "".join([" -l" + l for l in modopts["libs"]])
+    
     return licant.cxx_make.options(
         toolchain=modopts["toolchain"],
         include_paths=modopts["include_paths"],

@@ -1,11 +1,12 @@
 from licant.core import core
+from licant.util import yellow
 import licant.make
 import os
 
 class Options: pass
 
 class toolchain:
-	def __init__(self, cxx, cc, ld, ar, objdump, moc=None, uic=None, objcopy="objcopy"):
+	def __init__(self, cxx=None, cc=None, ld=None, ar=None, objdump=None, moc=None, uic=None, objcopy="objcopy"):
 		self.cc = cc
 		self.cxx = cxx
 		self.ld = ld
@@ -32,6 +33,10 @@ host_toolchain = toolchain(
 
 
 def toolchain_gcc(prefix):
+	print(f"{yellow('toolchain_gcc')} is deprecated. Use {yellow('gcc_toolchain')} instead")
+	return gcc_toolchain(prefix)
+
+def gcc_toolchain(prefix):
 	if prefix is None:
 		return host_toolchain
 

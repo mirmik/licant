@@ -157,6 +157,10 @@ class FileSet(MakeFileTarget):
 
 def source(tgt, deps=[]):
     """Index source file by licant core."""
+    
+    if core.exist(tgt):
+        return
+
     target = FileTarget(build=lambda self: self.warn_if_not_exist(), deps=deps, tgt=tgt)
     target.clr = None
     target.dirkeep = licant.util.do_nothing
@@ -164,9 +168,13 @@ def source(tgt, deps=[]):
     core.add(target)
     return tgt
 
-
 def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
     """Make the file copy target."""
+    src = os.path.expanduser(src)
+    tgt = os.path.expanduser(tgt)
+
+    source(src)
+
     core.add(
         FileTarget(
             tgt=tgt,

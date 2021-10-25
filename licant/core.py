@@ -34,6 +34,9 @@ class Core:
         self.help_showed_targets = []
         self.runtime = NoneDictionary()
 
+    def exist(self, name):
+        return name in self.targets
+
     def add(self, target):
         """Add new target"""
         target.core = self
