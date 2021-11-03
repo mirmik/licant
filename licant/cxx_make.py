@@ -38,7 +38,10 @@ host_toolchain = toolchain(
 
 
 def toolchain_gcc(prefix):
-    print(f"{yellow('toolchain_gcc')} is deprecated. Use {yellow('gcc_toolchain')} instead")
+    print("{} is deprecated. Use {} instead".format(
+        yellow('toolchain_gcc'),
+        yellow('gcc_toolchain')
+    ))
     return gcc_toolchain(prefix)
 
 
