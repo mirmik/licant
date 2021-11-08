@@ -35,7 +35,7 @@ parser.add_argument(
     help="print trace information",
 )
 parser.add_argument(
-    "-j", "--threads", default=1, help="amount of threads for executor"
+    "-j", "--threads", default='j', help="amount of threads for executor"
 )
 parser.add_argument(
     "-q",
