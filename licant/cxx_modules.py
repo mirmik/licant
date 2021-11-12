@@ -150,6 +150,7 @@ cxx_module_field_list = {
         "list", concat_add_locdir_second, concat_add_locdir_second, []
     ),
     "mdepends": solver("list", local, base, []),
+    "debug": solver("str", local_if_exist, base, "-g"),
 }
 
 
@@ -208,8 +209,8 @@ def cxx_options_from_modopts(modopts):
     cxxstd = "-std=" + modopts["cxxstd"]
     ccstd = "-std=" + modopts["ccstd"]
 
-    cxx_flags = cxxstd + " " + modopts["cxx_flags"]
-    cc_flags = ccstd + " " + modopts["cc_flags"]
+    cxx_flags = " ".join([cxxstd, modopts["debug"], modopts["cxx_flags"]])
+    cc_flags = " ".join([ccstd, modopts["debug"], modopts["cc_flags"]])
 
     ld_srcs_add = "".join([" -L" + os.path.expanduser(l)
                            for l in modopts["libdirs"]])
