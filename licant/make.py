@@ -91,7 +91,7 @@ class FileTarget(MakeFileTarget):
         dr = os.path.normpath(os.path.dirname(self.tgt))
         if not os.path.exists(dr):
             print("MKDIR %s" % dr)
-            os.system("mkdir -p {0}".format(dr))
+            os.makedirs(dr)
         return True
 
     def is_exist(self):
