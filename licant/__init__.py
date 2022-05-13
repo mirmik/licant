@@ -25,7 +25,7 @@ from licant.cxx_make import gcc_toolchain, clang_toolchain, host_toolchain
 import licant.scripter
 from licant.libs import include
 
-__version__ = "1.9.3"
+__version__ = "1.9.4"
 
 
 def directory():
