@@ -169,20 +169,33 @@ def source(tgt, deps=[]):
     core.add(target)
     return tgt
 
+def dirkeep(dirpath, message="MKDIR {tgt}"):
+    """Create directory tree for this file if needed."""
+    core.add(
+        FileTarget(
+            tgt=dirpath,
+            build=Executor("mkdir {tgt}"),
+            message=message,
+            deps=[]
+        )
+    )
+    return dirpath
 
 def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
     """Make the file copy target."""
     src = os.path.expanduser(src)
     tgt = os.path.expanduser(tgt)
+    dirpath = os.path.normpath(os.path.dirname(tgt))
 
     source(src)
+    dirkeep(dirpath)
 
     core.add(
         FileTarget(
             tgt=tgt,
             build=Executor("cp {src} {tgt}"),
             src=src,
-            deps=[src] + adddeps,
+            deps=[src, dirpath] + adddeps,
             message=message,
         )
     )

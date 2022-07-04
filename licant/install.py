@@ -2,6 +2,7 @@ import os
 import sys
 import licant.make
 import licant.util
+import subprocess
 
 error_in_install_library = False
 termux_dir = "/data/data/com.termux/files"
@@ -13,7 +14,8 @@ is_windows = sys.platform == 'win32'
 def find_application_path():
     global error_in_install_library
 
-    path_list = os.environ["PATH"].split(":")
+    envout = os.environ["PATH"]
+    path_list = envout.split(":")
 
     if "/usr/local/bin" in path_list:
         path = "/usr/local/bin"
@@ -21,6 +23,14 @@ def find_application_path():
     else:
         for p in path_list:
             if "/usr/bin" in p:
+                path = p
+                break
+        for p in path_list:
+            if "/usr/local/bin" in p:
+                path = p
+                break
+        for p in path_list:
+            if "\\usr\\local\\bin" in p:
                 path = p
                 break
         else:
@@ -37,10 +47,8 @@ def find_headers_path():
         return os.path.join(termux_dir, "usr/include")
 
     if is_windows:
-        print("TODO: Windows support")
-        error_in_install_library = True
-        return None
-
+        return "/usr/local/include"
+        
     return "/usr/local/include"
 
 
@@ -51,9 +59,7 @@ def find_libraries_path():
         return os.path.join(termux_dir, "usr/lib")
 
     if is_windows:
-        print("TODO: Windows support")
-        error_in_install_library = True
-        return None
+        return "/usr/lib"
 
     return "/usr/lib"
 
