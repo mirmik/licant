@@ -8,6 +8,7 @@ from licant.cache import fcache
 from licant.util import purple, quite
 import threading
 import os
+import sys
 
 _rlock = threading.RLock()
 
@@ -50,6 +51,15 @@ class Executor:
         return do_execute(target, self.rule, self.msgfield, **kwargs)
 
 
+class DirectoryKeeper():
+    def __init__(self, msgfield="message"):
+        self.msgfield = msgfield
+
+    def __call__(self, target, **kwargs):
+        print("MAKEDIRS", target.tgt)
+        return os.makedirs(str(target.tgt))
+
+
 class MakeFileTarget(UpdatableTarget):
     __actions__ = UpdatableTarget.__actions__.union(
         {"actlist", "makefile", "clean"})
@@ -69,7 +79,12 @@ class MakeFileTarget(UpdatableTarget):
 class FileTarget(MakeFileTarget):
     __actions__ = MakeFileTarget.__actions__.union({"build", "clr"})
 
-    def __init__(self, tgt, deps, force=False, **kwargs):
+    def __init__(self, tgt, deps, force=False, use_dirkeep=True, **kwargs):
+        if use_dirkeep:
+            dirpath = os.path.normpath(os.path.dirname(tgt))
+            dirkeep(dirpath)
+            deps = deps + [dirpath]
+
         MakeFileTarget.__init__(self, tgt, deps, **kwargs)
         self.isfile = True
         self.force = force
@@ -86,15 +101,8 @@ class FileTarget(MakeFileTarget):
         else:
             return curinfo.mtime
 
-    def dirkeep(self):
-        """Create directory tree for this file if needed."""
-        dr = os.path.normpath(os.path.dirname(self.tgt))
-        if not os.path.exists(dr):
-            print("MKDIR %s" % dr)
-            os.makedirs(dr)
-        return True
-
     def is_exist(self):
+#        print("is_exist", self.tgt, fcache.get_info(self.tgt).exist)
         curinfo = fcache.get_info(self.tgt)
         return curinfo.exist
 
@@ -123,9 +131,30 @@ class FileTarget(MakeFileTarget):
         return False
 
     def update(self):
-        self.dirkeep()
         return self.build(self)
 
+class DirectoryTarget(FileTarget):
+    def self_need(self):
+        if not self.is_exist():
+            return True
+        return False
+
+    def mtime(self):
+        return 0
+
+    def update_if_need(self):
+        #print(self.tgt, self.self_need())
+        if self.self_need():  # self.invoke("self_need"):
+            self.update_status = UpdateStatus.Updated
+            return self.update()  # self.invoke("update")
+        else:
+            self.update_status = UpdateStatus.Keeped
+            return True
+
+
+    def clr(self):
+        """Prevent directory deletion."""
+        pass
 
 class FileSet(MakeFileTarget):
     """Virtual file target`s set.
@@ -172,9 +201,10 @@ def source(tgt, deps=[]):
 def dirkeep(dirpath, message="MKDIR {tgt}"):
     """Create directory tree for this file if needed."""
     core.add(
-        FileTarget(
+        DirectoryTarget(
             tgt=dirpath,
-            build=Executor("mkdir -p {tgt}"),
+            build=DirectoryKeeper(),
+            use_dirkeep = False,
             message=message,
             deps=[]
         )
@@ -185,17 +215,14 @@ def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
     """Make the file copy target."""
     src = os.path.expanduser(src)
     tgt = os.path.expanduser(tgt)
-    dirpath = os.path.normpath(os.path.dirname(tgt))
-
+    
     source(src)
-    dirkeep(dirpath)
-
     core.add(
         FileTarget(
             tgt=tgt,
             build=Executor("cp {src} {tgt}"),
             src=src,
-            deps=[src, dirpath] + adddeps,
+            deps=[src] + adddeps,
             message=message,
         )
     )
@@ -203,7 +230,7 @@ def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
 
 
 def makefile(tgt, deps, do, **kwargs):
-    """Make the file copy target."""
+    """Makefile target."""
     core.add(
         FileTarget(
             tgt=tgt,
