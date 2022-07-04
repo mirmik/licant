@@ -174,7 +174,7 @@ def dirkeep(dirpath, message="MKDIR {tgt}"):
     core.add(
         FileTarget(
             tgt=dirpath,
-            build=Executor("mkdir {tgt}"),
+            build=Executor("mkdir -p {tgt}"),
             message=message,
             deps=[]
         )
