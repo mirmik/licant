@@ -19,11 +19,5 @@ setup(
     long_description_content_type="text/markdown",
     keywords=["testing", "make"],
     classifiers=[],
-    scripts=["configurator/licant-libs"],
-    # 	package_data={'licant': [
-    #   	'templates/cxx/make.py',
-    # 	  	'templates/cxx/main.cpp',
-    # 	 	'templates/cxxgxx/make.py',
-    # 		'templates/cxxgxx/main.cpp',
-    #    ]}
+    scripts=["licant/licant_libs.py"],
 )
