@@ -17,6 +17,9 @@ def find_application_path():
     envout = os.environ["PATH"]
     path_list = envout.split(":")
 
+    if "PREFIX" in os.environ:
+        return os.path.join(os.environ["PREFIX"], "bin")
+
     if "/usr/local/bin" in path_list:
         path = "/usr/local/bin"
 
@@ -43,8 +46,11 @@ def find_application_path():
 def find_headers_path():
     global error_in_install_library
 
-    if is_termux:
-        return os.path.join(termux_dir, "usr/include")
+    if "PREFIX" in os.environ:
+        return os.path.join(os.environ["PREFIX"], "include")
+
+    #if is_termux:
+    #    return os.path.join(termux_dir, "usr/include")
 
     if is_windows:
         return "/usr/local/include"
@@ -55,8 +61,8 @@ def find_headers_path():
 def find_libraries_path():
     global error_in_install_library
 
-    if is_termux:
-        return os.path.join(termux_dir, "usr/lib")
+    if "PREFIX" in os.environ:
+        return os.path.join(os.environ["PREFIX"], "lib")
 
     if is_windows:
         return "/usr/lib"
