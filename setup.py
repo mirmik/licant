@@ -19,5 +19,5 @@ setup(
     long_description_content_type="text/markdown",
     keywords=["testing", "make"],
     classifiers=[],
-    scripts=["licant/licant_libs.py"],
+    scripts=["configurator/licant_libs"],
 )
