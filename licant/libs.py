@@ -90,16 +90,7 @@ def include(lib, path=None, local_tunel=None):
 
 
 def print_about_lib(lib, path):
-    source = None
-    if (lib, path) in llibs:
-        source = "llibs"
-    elif (lib, path) in glibs:
-        source = "glibs"
-    else:
-        print("Warning: library {} not found in {} or {}".format(lib, lpath, gpath))
-        return
-
-    print(f"LICANTLIB s:{source} l:{lib} p:{path}")
+    print(f"LICANTLIB {lib} {path}")
 
 
 def print_system_libs(taget, *args):
