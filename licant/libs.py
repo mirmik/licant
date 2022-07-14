@@ -19,11 +19,12 @@ def merge_two_dicts(x, y):
     return z
 
 
-def init():
-    global libs
+glibs = {}
+llibs = {}
 
-    glibs = {}
-    llibs = {}
+
+def init():
+    global libs, glibs, llibs
 
     if os.path.exists(gpath):
         glibs = json.load(open(gpath))
@@ -46,7 +47,8 @@ def include(lib, path=None, local_tunel=None):
 
     if path is not None:
         included[lib] = path
-        print("LICANTLIB", lib, path)
+
+        print_about_lib(lib, path)
         scriptq.execute(path)
         return
 
@@ -83,8 +85,21 @@ def include(lib, path=None, local_tunel=None):
         exit(-1)
 
     included[lib] = libs[lib]
-    print("LICANTLIB", lib, included[lib])
+    print_about_lib(lib, libs[lib])
     scriptq.execute(libs[lib])
+
+
+def print_about_lib(lib, path):
+    source = None
+    if (lib, path) in llibs:
+        source = "llibs"
+    elif (lib, path) in glibs:
+        source = "glibs"
+    else:
+        print("Warning: library {} not found in {} or {}".format(lib, lpath, gpath))
+        return
+
+    print(f"LICANTLIB s:{source} l:{lib} p:{path}")
 
 
 def print_system_libs(taget, *args):

@@ -10,6 +10,7 @@ import licant.libs
 
 paths = {}
 
+
 def add_record(name, path):
     global paths
     abspath = os.path.abspath(path)
@@ -21,16 +22,17 @@ def add_record(name, path):
 
     paths[name] = abspath
 
+
 def licant_libs_utility():
     global paths
     usage = "usage: %prog [options] lib path"
-    parser = OptionParser(usage = usage)
-    parser.add_option("-u", "--user", action = "store_true", default = False)
-    parser.add_option("-r", "--remove", action = "store_true", default = False)
-    parser.add_option("-l", "--list", action = "store_true", default = False)
+    parser = OptionParser(usage=usage)
+    parser.add_option("-u", "--user", action="store_true", default=False)
+    parser.add_option("-r", "--remove", action="store_true", default=False)
+    parser.add_option("-l", "--list", action="store_true", default=False)
     opts, args = parser.parse_args(sys.argv[1:])
 
-    paths_file = licant.libs.lpath if opts.user else licant.libs.gpath 
+    paths_file = licant.libs.lpath if opts.user else licant.libs.gpath
 
     if (os.path.exists(paths_file)):
         try:
@@ -62,7 +64,7 @@ def licant_libs_utility():
         name = args[0]
         path = args[1]
         add_record(name, path)
-    
+
     if len(args) == 1 and opts.remove == False:
         import glob
         ret = glob.glob(os.path.join(args[0], "*.g.py"))
@@ -79,11 +81,13 @@ def licant_libs_utility():
             print("Unregistred library {}".format(name))
 
     try:
+        print(f"update: {paths_file}, text: {json.dumps(paths, indent=4)}")
         json.dump(paths, open(paths_file, "w"))
     except IOError as e:
         print("Dump error:")
         print(e)
         exit(-1)
+
 
 if __name__ == "__main__":
     licant_libs_utility()
