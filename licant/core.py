@@ -46,10 +46,12 @@ class Core:
         if target.__help__ is not None:
             self.help_showed_targets.append(target)
 
+        return target
+
     def get(self, tgt):
         """Get target object"""
-        if tgt in self.targets:
-            return self.targets[tgt]
+        if str(tgt) in self.targets:
+            return self.targets[str(tgt)]
         licant.util.error("unregistred target " + licant.util.yellow(tgt))
 
     def subtree(self, root):
@@ -60,9 +62,9 @@ class Core:
         """TODO: as_set, but list returned???"""
         res = set()
         if incroot:
-            res.add(tgt)
+            res.add(str(tgt))
 
-        target = self.get(tgt)
+        target = self.get(str(tgt))
 
         for d in target.deps:
             if d not in res:

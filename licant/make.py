@@ -132,6 +132,12 @@ class FileTarget(MakeFileTarget):
 
     def update(self):
         return self.build(self)
+        
+    def __lt__(self, other):
+        return str(self) < str(other)
+
+    def __gt__(self, other):
+        return str(self) > str(other)
 
 class DirectoryTarget(FileTarget):
     def self_need(self):
@@ -183,6 +189,12 @@ class FileSet(MakeFileTarget):
 
         return self.__mtime
 
+    def __lt__(self, other):
+        return str(self) < str(other)
+
+    def __gt__(self, other):
+        return str(self) > str(other)
+
 
 def source(tgt, deps=[]):
     """Index source file by licant core."""
@@ -195,12 +207,11 @@ def source(tgt, deps=[]):
     target.clr = None
     target.dirkeep = licant.util.do_nothing
     target.update_status = UpdateStatus.Keeped
-    core.add(target)
-    return tgt
+    return core.add(target)
 
 def dirkeep(dirpath, message="MKDIR {tgt}"):
     """Create directory tree for this file if needed."""
-    core.add(
+    return core.add(
         DirectoryTarget(
             tgt=dirpath,
             build=DirectoryKeeper(),
@@ -209,12 +220,11 @@ def dirkeep(dirpath, message="MKDIR {tgt}"):
             deps=[]
         )
     )
-    return dirpath
 
 def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
     """Make the file copy target."""
-    src = os.path.expanduser(src)
-    tgt = os.path.expanduser(tgt)
+    src = os.path.expanduser(str(src))
+    tgt = os.path.expanduser(str(tgt))
     
     source(src)
     core.add(
@@ -231,7 +241,7 @@ def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
 
 def makefile(tgt, deps, do, **kwargs):
     """Makefile target."""
-    core.add(
+    return core.add(
         FileTarget(
             tgt=tgt,
             build=Executor(do),
@@ -245,7 +255,6 @@ def fileset(tgt, targets, deps=[], **kwargs):
     """Make a fileset."""
     core.add(FileSet(tgt=tgt, targets=targets, deps=deps, **kwargs))
     return tgt
-
 
 def if_file_and_exist(target):
     if not isinstance(target, FileTarget):
