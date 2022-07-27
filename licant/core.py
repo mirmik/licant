@@ -6,6 +6,7 @@ import types
 import inspect
 from enum import Enum
 import re
+import random
 
 
 class WrongAction(Exception):

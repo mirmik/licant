@@ -2,13 +2,15 @@ import os
 import inspect
 import types
 import re
-
 import fnmatch
 import functools
 import warnings
+import random
 
 string_types = (type(b""), type(u""))
 
+def random_string(length):
+    return "".join(random.choice("0123456789abcdefghijklmnopqrstuvwxyz") for i in range(length))
 
 def deprecated(reason):
     """

@@ -123,17 +123,28 @@ def install_library(tgt, hroot, headers, headers_patterns=("*.h", "*.hxx", "*.hp
     if error_in_install_library:
         return None
 
-    ltgt=None
-    if libtgt:
-        ltgt = install_shared_library(libtgt)
+    ltgt=[]
+    if libtgt is None:
+        pass
+    elif isinstance(libtgt, list):
+        for l in libtgt:
+            ltgt.append(install_shared_library(l))
+    else:
+        ltgt.append(install_shared_library(libtgt))
     
     deps = []
-    if libtgt:
+    if libtgt is None:
+        pass
+    elif isinstance(libtgt, list):
+        for l in libtgt:
+            deps.append(l)
+    else:
         deps.append(libtgt)
+    
     htgt, rawtgts = install_headers(
         tgtdir=hroot, srcdir=headers, patterns=headers_patterns, adddeps=deps)
 
-    tgts = [htgt, ltgt] if libtgt else [htgt]
+    tgts = [htgt] + ltgt if libtgt else [htgt]
  
     if uninstall:
         # Add uninstall target as fake makefile
@@ -146,7 +157,7 @@ def install_library(tgt, hroot, headers, headers_patterns=("*.h", "*.hxx", "*.hp
                 build=licant.make.MakeFileTarget.clean,
                 makefile=licant.make.MakeFileTarget.clean,
                 deps=[],
-                weakdeps=rawtgts + [ltgt] if libtgt else rawtgts
+                weakdeps=rawtgts + ltgt
             )
         )
 

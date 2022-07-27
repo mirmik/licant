@@ -12,6 +12,7 @@ from licant.cxx_make import objcopy
 from licant.cxx_modules import application as cxx_application
 from licant.cxx_modules import shared_library as cxx_shared_library
 from licant.cxx_modules import static_library as cxx_static_library
+from licant.cxx_modules import static_and_shared as cxx_static_and_shared
 from licant.cxx_modules import library as cxx_library
 from licant.cxx_modules import objects as cxx_objects
 
@@ -83,6 +84,7 @@ __all__ = [
     "cxx_application",
     "shared_library",
     "static_library",
+    "static_and_shared",
 
     "makefile",
     "fileset",

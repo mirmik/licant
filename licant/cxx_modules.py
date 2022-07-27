@@ -571,6 +571,11 @@ def library(*args, shared=True, **kwargs):
     else:
         return static_library(*args, **kwargs)
 
+def static_and_shared(name, static_lib, shared_lib, **kwargs):
+    static_library(static_lib, **kwargs)
+    shared_library(shared_lib, **kwargs)
+    return licant.fileset(tgt=name, targets=[static_lib, shared_lib])
+
 
 def print_collect_list(target, *args):
     if len(args) > 0:
