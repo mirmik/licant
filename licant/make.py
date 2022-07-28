@@ -82,8 +82,9 @@ class FileTarget(MakeFileTarget):
     def __init__(self, tgt, deps, force=False, use_dirkeep=True, **kwargs):
         if use_dirkeep:
             dirpath = os.path.normpath(os.path.dirname(tgt))
-            dirkeep(dirpath)
-            deps = deps + [dirpath]
+            if not os.path.exists(dirpath):
+                dirkeep(dirpath)
+                deps = deps + [dirpath]
 
         MakeFileTarget.__init__(self, tgt, deps, **kwargs)
         self.isfile = True
@@ -211,11 +212,12 @@ def source(tgt, deps=[]):
 
 def dirkeep(dirpath, message="MKDIR {tgt}"):
     """Create directory tree for this file if needed."""
+    base_directory_path = os.path.normpath(os.path.dirname(dirpath))
     return core.add(
         DirectoryTarget(
             tgt=dirpath,
             build=DirectoryKeeper(),
-            use_dirkeep = False,
+            use_dirkeep = not os.path.exists(base_directory_path),
             message=message,
             deps=[]
         )
