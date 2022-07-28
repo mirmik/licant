@@ -90,7 +90,8 @@ def include(lib, path=None, local_tunel=None):
 
 
 def print_about_lib(lib, path):
-    print(f"LICANTLIB {lib} {path}")
+    if licant.core.core.runtime["debug"]:
+        print(f"LICANTLIB {lib} {path}")
 
 
 def print_system_libs(taget, *args):
