@@ -8,6 +8,9 @@ from licant.cache import fcache
 from licant.util import purple, quite
 import threading
 import os
+import time
+import subprocess
+import fcntl
 import sys
 
 _rlock = threading.RLock()
@@ -34,7 +37,15 @@ def do_execute(target, rule, msgfield, prefix=None):
         else:
             sprint(rule)
 
-    ret = os.system(rule)
+    proc = subprocess.Popen(rule, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout = proc.stdout
+    stderr = proc.stderr
+    ret = proc.wait()    
+
+    sprint(stdout.read().decode("utf-8"), end="")
+    sys.stdout.flush()
+    sprint(stderr.read().decode("utf-8"), end="")
+    sys.stderr.flush()
 
     if target.isfile:
         target.update_info(target)
