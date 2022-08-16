@@ -193,6 +193,11 @@ class FileSet(MakeFileTarget):
     def update(self):
         pass
 
+    def clean(self):
+        for target in self.targets:
+            target = self.core.get(target)
+            target.invoke("clean")
+
     def mtime(self):
         if self.__mtime is None:
             maxtime = 0
