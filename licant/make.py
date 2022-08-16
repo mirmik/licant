@@ -135,7 +135,7 @@ class FileTarget(MakeFileTarget):
 
         maxtime = 0
         for dep in self.get_deplist():
-            if dep.mtime() > maxtime:
+            if isinstance(dep, FileTarget) and dep.mtime() > maxtime:
                 maxtime = dep.mtime()
 
         if maxtime > self.mtime():

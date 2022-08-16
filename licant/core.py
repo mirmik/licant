@@ -398,37 +398,33 @@ class UpdatableTarget(Target):
 class Routine(UpdatableTarget):
     __actions__ = {"recurse_update", "update", "actlist"}
 
-    def __init__(self, func, deps=[], update_on="always", tgt=None, **kwargs):
+    def __init__(self, func, deps=[], update_if=lambda s: False, tgt=None, **kwargs):
         if tgt is None:
             tgt = func.__name__
         UpdatableTarget.__init__(self, tgt=tgt, deps=deps, **kwargs)
         self.func = func
-        self.update_on = update_on
+        self.update_if = update_if
         self.args = []
 
     def update(self):
         return self.func(*self.args)
 
     def self_need(self):
-        if self.update_on == "always":
-            return True
-        elif self.update_on == "depends":
-            return False
+        return self.update_if(self)
 
     def recurse_update(self, *args):
         self.args = args
         super().recurse_update()
 
 
-def routine_decorator(func=None, deps=[], update_on="always", tgt=None):
+def routine_decorator(func=None, deps=[], update_if=lambda s: False, tgt=None):
     if inspect.isfunction(func):
-        core.add(Routine(func, deps, update_on, tgt))
+        core.add(Routine(func, deps, update_if, tgt))
         return func
 
     else:
-
         def decorator(func):
-            core.add(Routine(func, deps=deps))
+            core.add(Routine(func, deps, update_if, tgt))
             return func
 
         return decorator

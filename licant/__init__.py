@@ -1,4 +1,5 @@
 import subprocess
+import os
 from licant.cli import cliexecute as ex
 
 from licant.core import Core, Target, UpdatableTarget, UpdateStatus
@@ -78,6 +79,10 @@ def system(cmd, message=None):
         raise Exception("system error")
 
 
+def mtime(path):
+    return os.path.getmtime(path)
+
+
 __all__ = [
     "include",
     "system",
@@ -87,7 +92,6 @@ __all__ = [
     "module",
     "implementation",
     "submodule",
-
     "cxx_modules",
     "cxx_objects",
     "cxx_library",
@@ -95,7 +99,6 @@ __all__ = [
     "shared_library",
     "static_library",
     "static_and_shared",
-
     "makedir",
     "makefile",
     "fileset",
@@ -104,7 +107,7 @@ __all__ = [
     "do",
     "routine",
     "routine_decorator",
-
+    "mtime",
     "UpdateStatus",
     "UpdatableTarget",
     "Core",
