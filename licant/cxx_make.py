@@ -110,8 +110,8 @@ class options:
         )
 
 
-cxx_ext_list = ["cpp", "cxx"]
-cc_ext_list = ["cc", "c"]
+cxx_ext_list = ["cpp", "cxx", "cc"]
+cc_ext_list = ["c"]
 asm_ext_list = ["asm", "s", "S"]
 
 

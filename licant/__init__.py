@@ -1,13 +1,12 @@
+import subprocess
 from licant.cli import cliexecute as ex
 
 from licant.core import Core, Target, UpdatableTarget, UpdateStatus
 from licant.core import core as default_core
 from licant.core import routine_decorator as routine
-
 from licant.core import do
 from licant.core import get_target
-
-from licant.make import copy, fileset, makefile, source
+from licant.make import copy, fileset, makefile, source, makedir
 from licant.cxx_make import objcopy
 from licant.cxx_modules import application as cxx_application
 from licant.cxx_modules import shared_library as cxx_shared_library
@@ -68,9 +67,20 @@ def import_attribute(name, var):
 def attribute(name):
     return getattr(attribute_store, name)
 
+# also os.system but throw exception on error
+
+
+def system(cmd, message=None):
+    if message is not None:
+        print(message)
+    status = subprocess.check_call(cmd, shell=True)
+    if status != 0:
+        raise Exception("system error")
+
 
 __all__ = [
     "include",
+    "system",
     "error",
     "module_default_implementation",
     "module_defimpl",
@@ -86,6 +96,7 @@ __all__ = [
     "static_library",
     "static_and_shared",
 
+    "makedir",
     "makefile",
     "fileset",
     "copy",

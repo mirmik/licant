@@ -37,10 +37,11 @@ def do_execute(target, rule, msgfield, prefix=None):
         else:
             sprint(rule)
 
-    proc = subprocess.Popen(rule, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(
+        rule, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout = proc.stdout
     stderr = proc.stderr
-    ret = proc.wait()    
+    ret = proc.wait()
 
     sprint(stdout.read().decode("utf-8"), end="")
     sys.stdout.flush()
@@ -114,7 +115,7 @@ class FileTarget(MakeFileTarget):
             return curinfo.mtime
 
     def is_exist(self):
-#        print("is_exist", self.tgt, fcache.get_info(self.tgt).exist)
+        #        print("is_exist", self.tgt, fcache.get_info(self.tgt).exist)
         curinfo = fcache.get_info(self.tgt)
         return curinfo.exist
 
@@ -144,12 +145,13 @@ class FileTarget(MakeFileTarget):
 
     def update(self):
         return self.build(self)
-        
+
     def __lt__(self, other):
         return str(self) < str(other)
 
     def __gt__(self, other):
         return str(self) > str(other)
+
 
 class DirectoryTarget(FileTarget):
     def self_need(self):
@@ -169,10 +171,10 @@ class DirectoryTarget(FileTarget):
             self.update_status = UpdateStatus.Keeped
             return True
 
-
     def clr(self):
         """Prevent directory deletion."""
         pass
+
 
 class FileSet(MakeFileTarget):
     """Virtual file target`s set.
@@ -221,6 +223,7 @@ def source(tgt, deps=[]):
     target.update_status = UpdateStatus.Keeped
     return core.add(target)
 
+
 def dirkeep(dirpath, message="MKDIR {tgt}"):
     """Create directory tree for this file if needed."""
     base_directory_path = os.path.normpath(os.path.dirname(dirpath))
@@ -228,17 +231,22 @@ def dirkeep(dirpath, message="MKDIR {tgt}"):
         DirectoryTarget(
             tgt=dirpath,
             build=DirectoryKeeper(),
-            use_dirkeep = not os.path.exists(base_directory_path),
+            use_dirkeep=not os.path.exists(base_directory_path),
             message=message,
             deps=[]
         )
     )
 
+
+def makedir(dirpath, message="MKDIR {tgt}"):
+    return dirkeep(dirpath, message)
+
+
 def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
     """Make the file copy target."""
     src = os.path.expanduser(str(src))
     tgt = os.path.expanduser(str(tgt))
-    
+
     source(src)
     core.add(
         FileTarget(
@@ -268,6 +276,7 @@ def fileset(tgt, targets, deps=[], **kwargs):
     """Make a fileset."""
     core.add(FileSet(tgt=tgt, targets=targets, deps=deps, **kwargs))
     return tgt
+
 
 def if_file_and_exist(target):
     if not isinstance(target, FileTarget):

@@ -1,5 +1,6 @@
 # coding: utf-8
 
+from cmath import inf
 from licant.modules import mlibrary
 from licant.cxx_make import host_toolchain
 from licant.util import red, yellow, cxx_read_depends
@@ -125,6 +126,7 @@ def concat_to_submodule(base, local, solver, tbase, tlocal):
 cxx_module_field_list = {
     #                                       # merge                     #include                    #default
     "srcdir": solver("str", local, base, "."),
+    "depends": solver("list", local, base, []),
     "objects": solver("list", local_add_srcdir, concat_add_srcdir, []),
     "sources": solver("list", local_add_srcdir, concat_add_srcdir, []),
     "qt_moc": solver("list", local_add_srcdir, concat_add_srcdir, []),
@@ -476,6 +478,12 @@ def prepare_targets(name, impl=None, **kwargs):
         licant.make.fileset(name + "__local_headers__", local_headers_targets)
         adddeps.append(name + "__local_headers__")
 
+        for dep in locopts["depends"]:
+            if "*" in dep:
+                adddeps.extend(glob.glob(dep))
+            else:
+                adddeps.append(dep)
+
         locsrcs = sources_paths(locopts)
         locobjs = build_paths(locsrcs, locopts, "o")
         locdeps = build_paths(locsrcs, locopts, "d")
@@ -570,6 +578,7 @@ def library(*args, shared=True, **kwargs):
         return shared_library(*args, **kwargs)
     else:
         return static_library(*args, **kwargs)
+
 
 def static_and_shared(name, static_lib, shared_lib, **kwargs):
     static_library(static_lib, **kwargs)
