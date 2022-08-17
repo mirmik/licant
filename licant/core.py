@@ -110,9 +110,6 @@ class SubTree:
         self.depset = core.depends_as_set(root)
         self.weakdepsset = list(self.core.get(root).weakdeps)
 
-    #    def update(self):
-    #        SubTree.__init__(self, root)
-
     def invoke_foreach(self, ops, cond=licant.util.always_true):
         if core.runtime["debug"]:
             print("FOREACH(root={}, ops={}, cond={})".format(self.root, ops, cond))
@@ -419,10 +416,17 @@ class UpdatableTarget(Target):
 
         return False
 
+    def invoke_function_or_method(self, act):
+        if isinstance(act, types.MethodType):
+            return act()
+        else:
+            return act(self)
+
     def update_if_need(self):
         if self.has_updated_depends() or self.self_need():  # self.invoke("self_need"):
             self.update_status = UpdateStatus.Updated
-            return self.update(self)  # self.invoke("update")
+            # self.invoke("update")
+            return self.invoke_function_or_method(self.update)
         else:
             self.update_status = UpdateStatus.Keeped
             return True
