@@ -87,5 +87,10 @@ class MyTest(unittest.TestCase):
         core.do("target", action="recurse_update", threads=1)
         self.assertEqual(x["a"], 0)
 
-    def test_makecore(self):
+    def test_makecore_touch(self):
         core = licant.MakeCore()
+        target = core.touch("/tmp/licant/test/a", content="Hello")
+        self.assertEqual(
+            core.get("/tmp/licant/test").__class__, licant.DirectoryTarget)
+        core.do("/tmp/licant/test/a")
+        # self.assertTrue(os.path.exists("/tmp/licant/test/a"))

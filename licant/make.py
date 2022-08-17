@@ -292,11 +292,37 @@ def if_file_and_exist(target):
 
 
 class MakeCore(Core):
+    def __init__(self):
+        super().__init__()
+
+    def makedir(self, dirpath, message="MKDIR {tgt}"):
+        return self.add(
+            DirectoryTarget(
+                tgt=dirpath,
+                build=DirectoryKeeper(),
+                use_dirkeep=False,
+                message=message,
+                deps=[]
+            )
+        )
+
+    def dirkeep(self, path):
+        """Create directory tree for this file if needed."""
+        base_directory_path = os.path.normpath(os.path.dirname(path))
+        if not os.path.exists(base_directory_path):
+            deps = self.dirkeep(base_directory_path)
+            self.makedir(base_directory_path, deps)
+            return [base_directory_path]
+        else:
+            return []
+
     def touch(self, out, content, deps=[]):
+        dirdeps = self.dirkeep(out)
         return self.add(FileTarget(
             tgt=out,
             build=Executor("echo '{content}' > {tgt}"),
-            deps=deps,
+            deps=deps + dirdeps,
             message="TOUCH {tgt}",
-            content=content,
+            use_dirkeep=False,
+            content=content
         ))
