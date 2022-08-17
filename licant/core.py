@@ -75,6 +75,26 @@ class Core:
                 res = res.union(subres)
         return sorted(res)
 
+    def target(self, name, deps=[], **kwargs):
+        """Create new target"""
+        return self.add(Target(name, deps=deps, **kwargs))
+
+    def updtarget(self, name, deps=[], **kwargs):
+        """Create new target"""
+        return self.add(Target(name, deps=deps, **kwargs))
+
+    def do(self, target, action="action"):
+        """Do action on target"""
+        if isinstance(target, str):
+            target = self.get(target)
+
+        target.invoke(action)
+
+    def routine(self, func):
+        """Create new routine"""
+        funcname = func.__name__
+        return self.add(Target(funcname, action=func, need_if=lambda s: True))
+
 
 # Объект ядра с которым библиотеки работают по умолчанию.
 core = Core()
@@ -259,11 +279,13 @@ class SubTree:
 class Target:
     __actions__ = {"actlist", "print"}
 
-    def __init__(self, tgt, deps, weakdeps=[], actions=None, __help__=None, **kwargs):
+    def __init__(self, tgt, deps=[], action=lambda s: None, need_if=lambda s: True, weakdeps=[], actions=None, __help__=None, **kwargs):
         self.tgt = tgt
         deps = self.expand_globs(deps)
         self.deps = set(deps)
+        self.need_if = need_if
         self.weakdeps = set(weakdeps)
+        self.action = action
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -271,6 +293,9 @@ class Target:
             self.__actions__ = self.__actions__.union(set(actions))
 
         self.__help__ = __help__
+
+    def name(self):
+        return self.tgt
 
     def expand_globs(self, deps):
         import licant.make
@@ -284,6 +309,11 @@ class Target:
             if os.path.exists(r):
                 licant.make.source(r)
         return ret
+
+    def action_if_need(self):
+        need = self.need_if(self)
+        if need:
+            self.action(self)
 
     def get_deplist(self):
         return [self.core.get(d) for d in self.deps]
@@ -312,9 +342,6 @@ class Target:
                     self.tgt, funcname, args, kwargs
                 )
             )
-
-        # if funcname not in self.__actions__:
-        # 	licant.error("Isn't action {}".format(licant.util.yellow(funcname)))
 
         func = getattr(self, funcname, None)
         if func is None:

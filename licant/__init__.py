@@ -74,6 +74,8 @@ def attribute(name):
 def system(cmd, message=None):
     if message is not None:
         print(message)
+    else:
+        print(cmd)
     status = subprocess.check_call(cmd, shell=True)
     if status != 0:
         raise Exception("system error")
