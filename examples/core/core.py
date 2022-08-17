@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
+import licant
 import os
 import sys
 
 sys.path.insert(0, "../..")
 
-import licant
 
 core = licant.Core()
 
@@ -25,11 +25,10 @@ def copy(tgt):
     res = os.system(task)
 
 
-core.add(licant.Target(tgt="copy", src="a", tgtpath="b", deps=[], do=copy))
-core.add(licant.Target(tgt="hello_world_0", deps=[], do=hello_world_0))
-core.add(
-    licant.Target(tgt="hello_world_1", deps=["hello_world_0", "copy"], do=hello_world_1)
-)
+core.target(name="copy", src="a", tgtpath="b", deps=[], do=copy)
+core.target(name="hello_world_0", deps=[], do=hello_world_0)
+core.target(name="hello_world_1", deps=[
+            "hello_world_0", "copy"], do=hello_world_1)
 
 stree = core.subtree("hello_world_1")
 
