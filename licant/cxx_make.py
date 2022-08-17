@@ -1,6 +1,7 @@
 from licant.core import core
 from licant.util import yellow
 import licant.make
+from licant.make import MakeCore
 import os
 
 
