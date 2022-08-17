@@ -58,7 +58,7 @@ class Core:
 
     def subtree(self, root):
         """Construct Subtree accessor for root target"""
-        return SubTree(self, root)
+        return SubTree(root=root, core=self)
 
     def depends_as_set(self, tgt, incroot=True):
         """TODO: as_set, but list returned???"""
@@ -83,10 +83,13 @@ class Core:
         """Create new target"""
         return self.add(UpdatableTarget(name, deps=deps, **kwargs))
 
-    def do(self, target, action="action"):
+    def do(self, target, action=None):
         """Do action on target"""
         if isinstance(target, str):
             target = self.get(target)
+
+        if action is None:
+            action = target.default_action
 
         target.invoke(action)
 
@@ -105,7 +108,7 @@ class SubTree:
         self.root = root
         self.core = core
         self.depset = core.depends_as_set(root)
-        self.weakdepsset = list(get_target(root).weakdeps)
+        self.weakdepsset = list(self.core.get(root).weakdeps)
 
     #    def update(self):
     #        SubTree.__init__(self, root)
@@ -286,6 +289,7 @@ class Target:
         self.need_if = need_if
         self.weakdeps = set(weakdeps)
         self.action = action
+        self.default_action = "action"
         for k, v in kwargs.items():
             setattr(self, k, v)
 

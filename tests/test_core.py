@@ -41,33 +41,37 @@ class MyTest(unittest.TestCase):
         self.assertEqual(x["a"], 0)
         self.assertEqual(y["a"], 1)
 
-    # def test_target_routine(self):
-    #     core = licant.Core()
+    def test_target_routine(self):
+        core = licant.Core()
 
-    #     @core.routine
-    #     def clean(target):
-    #         licant.system("rm -rf /tmp/licant/test/")
+        @core.routine
+        def clean(target):
+            licant.system("rm -rf /tmp/licant/test/")
 
-    #     @core.routine
-    #     def make(target):
-    #         licant.system("mkdir -p /tmp/licant/test/")
+        @core.routine
+        def make(target):
+            licant.system("mkdir -p /tmp/licant/test/")
 
-    #     self.assertEqual(len(core.targets), 2)
-    #     core.do("clean")
-    #     core.do("make")
-    #     self.assertTrue(os.path.exists("/tmp/licant/test/"))
-    #     core.do("clean")
-    #     self.assertFalse(os.path.exists("/tmp/licant/test/"))
+        self.assertEqual(len(core.targets), 2)
+        core.do("clean")
+        core.do("make")
+        self.assertTrue(os.path.exists("/tmp/licant/test/"))
+        core.do("clean")
+        self.assertFalse(os.path.exists("/tmp/licant/test/"))
 
-    # def test_target_depens(self):
-    #     core = licant.Core()
-    #     x = {"a": 0}
-    #     core.updtarget("nonupdated", need_if=lambda s: False)
-    #     core.updtarget("target",
-    #                    need_if=lambda s: s.has_updated_depends(),
-    #                    action=lambda s: setattr(x, "a", 1),
-    #                    deps=["nonupdated"]
-    #                    )
+    def test_target_depens(self):
+        core = licant.Core()
+        x = {"a": 0}
+        core.updtarget("nonupdated", need_if=lambda s: False)
+        core.updtarget("target",
+                       update=lambda s: setattr(x, "a", 1),
+                       deps=["nonupdated"]
+                       )
 
-    #     core.do("target", action="action_if_need")
-    #     self.assertEqual(x["a"], 0)
+        self.assertEqual(core.get("target").get_deplist(),
+                         [core.get("nonupdated")])
+
+        core.subtree("target")
+
+        #core.do("target", action="update_if_need")
+        #self.assertEqual(x["a"], 0)
