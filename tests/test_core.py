@@ -71,7 +71,18 @@ class MyTest(unittest.TestCase):
         self.assertEqual(core.get("target").get_deplist(),
                          [core.get("nonupdated")])
 
-        core.subtree("target")
+        subtree = core.subtree("target")
+        subtree.generate_rdepends()
+        self.assertEqual(core.get("nonupdated").rdepends, ["target"])
+        self.assertEqual(core.get("target").rdepends, [])
+        self.assertEqual(core.get("nonupdated").rcounter, 0)
+        self.assertEqual(core.get("target").rcounter, 0)
+        self.assertEqual(subtree.depset, ["nonupdated", "target"])
 
-        #core.do("target", action="update_if_need")
-        #self.assertEqual(x["a"], 0)
+        subtree = core.subtree("target")
+        subtree.reverse_recurse_invoke_single("update_if_need")
+        self.assertEqual(core.get("nonupdated").rcounter, 0)
+        self.assertEqual(core.get("target").rcounter, 1)
+
+        core.do("target", action="recurse_update", threads=1)
+        self.assertEqual(x["a"], 0)

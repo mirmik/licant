@@ -83,7 +83,7 @@ class Core:
         """Create new target"""
         return self.add(UpdatableTarget(name, deps=deps, **kwargs))
 
-    def do(self, target, action=None):
+    def do(self, target, action=None, **kwargs):
         """Do action on target"""
         if isinstance(target, str):
             target = self.get(target)
@@ -91,7 +91,7 @@ class Core:
         if action is None:
             action = target.default_action
 
-        target.invoke(action)
+        target.invoke(action, **kwargs)
 
     def routine(self, func):
         """Create new routine"""
@@ -136,6 +136,10 @@ class SubTree:
             for dname in t.deps:
                 dtarget = self.core.get(dname)
                 dtarget.rdepends.append(t.tgt)
+
+    def generate_rdepends(self):
+        targets = [self.core.get(t) for t in self.depset]
+        self.__generate_rdepends_lists(targets)
 
     def reverse_recurse_invoke_single(
         self, ops, threads=None, cond=licant.util.always_true
@@ -351,6 +355,7 @@ class Target:
         func = getattr(self, funcname, None)
         if func is None:
             if critical:
+                print("wrong action: {}".format(funcname))
                 raise WrongAction(self, funcname)
             return None
 
@@ -375,7 +380,7 @@ class UpdateStatus(Enum):
 
 class UpdatableTarget(Target):
     __actions__ = Target.__actions__.union(
-        {"recurse_update", "update", "update_if_need"}
+        {"recurse_update", "recurse_update_get_args", "update", "update_if_need"}
     )
 
     def __init__(
@@ -383,7 +388,7 @@ class UpdatableTarget(Target):
         tgt,
         deps,
         need_if=lambda s: False,
-        default_action="recurse_update",
+        default_action="recurse_update_get_args",
         update_status=UpdateStatus.Waiting,
         **kwargs
     ):
@@ -391,6 +396,9 @@ class UpdatableTarget(Target):
                         default_action=default_action, **kwargs)
         self.update_status = update_status
         self.need_if = need_if
+
+    def recurse_update_get_args(self):
+        return self.recurse_update(threads=core.runtime["threads"])
 
     def update(self, _self):
         licant.error("Unoverrided update method")
@@ -431,15 +439,15 @@ class UpdatableTarget(Target):
             self.update_status = UpdateStatus.Keeped
             return True
 
-    def recurse_update(self):
+    def recurse_update(self, threads=1):
         stree = self.core.subtree(self.tgt)
         stree.reverse_recurse_invoke(
-            ops="update_if_need", threads=core.runtime["threads"]
-        )
+            ops="update_if_need", threads=threads)
 
 
 class Routine(UpdatableTarget):
-    __actions__ = {"recurse_update", "update", "actlist"}
+    __actions__ = {"recurse_update",
+                   "recurse_update_get_args", "update", "actlist"}
 
     def __init__(self, func, deps=[], update_if=lambda s: False, tgt=None, **kwargs):
         if tgt is None:
@@ -455,9 +463,9 @@ class Routine(UpdatableTarget):
     def self_need(self):
         return self.update_if(self)
 
-    def recurse_update(self, *args):
+    def recurse_update(self, *args, **kwargs):
         self.args = args
-        super().recurse_update()
+        super().recurse_update(**kwargs)
 
 
 def routine_decorator(func=None, deps=[], update_if=lambda s: False, tgt=None):
