@@ -317,6 +317,7 @@ class MakeCore(Core):
             return []
 
     def touch(self, out, content, deps=[]):
+        out = os.path.expanduser(str(out))
         dirdeps = self.dirkeep(out)
         return self.add(FileTarget(
             tgt=out,
@@ -325,4 +326,18 @@ class MakeCore(Core):
             message="TOUCH {tgt}",
             use_dirkeep=False,
             content=content
+        ))
+
+    def copy(self, tgt, src, adddeps=[], message="COPY {src} {tgt}"):
+        """Make the file copy target."""
+        src = os.path.expanduser(str(src))
+        tgt = os.path.expanduser(str(tgt))
+
+        source(src)
+        return self.add(FileTarget(
+            tgt=tgt,
+            build=Executor("cp {src} {tgt}"),
+            src=src,
+            deps=[src] + adddeps,
+            message=message,
         ))
