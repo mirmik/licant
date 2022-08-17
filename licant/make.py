@@ -289,3 +289,14 @@ def if_file_and_exist(target):
 
     curinfo = fcache.get_info(target.tgt)
     return curinfo.exist
+
+
+class MakeCore(licant.Core):
+    def touch(self, out, content, deps=[]):
+        return self.add(FileTarget(
+            tgt=out,
+            build=Executor("echo '{content}' > {tgt}"),
+            deps=deps,
+            message="TOUCH {tgt}",
+            content=content,
+        ))

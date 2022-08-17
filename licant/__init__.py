@@ -7,7 +7,7 @@ from licant.core import core as default_core
 from licant.core import routine_decorator as routine
 from licant.core import do
 from licant.core import get_target
-from licant.make import copy, fileset, makefile, source, makedir
+from licant.make import copy, fileset, makefile, source, makedir, MakeCore
 from licant.cxx_make import objcopy
 from licant.cxx_modules import application as cxx_application
 from licant.cxx_modules import shared_library as cxx_shared_library
@@ -119,5 +119,6 @@ __all__ = [
     "objcopy",
     "get_target",
     "Target",
-    "ex"
+    "ex",
+    "MakeCore"
 ]

@@ -86,3 +86,6 @@ class MyTest(unittest.TestCase):
 
         core.do("target", action="recurse_update", threads=1)
         self.assertEqual(x["a"], 0)
+
+    def test_makecore(self):
+        core = licant.MakeCore()
