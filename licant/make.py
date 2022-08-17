@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 import licant
-from licant.core import UpdatableTarget, UpdateStatus, core
+from licant.core import UpdatableTarget, UpdateStatus, Core, core
 from licant.cache import fcache
 from licant.util import purple, quite
 import threading
@@ -291,7 +291,7 @@ def if_file_and_exist(target):
     return curinfo.exist
 
 
-class MakeCore(licant.Core):
+class MakeCore(Core):
     def touch(self, out, content, deps=[]):
         return self.add(FileTarget(
             tgt=out,
