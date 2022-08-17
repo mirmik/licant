@@ -328,16 +328,16 @@ class MakeCore(Core):
             content=content
         ))
 
-    def copy(self, tgt, src, adddeps=[], message="COPY {src} {tgt}"):
+    def copy(self, tgt, src, deps=[], message="COPY {src} {tgt}"):
         """Make the file copy target."""
         src = os.path.expanduser(str(src))
         tgt = os.path.expanduser(str(tgt))
-
+        dirdeps = self.dirkeep(tgt)
         source(src)
         return self.add(FileTarget(
             tgt=tgt,
             build=Executor("cp {src} {tgt}"),
             src=src,
-            deps=[src] + adddeps,
+            deps=[src] + dirdeps + deps,
             message=message,
         ))
