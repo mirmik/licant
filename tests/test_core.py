@@ -107,3 +107,10 @@ class MyTest(unittest.TestCase):
         core.do("/tmp/licant/test/c")
         self.assertTrue(os.path.exists("/tmp/licant/test/b"))
         self.assertTrue(os.path.exists("/tmp/licant/test/c"))
+
+    def test_source(self):
+        core = licant.MakeCore()
+        with open("/tmp/vasdvasdva.txt", "w") as f:
+            f.write("Hello")
+        core.source("a.txt")
+        os.remove("/tmp/vasdvasdva.txt")

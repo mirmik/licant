@@ -335,7 +335,7 @@ class MakeCore(Core):
         src = os.path.expanduser(str(src))
         dst = os.path.expanduser(str(dst))
         dirdeps = self.dirkeep(dst)
-        source(src)
+        self.source(src)
         return self.add(FileTarget(
             tgt=dst,
             build=Executor("cp {src} {tgt}"),
@@ -343,4 +343,15 @@ class MakeCore(Core):
             deps=[src] + dirdeps + deps,
             use_dirkeep=False,
             message=message,
+        ))
+
+    def source(self, src):
+        """Index source file by licant core."""
+        src = os.path.expanduser(str(src))
+        return self.add(FileTarget(
+            tgt=src,
+            build=lambda self: self.warn_if_not_exist(),
+            deps=[],
+            use_dirkeep=False,
+            message="SOURCE {tgt}"
         ))
