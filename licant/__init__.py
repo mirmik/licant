@@ -1,13 +1,12 @@
 import subprocess
 import os
 from licant.cli import cliexecute as ex
-
 from licant.core import Core, Target, UpdatableTarget, UpdateStatus
 from licant.core import core as default_core
 from licant.core import routine_decorator as routine
 from licant.core import do
 from licant.core import get_target
-from licant.make import copy, fileset, makefile, source, makedir, MakeCore, DirectoryTarget, FileTarget
+from licant.make import copy, fileset, Executor, makefile, source, makedir, MakeCore, DirectoryTarget, FileTarget
 from licant.cxx_make import objcopy
 from licant.cxx_modules import application as cxx_application
 from licant.cxx_modules import shared_library as cxx_shared_library
@@ -15,14 +14,11 @@ from licant.cxx_modules import static_library as cxx_static_library
 from licant.cxx_modules import static_and_shared as cxx_static_and_shared
 from licant.cxx_modules import library as cxx_library
 from licant.cxx_modules import objects as cxx_objects
-
 from licant.modules import module, implementation, submodule
 from licant.modules import module_default_implementation as module_defimpl
 from licant.modules import module_default_implementation
 from licant.util import error
-
 from licant.cxx_make import gcc_toolchain, clang_toolchain, host_toolchain
-
 import licant.scripter
 from licant.libs import include
 
@@ -72,13 +68,7 @@ def attribute(name):
 
 
 def system(cmd, message=None):
-    if message is not None:
-        print(message)
-    else:
-        print(cmd)
-    status = subprocess.check_call(cmd, shell=True)
-    if status != 0:
-        raise Exception("system error")
+    return Executor(cmd, message=message).execute()
 
 
 def mtime(path):
