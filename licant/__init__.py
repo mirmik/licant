@@ -68,7 +68,13 @@ def attribute(name):
 
 
 def system(cmd, message=None):
-    return Executor(cmd, message=message).execute()
+    if message is not None:
+        print(message)
+    else:
+        print(cmd)
+    status = subprocess.check_call(cmd, shell=True)
+    if status != 0:
+        raise Exception("system error")
 
 
 def mtime(path):
