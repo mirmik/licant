@@ -309,3 +309,21 @@ binutils_target = licant.core.Target(
 )
 
 core.add(binutils_target)
+
+
+class CxxCore(MakeCore):
+    def __init__(self, debug=False):
+        super().__init__(debug=debug)
+        self.init_options()
+
+    def init_options(self):
+        self.include_paths = []
+        self.lib_paths = []
+        self.libs = []
+        self.cxxflags = []
+        self.cflags = []
+        self.ldflags = []
+
+        self.cxx = "c++"
+        self.cc = "cc"
+        self.ld = "c++"

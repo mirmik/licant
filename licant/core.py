@@ -408,7 +408,7 @@ class UpdatableTarget(Target):
     def recurse_update_get_args(self):
         return self.recurse_update(threads=core.runtime["threads"])
 
-    def update(self, _self):
+    def update(self):
         licant.error("Unoverrided update method")
 
     def self_need(self):
@@ -465,7 +465,7 @@ class Routine(UpdatableTarget):
         self.update_if = update_if
         self.args = []
 
-    def update(self, _self):
+    def update(self):
         return self.func(*self.args)
 
     def self_need(self):
