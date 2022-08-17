@@ -351,10 +351,14 @@ class MakeCore(Core):
             return self.get(str(src))
 
         src = os.path.expanduser(str(src))
-        return self.add(FileTarget(
+        target = self.add(FileTarget(
             tgt=src,
             build=lambda self: self.warn_if_not_exist(),
             deps=[],
             use_dirkeep=False,
             message="SOURCE {tgt}"
         ))
+        target.clr = None
+        target.dirkeep = licant.util.do_nothing
+        target.update_status = UpdateStatus.Keeped
+        return target
