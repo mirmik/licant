@@ -69,7 +69,8 @@ class DirectoryKeeper():
 
     def __call__(self, target, **kwargs):
         print("MAKEDIRS", target.tgt)
-        return os.makedirs(str(target.tgt))
+        if not os.path.exists(target.tgt):
+            os.makedirs(target.tgt)
 
 
 class MakeFileTarget(UpdatableTarget):
@@ -295,14 +296,14 @@ class MakeCore(Core):
     def __init__(self):
         super().__init__()
 
-    def makedir(self, dirpath, message="MKDIR {tgt}"):
+    def makedir(self, dirpath, deps, message="MKDIR {tgt}"):
         return self.add(
             DirectoryTarget(
                 tgt=dirpath,
                 build=DirectoryKeeper(),
                 use_dirkeep=False,
                 message=message,
-                deps=[]
+                deps=deps
             )
         )
 
@@ -311,7 +312,8 @@ class MakeCore(Core):
         base_directory_path = os.path.normpath(os.path.dirname(path))
         if not os.path.exists(base_directory_path):
             deps = self.dirkeep(base_directory_path)
-            self.makedir(base_directory_path, deps)
+            if not self.has(base_directory_path):
+                self.makedir(base_directory_path, deps=deps)
             return [base_directory_path]
         else:
             return []
@@ -328,16 +330,17 @@ class MakeCore(Core):
             content=content
         ))
 
-    def copy(self, tgt, src, deps=[], message="COPY {src} {tgt}"):
+    def copy(self, src, dst, deps=[], message="COPY {src} {tgt}"):
         """Make the file copy target."""
         src = os.path.expanduser(str(src))
-        tgt = os.path.expanduser(str(tgt))
-        dirdeps = self.dirkeep(tgt)
+        dst = os.path.expanduser(str(dst))
+        dirdeps = self.dirkeep(dst)
         source(src)
         return self.add(FileTarget(
-            tgt=tgt,
+            tgt=dst,
             build=Executor("cp {src} {tgt}"),
             src=src,
             deps=[src] + dirdeps + deps,
+            use_dirkeep=False,
             message=message,
         ))

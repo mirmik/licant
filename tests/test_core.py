@@ -1,5 +1,6 @@
 import unittest
 import licant
+import shutil
 import os
 
 
@@ -89,8 +90,20 @@ class MyTest(unittest.TestCase):
 
     def test_makecore_touch(self):
         core = licant.MakeCore()
+        shutil.rmtree("/tmp/licant/test/", ignore_errors=True)
         target = core.touch("/tmp/licant/test/a", content="Hello")
+        core.touch("/tmp/licant/test/d", content="Hello")
         self.assertEqual(
             core.get("/tmp/licant/test").__class__, licant.DirectoryTarget)
         core.do("/tmp/licant/test/a")
-        # self.assertTrue(os.path.exists("/tmp/licant/test/a"))
+        core.do("/tmp/licant/test/d")
+        self.assertTrue(os.path.exists("/tmp/licant/test/a"))
+        self.assertTrue(os.path.exists("/tmp/licant/test/d"))
+
+        core.copy(src="/tmp/licant/test/a", dst="/tmp/licant/test/b")
+        core.copy(src=target, dst="/tmp/licant/test/c")
+
+        core.do("/tmp/licant/test/b")
+        core.do("/tmp/licant/test/c")
+        self.assertTrue(os.path.exists("/tmp/licant/test/b"))
+        self.assertTrue(os.path.exists("/tmp/licant/test/c"))

@@ -56,6 +56,10 @@ class Core:
             return self.targets[str(tgt)]
         licant.util.error("unregistred target " + licant.util.yellow(tgt))
 
+    def has(self, tgt):
+        """Check if target exists"""
+        return tgt in self.targets
+
     def subtree(self, root):
         """Construct Subtree accessor for root target"""
         return SubTree(root=root, core=self)
