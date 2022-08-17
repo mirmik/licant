@@ -143,7 +143,7 @@ class FileTarget(MakeFileTarget):
 
         return False
 
-    def update(self):
+    def update(self, _self):
         return self.build(self)
 
     def __lt__(self, other):

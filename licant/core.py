@@ -81,7 +81,7 @@ class Core:
 
     def updtarget(self, name, deps=[], **kwargs):
         """Create new target"""
-        return self.add(Target(name, deps=deps, **kwargs))
+        return self.add(UpdatableTarget(name, deps=deps, **kwargs))
 
     def do(self, target, action="action"):
         """Do action on target"""
@@ -294,6 +294,9 @@ class Target:
 
         self.__help__ = __help__
 
+        self.need_by_self = None
+        self.need_by_deps = None
+
     def name(self):
         return self.tgt
 
@@ -312,6 +315,7 @@ class Target:
 
     def action_if_need(self):
         need = self.need_if(self)
+        self.need_by_self = need
         if need:
             self.action(self)
 
@@ -377,6 +381,7 @@ class UpdatableTarget(Target):
         self,
         tgt,
         deps,
+        need_if=lambda s: False,
         default_action="recurse_update",
         update_status=UpdateStatus.Waiting,
         **kwargs
@@ -384,11 +389,14 @@ class UpdatableTarget(Target):
         Target.__init__(self, tgt, deps,
                         default_action=default_action, **kwargs)
         self.update_status = update_status
+        self.need_if = need_if
 
-    def update(self):
+    def update(self, _self):
         licant.error("Unoverrided update method")
 
     def self_need(self):
+        if self.need_if is not None:
+            return self.need_if(self)
         return False
 
     def has_updated_depends(self):
@@ -410,7 +418,7 @@ class UpdatableTarget(Target):
     def update_if_need(self):
         if self.has_updated_depends() or self.self_need():  # self.invoke("self_need"):
             self.update_status = UpdateStatus.Updated
-            return self.update()  # self.invoke("update")
+            return self.update(self)  # self.invoke("update")
         else:
             self.update_status = UpdateStatus.Keeped
             return True
@@ -433,7 +441,7 @@ class Routine(UpdatableTarget):
         self.update_if = update_if
         self.args = []
 
-    def update(self):
+    def update(self, _self):
         return self.func(*self.args)
 
     def self_need(self):
