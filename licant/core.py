@@ -32,10 +32,11 @@ class NoneDictionary(dict):
 
 
 class Core:
-    def __init__(self):
+    def __init__(self, debug=False):
         self.targets = {}
         self.help_showed_targets = []
         self.runtime = NoneDictionary()
+        self.debug = debug
 
     def exist(self, name):
         return name in self.targets
@@ -44,6 +45,9 @@ class Core:
         """Add new target"""
         target.core = self
         self.targets[target.tgt] = target
+
+        if self.debug:
+            print("add target: " + target.tgt)
 
         if target.__help__ is not None:
             self.help_showed_targets.append(target)

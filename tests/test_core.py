@@ -61,7 +61,7 @@ class MyTest(unittest.TestCase):
         self.assertFalse(os.path.exists("/tmp/licant/test/"))
 
     def test_target_depens(self):
-        core = licant.Core()
+        core = licant.Core(debug=True)
         x = {"a": 0}
         core.updtarget("nonupdated", need_if=lambda s: False)
         core.updtarget("target",
@@ -89,7 +89,8 @@ class MyTest(unittest.TestCase):
         self.assertEqual(x["a"], 0)
 
     def test_makecore_touch(self):
-        core = licant.MakeCore()
+        core = licant.MakeCore(debug=True)
+        os.makedirs("/tmp/licant/test/", exist_ok=True)
         shutil.rmtree("/tmp/licant/test/", ignore_errors=True)
         target = core.touch("/tmp/licant/test/a", content="Hello")
         core.touch("/tmp/licant/test/d", content="Hello")
@@ -114,3 +115,26 @@ class MyTest(unittest.TestCase):
             f.write("Hello")
         core.source("a.txt")
         os.remove("/tmp/vasdvasdva.txt")
+
+    def test_copy(self):
+        core = licant.MakeCore(debug=True)
+        os.makedirs("/tmp/licant/test/", exist_ok=True)
+        with open("/tmp/licant/test/a.txt", "w") as f:
+            f.write("Hello")
+        a = core.source("/tmp/a.txt")
+        core.copy(dst="/tmp/licant/test/build/b.txt",
+                  src="/tmp/licant/test/a.txt")
+        core.copy(dst="/tmp/licant/test/build/c.txt",
+                  src="/tmp/licant/test/build/b.txt")
+
+        print(core.get("/tmp/licant/test/a.txt").deps)
+        print(core.get("/tmp/licant/test/build/b.txt").deps)
+        print(core.get("/tmp/licant/test/build/c.txt").deps)
+
+        self.assertEqual(
+            core.get("/tmp/licant/test/build/b.txt").deps, {"/tmp/licant/test/a.txt", "/tmp/licant/test/build"})
+        self.assertEqual(core.get(
+            "/tmp/licant/test/build/c.txt").deps, {"/tmp/licant/test/build/b.txt", "/tmp/licant/test/build"})
+
+        core.do("/tmp/licant/test/build/c.txt", "recurse_update")
+        shutil.rmtree("/tmp/licant")

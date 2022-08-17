@@ -293,8 +293,8 @@ def if_file_and_exist(target):
 
 
 class MakeCore(Core):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, debug=False):
+        super().__init__(debug=debug)
 
     def makedir(self, dirpath, deps, message="MKDIR {tgt}"):
         return self.add(
@@ -347,6 +347,9 @@ class MakeCore(Core):
 
     def source(self, src):
         """Index source file by licant core."""
+        if self.has(str(src)):
+            return self.get(str(src))
+
         src = os.path.expanduser(str(src))
         return self.add(FileTarget(
             tgt=src,
