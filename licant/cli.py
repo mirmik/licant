@@ -70,7 +70,7 @@ def execute_with_default_action(target, args):
                 licant.util.yellow(target.tgt), licant.util.get_actions(target)
             )
         )
-    return target.invoke(target.default_action, *args, critical=True)
+    return target.invoke(target.default_action, args=args, critical=True)
 
 
 def __cliexecute(args, default, core):
