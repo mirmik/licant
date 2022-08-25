@@ -91,7 +91,7 @@ class Core:
         """Create new target"""
         return self.add(UpdatableTarget(name, deps=deps, **kwargs))
 
-    def do(self, target, action=None, **kwargs):
+    def do(self, target, action=None, args=[], kwargs={}):
         """Do action on target"""
         if isinstance(target, str):
             target = self.get(target)
@@ -99,12 +99,19 @@ class Core:
         if action is None:
             action = target.default_action
 
-        target.invoke(action, **kwargs)
+        target.invoke(action, args=args, kwargs=kwargs)
 
-    def routine(self, func):
-        """Create new routine"""
-        funcname = func.__name__
-        return self.add(Target(funcname, action=func, need_if=lambda s: True))
+    def routine_do(self, func=None, deps=[], update_if=lambda s: False, tgt=None):
+        self.add(Routine(func=func, deps=deps, update_if=update_if, tgt=tgt))
+        return func
+
+    def routine(self, func=None, **kwargs):
+        if inspect.isfunction(func):
+            return self.routine_do(func, **kwargs)
+        else:
+            def decorator(func):
+                return self.routine_do(func, **kwargs)
+            return decorator
 
 
 # Объект ядра с которым библиотеки работают по умолчанию.
@@ -344,7 +351,7 @@ class Target:
     def hasaction(self, act):
         return act in self.__actions__
 
-    def invoke(self, funcname, *args, critical=False, **kwargs):
+    def invoke(self, funcname: str, args=[], critical: bool = False, kwargs={}):
         """Invoke func function or method, or mthod with func name for this target
 
                 Поддерживается несколько разных типов func.
@@ -408,7 +415,7 @@ class UpdatableTarget(Target):
     def recurse_update_get_args(self):
         return self.recurse_update(threads=core.runtime["threads"])
 
-    def update(self):
+    def update(self, *args, **kwargs):
         licant.error("Unoverrided update method")
 
     def self_need(self):
@@ -457,16 +464,23 @@ class Routine(UpdatableTarget):
     __actions__ = {"recurse_update",
                    "recurse_update_get_args", "update", "actlist"}
 
-    def __init__(self, func, deps=[], update_if=lambda s: False, tgt=None, **kwargs):
+    def __init__(self,
+                 func,
+                 deps=[],
+                 default_action="update",
+                 update_if=lambda s: False,
+                 tgt=None,
+                 **kwargs):
         if tgt is None:
             tgt = func.__name__
-        UpdatableTarget.__init__(self, tgt=tgt, deps=deps, **kwargs)
+        UpdatableTarget.__init__(self, tgt=tgt, deps=deps,
+                                 default_action=default_action, **kwargs)
         self.func = func
         self.update_if = update_if
         self.args = []
 
-    def update(self):
-        return self.func(*self.args)
+    def update(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
 
     def self_need(self):
         return self.update_if(self)
@@ -476,16 +490,17 @@ class Routine(UpdatableTarget):
         super().recurse_update(**kwargs)
 
 
-def routine_decorator(func=None, deps=[], update_if=lambda s: False, tgt=None):
-    if inspect.isfunction(func):
-        core.add(Routine(func, deps, update_if, tgt))
-        return func
+def routine_decorator_do(func=None, deps=[], update_if=lambda s: False, tgt=None):
+    core.add(Routine(func=func, deps=deps, update_if=update_if, tgt=tgt))
+    return func
 
+
+def routine_decorator(func=None, **kwargs):
+    if inspect.isfunction(func):
+        return routine_decorator_do(func, **kwargs)
     else:
         def decorator(func):
-            core.add(Routine(func, deps, update_if, tgt))
-            return func
-
+            return routine_decorator_do(func, **kwargs)
         return decorator
 
 

@@ -46,11 +46,11 @@ class MyTest(unittest.TestCase):
         core = licant.Core()
 
         @core.routine
-        def clean(target):
+        def clean():
             licant.system("rm -rf /tmp/licant/test/")
 
         @core.routine
-        def make(target):
+        def make():
             licant.system("mkdir -p /tmp/licant/test/")
 
         self.assertEqual(len(core.targets), 2)
@@ -85,7 +85,7 @@ class MyTest(unittest.TestCase):
         self.assertEqual(core.get("nonupdated").rcounter, 0)
         self.assertEqual(core.get("target").rcounter, 1)
 
-        core.do("target", action="recurse_update", threads=1)
+        core.do("target", action="recurse_update", kwargs={"threads": 1})
         self.assertEqual(x["a"], 0)
 
     def test_makecore_touch(self):
