@@ -110,10 +110,12 @@ class FileTarget(MakeFileTarget):
 
     def mtime(self):
         curinfo = fcache.get_info(self.tgt)
-        if not curinfo.exist:
-            return 0
-        else:
-            return curinfo.mtime
+        return os.path.getmtime(self.tgt)
+        #curinfo = fcache.get_info(self.tgt)
+        # if not curinfo.exist:
+        #    return 0
+        # else:
+        #    return curinfo.mtime
 
     def is_exist(self):
         #        print("is_exist", self.tgt, fcache.get_info(self.tgt).exist)
@@ -143,6 +145,9 @@ class FileTarget(MakeFileTarget):
             return True
 
         return False
+
+    def needs_update(self):
+        return self.self_need()
 
     def update(self):
         return self.build(self)
