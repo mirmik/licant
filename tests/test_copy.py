@@ -8,6 +8,7 @@ import time
 
 class CopyTest(unittest.TestCase):
     def test_core_object(self):
+        os.makedirs("/tmp/licant", exist_ok=True)
         # random file name
         tmpname = str(random.randint(0, 1000000))
 
