@@ -323,12 +323,18 @@ class MakeCore(Core):
         else:
             return []
 
-    def touch(self, out, content, deps=[]):
+    def touch(self, out, content="", deps=[]):
+        """Create file if not exist."""
+
+        def create_file(self):
+            with open(self.tgt, "w") as f:
+                f.write(content)
+
         out = os.path.expanduser(str(out))
         dirdeps = self.dirkeep(out)
         return self.add(FileTarget(
             tgt=out,
-            build=Executor("echo '{content}' > {tgt}"),
+            build=create_file,
             deps=deps + dirdeps,
             message="TOUCH {tgt}",
             use_dirkeep=False,

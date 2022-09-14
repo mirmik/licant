@@ -96,6 +96,11 @@ class Core:
         if isinstance(target, str):
             target = self.get(target)
 
+        if isinstance(target, (list, tuple)):
+            for t in target:
+                self.do(t, action, args, kwargs)
+            return
+
         if action is None:
             action = target.default_action
 
