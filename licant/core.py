@@ -301,7 +301,7 @@ class SubTree:
 
 
 class Target:
-    __actions__ = {"actlist", "print"}
+    __actions__ = {"actlist", "print", "dependies"}
 
     def __init__(self, tgt, deps=[], action=lambda s: None, need_if=lambda s: True, weakdeps=[], actions=None, __help__=None, **kwargs):
         self.tgt = tgt
@@ -321,6 +321,9 @@ class Target:
 
         self.need_by_self = None
         self.need_by_deps = None
+
+    def dependies(self):
+        print(self.deps)
 
     def name(self):
         return self.tgt
