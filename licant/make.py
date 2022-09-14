@@ -154,7 +154,6 @@ class FileTarget(MakeFileTarget):
             if isinstance(dep, (FileTarget, FileSet)) and dep.mtime() > maxtime:
                 maxtime = dep.mtime()
 
-        print("need update", self.tgt, maxtime, self.mtime())
         if maxtime > self.mtime():
             return True
 
