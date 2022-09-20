@@ -567,7 +567,7 @@ core.add(corediag_target)
 
 
 def do(target, action=None, args=[], kwargs={}):
-    core.do(targer=target, action=action, args=args, kwargs=kwargs)
+    core.do(target=target, action=action, args=args, kwargs=kwargs)
 
 
 def get_target(name):
