@@ -386,3 +386,21 @@ class MakeCore(Core):
         target.dirkeep = licant.util.do_nothing
         target.update_status = UpdateStatus.Keeped
         return target
+
+    def ftarget(self, tgt, build=None, deps=[], exec=None, message="FTARGET {tgt}"):
+        """Make the file target."""
+        if exec is not None:
+            build = licant.Executor(exec)
+
+        if build is None:
+            raise Exception("build action is None")
+
+        tgt = os.path.expanduser(str(tgt))
+        dirdeps = self.dirkeep(tgt)
+        return self.add(FileTarget(
+            tgt=tgt,
+            build=build,
+            deps=deps + dirdeps,
+            use_dirkeep=False,
+            message=message
+        ))

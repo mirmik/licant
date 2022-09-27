@@ -3,6 +3,7 @@
 from cmath import inf
 from licant.modules import mlibrary
 from licant.cxx_make import host_toolchain
+from licant.core import default_core
 from licant.util import red, yellow, cxx_read_depends
 
 import os
@@ -431,7 +432,7 @@ def collect_modules(mod):
     ]
 
 
-def prepare_targets(name, impl=None, **kwargs):
+def prepare_targets(name, impl=None, core=licant.core.default_core(), **kwargs):
     opts = CXXModuleOptions(**kwargs)
     opts.set_default_if_empty()
 
@@ -544,7 +545,7 @@ def prepare_targets(name, impl=None, **kwargs):
     return (res, locopts)
 
 
-def task(name, target, impl, type, **kwargs):
+def task(name, target, impl, type, core, **kwargs):
     if type != "objects":
         if target is None or target == name:
             target = "./" + name
@@ -552,21 +553,21 @@ def task(name, target, impl, type, **kwargs):
                               target=target, **kwargs)
     else:
         licant.modules.module(name, impl=impl, type=type, **kwargs)
-    ret, opts = prepare_targets(name)
-    licant.make.fileset(tgt=name, targets=ret, finalopts=opts)
+    ret, opts = prepare_targets(name, core=core)
+    licant.make.fileset(tgt=name, targets=ret, finalopts=opts, core=core)
     return ret
 
 
-def application(name, target=None, impl=None, type="application", **kwargs):
-    return task(name, target, impl, type, **kwargs)
+def application(name, target=None, impl=None, type="application", core=licant.core.default_core(), **kwargs):
+    return task(name, target, impl, type, core=core, **kwargs)
 
 
-def shared_library(name, target=None, impl=None, type="shared_library", **kwargs):
-    return task(name, target, impl, type, **kwargs)
+def shared_library(name, target=None, impl=None, type="shared_library", core=licant.core.default_core(), **kwargs):
+    return task(name, target, impl, type, core=core, **kwargs)
 
 
-def static_library(name, target=None, impl=None, type="static_library", **kwargs):
-    return task(name, target, impl, type, **kwargs)
+def static_library(name, target=None, impl=None, type="static_library", core=licant.core.default_core(), **kwargs):
+    return task(name, target, impl, type, core=core, **kwargs)
 
 
 def objects(name, target=None, impl=None, type="objects", **kwargs):

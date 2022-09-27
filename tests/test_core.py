@@ -132,9 +132,9 @@ class MyTest(unittest.TestCase):
         print(core.get("/tmp/licant/test/build/c.txt").deps)
 
         self.assertEqual(
-            core.get("/tmp/licant/test/build/b.txt").deps, {"/tmp/licant/test/a.txt", "/tmp/licant/test/build"})
+            core.get("/tmp/licant/test/build/b.txt").deps, ["/tmp/licant/test/a.txt", "/tmp/licant/test/build"])
         self.assertEqual(core.get(
-            "/tmp/licant/test/build/c.txt").deps, {"/tmp/licant/test/build/b.txt", "/tmp/licant/test/build"})
+            "/tmp/licant/test/build/c.txt").deps, ["/tmp/licant/test/build/b.txt", "/tmp/licant/test/build"])
 
         core.do("/tmp/licant/test/build/c.txt", "recurse_update")
         shutil.rmtree("/tmp/licant")

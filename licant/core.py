@@ -123,6 +123,10 @@ class Core:
 core = Core()
 
 
+def default_core():
+    return core
+
+
 class SubTree:
     def __init__(self, core, root):
         self.root = root
@@ -306,7 +310,7 @@ class Target:
     def __init__(self, tgt, deps=[], action=lambda s: None, need_if=lambda s: True, weakdeps=[], actions=None, __help__=None, **kwargs):
         self.tgt = tgt
         deps = self.expand_globs(deps)
-        self.deps = set(deps)
+        self.deps = deps
         self.need_if = need_if
         self.weakdeps = set(weakdeps)
         self.action = action
