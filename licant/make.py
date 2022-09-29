@@ -19,8 +19,11 @@ _rlock = threading.RLock()
 def do_execute(target, rule, msgfield, prefix=None):
     def sprint(*args, **kwargs):
         """print for multithread build"""
-        with _rlock:
-            print(*args, **kwargs)
+        try:
+            with _rlock:
+                print(*args, **kwargs)
+        except Exception as e:
+            print("Licant: Print error:", e)
 
     rule = rule.format(**target.__dict__)
 
