@@ -9,8 +9,22 @@ import random
 
 string_types = (type(b""), type(u""))
 
+
+def invert_depends_dictionary(depends_dictionary):
+    inverse_dictionary = {}
+    for target in depends_dictionary:
+        inverse_dictionary[target] = set()
+
+    for target in depends_dictionary:
+        deps_of_target = depends_dictionary[target]
+        for dep in deps_of_target:
+            inverse_dictionary[dep].add(target)
+    return inverse_dictionary
+
+
 def random_string(length):
     return "".join(random.choice("0123456789abcdefghijklmnopqrstuvwxyz") for i in range(length))
+
 
 def deprecated(reason):
     """
