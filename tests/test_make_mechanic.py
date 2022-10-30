@@ -60,21 +60,16 @@ class InvertDependsTest(unittest.TestCase):
 
         def c_func():
             obj.update({"c": True})
-
         ad = DependableTarget("a", deps={"b", "c"}, what_to_do=lambda: a_func())
         bd = DependableTarget("b", deps={"c"}, what_to_do=lambda: b_func())
         cd = DependableTarget("c", deps=set(), what_to_do=lambda: c_func())
         targets = [
             ad, bd, cd
         ]
-
-        solver = InverseRecursiveSolver(targets)
+        solver = InverseRecursiveSolver(targets, count_of_threads=2)
         self.assertEqual(solver.names_to_deptargets["a"].inverse_deps_count, 0)
         self.assertEqual(solver.names_to_deptargets["b"].inverse_deps_count, 1)
         self.assertEqual(solver.names_to_deptargets["c"].inverse_deps_count, 2)
-
         self.assertEqual(solver.names_to_deptargets["c"].inverse_deps.__class__, set)
-
         solver.exec()
-
         self.assertEqual(obj, {"a": True, "b": True, "c": True})
