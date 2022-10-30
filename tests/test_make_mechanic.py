@@ -6,7 +6,10 @@ import licant.util
 import shutil
 from licant.solver import (DependableTarget,
                            DependableTargetRuntime,
-                           InverseRecursiveSolver)
+                           InverseRecursiveSolver,
+                           UnknowTargetError,
+                           NoOneNonDependableTarget,
+                           CircularDependencyError)
 
 
 class InvertDependsTest(unittest.TestCase):
@@ -83,6 +86,45 @@ class InvertDependsTest(unittest.TestCase):
         ]
         solver = InverseRecursiveSolver(targets, count_of_threads=3)
         self.assertEqual(solver.names_to_deptargets["c"].inverse_deps.__class__, set)
-        self.assertEqual(solver.task_invoker.total_tasks_count, 5)
         solver.exec()
         self.assertEqual(obj, {"a": True, "b": True, "c": True, "d": True, "e": True})
+
+    def test_uncorrect_task(self):
+        def a_func():
+            pass
+
+        targets = [
+            DependableTarget("a", deps={"b", "c"}, what_to_do=lambda: a_func()),
+            DependableTarget("b", deps={"c", "z"}, what_to_do=lambda: a_func()),
+            DependableTarget("c", deps=set(), what_to_do=lambda: a_func()),
+            DependableTarget("d", deps=set(), what_to_do=lambda: a_func()),
+            DependableTarget("e", deps=set(), what_to_do=lambda: a_func()),
+        ]
+        with self.assertRaises(UnknowTargetError) as context:
+            solver = InverseRecursiveSolver(targets, count_of_threads=3)
+            solver.exec()
+
+    def test_ciclyc_task(self):
+        def a_func():
+            pass
+
+        targets = [
+            DependableTarget("a", deps={"b"}, what_to_do=lambda: a_func()),
+            DependableTarget("b", deps={"a"}, what_to_do=lambda: a_func()),
+        ]
+        with self.assertRaises(NoOneNonDependableTarget) as context:
+            solver = InverseRecursiveSolver(targets, count_of_threads=1)
+            solver.exec()
+
+    def test_ciclyc_task(self):
+        def a_func():
+            pass
+
+        targets = [
+            DependableTarget("a", deps={"b"}, what_to_do=lambda: a_func()),
+            DependableTarget("b", deps={"a", "c"}, what_to_do=lambda: a_func()),
+            DependableTarget("c", deps=set(), what_to_do=lambda: a_func()),
+        ]
+        with self.assertRaises(CircularDependencyError) as context:
+            solver = InverseRecursiveSolver(targets, count_of_threads=1)
+            solver.exec()

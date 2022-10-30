@@ -58,33 +58,37 @@ class DependableTargetRuntime:
 
 
 class TaskInvoker:
-    def __init__(self, threads_count, total_tasks_count):
+    def __init__(self, threads_count):
         self.queue = Queue()
         self.threads_count = threads_count
         self.threads = []
+        self.thread_on_base = [True] * threads_count
         self.done = False
-        self.total_tasks_count = total_tasks_count
         self.mtx = threading.Lock()
 
     def start(self):
         for i in range(self.threads_count):
-            t = Thread(target=self.worker)
+            t = Thread(target=self.worker, args=(i,))
             t.start()
             self.threads.append(t)
 
-    def worker(self):
+    def worker(self, no):
         while not self.done:
             try:
                 task = self.queue.get(timeout=0.4)
+                with self.mtx:
+                    self.thread_on_base[no] = False
                 task.doit()
 
                 with self.mtx:
-                    self.total_tasks_count -= 1
-                    if self.total_tasks_count == 0:
+                    self.thread_on_base[no] = True
+                    if all(self.thread_on_base) and self.queue.empty():
                         self.done = True
                         break
             except queue.Empty:
-                pass
+                if all(self.thread_on_base) and self.queue.empty():
+                    self.done = True
+                    break
 
     def add_target(self, target):
         self.queue.put(target)
@@ -100,10 +104,24 @@ class TaskInvoker:
             t.join()
 
 
+class UnknowTargetError(Exception):
+    pass
+
+
+class NoOneNonDependableTarget(Exception):
+    pass
+
+
+class CircularDependencyError(Exception):
+    def __init__(self, lst):
+        self.lst = lst
+        Exception.__init__(self, lst)
+
+
 class InverseRecursiveSolver:
     def __init__(self, targets: list, count_of_threads=1):
         self.check(targets)
-        self.task_invoker = TaskInvoker(count_of_threads, len(targets))
+        self.task_invoker = TaskInvoker(count_of_threads)
         self.deptargets = [DependableTargetRuntime(target, self.task_invoker) for target in targets]
 
         self.names_to_deptargets = {target.name(): target for target in self.deptargets}
@@ -117,13 +135,33 @@ class InverseRecursiveSolver:
         for target in non_dependable_targets:
             self.task_invoker.add_target(target)
 
+        if len(non_dependable_targets) == 0:
+            raise NoOneNonDependableTarget()
+
+        self.deep_cyclic_check(self.deptargets, non_dependable_targets)
+
+    def deep_cyclic_check_for_target(self, target, lst):
+        if target in lst:
+            raise CircularDependencyError(lst)
+        lst.append(target)
+        for dep in target.inverse_deps:
+            self.deep_cyclic_check_for_target(dep, lst)
+        lst.pop()
+
+    def deep_cyclic_check(self, deptargets, non_dependable_targets):
+        for target in non_dependable_targets:
+            self.deep_cyclic_check_for_target(target, [])
+
     def collect_depends_of_targets(self, deptargets, names_to_deptargets):
-        deps_of_targets = {}
-        for deptarget in deptargets:
-            deps_of_targets[deptarget] = set()
-            for dep in deptarget.deps():
-                deps_of_targets[deptarget].add(names_to_deptargets[dep])
-        return deps_of_targets
+        try:
+            deps_of_targets = {}
+            for deptarget in deptargets:
+                deps_of_targets[deptarget] = set()
+                for dep in deptarget.deps():
+                    deps_of_targets[deptarget].add(names_to_deptargets[dep])
+            return deps_of_targets
+        except KeyError as e:
+            raise UnknowTargetError(e)
 
     def check(self, targets):
         for target in targets:
