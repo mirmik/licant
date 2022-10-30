@@ -1,9 +1,9 @@
 from concurrent.futures import thread
-from this import d
 from threading import Thread
 from queue import Queue
 import queue
 import threading
+import sys
 from licant.util import invert_depends_dictionary
 
 
@@ -22,34 +22,39 @@ class DependableTarget:
 class DependableTargetRuntime:
     def __init__(self, deptarget, task_invoker):
         self.deptarget = deptarget
-        self.is_done = False
+        self.depcount = len(deptarget.deps)
         self.inverse_deps = set()
-        self.inverse_deps_count = 0
         self.task_invoker = task_invoker
 
     def set_inverse_deps(self, inverse_deps: set):
         self.inverse_deps = inverse_deps
-        self.inverse_deps_count = len(inverse_deps)
 
     def deps(self):
         return self.deptarget.deps
 
     def decrease_inverse_deps_count(self):
-        with self.task_invoker.mtx:
-            self.inverse_deps_count -= 1
+        self.depcount -= 1
+        if self.depcount == 0:
             self.task_invoker.add_target(self)
+        assert self.depcount >= 0
 
     def doit(self):
         self.deptarget.doit()
-        self.is_done = True
-        for dep in self.inverse_deps:
-            dep.decrease_inverse_deps_count()
+        with self.task_invoker.mtx:
+            for dep in self.inverse_deps:
+                dep.decrease_inverse_deps_count()
 
     def count_of_deps(self):
         return len(self.deptarget.deps)
 
     def name(self):
         return self.deptarget.name
+
+    def __str__(self) -> str:
+        return self.name()
+
+    def __repr__(self) -> str:
+        return self.name()
 
 
 class TaskInvoker:
@@ -70,7 +75,7 @@ class TaskInvoker:
     def worker(self):
         while not self.done:
             try:
-                task = self.queue.get(timeout=1)
+                task = self.queue.get(timeout=0.4)
                 task.doit()
 
                 with self.mtx:
