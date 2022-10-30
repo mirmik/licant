@@ -1,7 +1,9 @@
+from concurrent.futures import thread
 from this import d
 from threading import Thread
 from queue import Queue
 import queue
+import threading
 from licant.util import invert_depends_dictionary
 
 
@@ -33,8 +35,9 @@ class DependableTargetRuntime:
         return self.deptarget.deps
 
     def decrease_inverse_deps_count(self):
-        self.inverse_deps_count -= 1
-        self.task_invoker.add_target(self)
+        with self.task_invoker.mtx:
+            self.inverse_deps_count -= 1
+            self.task_invoker.add_target(self)
 
     def doit(self):
         self.deptarget.doit()
@@ -56,6 +59,7 @@ class TaskInvoker:
         self.threads = []
         self.done = False
         self.total_tasks_count = total_tasks_count
+        self.mtx = threading.Lock()
 
     def start(self):
         for i in range(self.threads_count):
@@ -67,12 +71,13 @@ class TaskInvoker:
         while not self.done:
             try:
                 task = self.queue.get(timeout=1)
-                self.total_tasks_count -= 1
                 task.doit()
 
-                if self.total_tasks_count == 0:
-                    self.done = True
-                    break
+                with self.mtx:
+                    self.total_tasks_count -= 1
+                    if self.total_tasks_count == 0:
+                        self.done = True
+                        break
             except queue.Empty:
                 pass
 
