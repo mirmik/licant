@@ -75,19 +75,14 @@ class InvertDependsTest(unittest.TestCase):
                 obj.update({"e": True})
 
         targets = [
-            #DependableTarget("a", deps={"b", "c"}, what_to_do=lambda: a_func()),
-            DependableTarget("b", deps={"c"}, what_to_do=lambda: b_func()),
+            DependableTarget("a", deps={"b", "c"}, what_to_do=lambda: a_func()),
+            DependableTarget("b", deps={"c", "e"}, what_to_do=lambda: b_func()),
             DependableTarget("c", deps=set(), what_to_do=lambda: c_func()),
             DependableTarget("d", deps=set(), what_to_do=lambda: d_func()),
             DependableTarget("e", deps=set(), what_to_do=lambda: e_func()),
         ]
-        solver = InverseRecursiveSolver(targets, count_of_threads=1)
-        # self.assertEqual(solver.names_to_deptargets["a"].inverse_deps_count, 0)
-        # self.assertEqual(solver.names_to_deptargets["b"].inverse_deps_count, 1)
-        # self.assertEqual(solver.names_to_deptargets["c"].inverse_deps_count, 2)
-        # self.assertEqual(solver.names_to_deptargets["d"].inverse_deps_count, 0)
-        # self.assertEqual(solver.names_to_deptargets["e"].inverse_deps_count, 1)
-        # self.assertEqual(solver.names_to_deptargets["c"].inverse_deps.__class__, set)
-        # self.assertEqual(solver.task_invoker.total_tasks_count, 5)
+        solver = InverseRecursiveSolver(targets, count_of_threads=3)
+        self.assertEqual(solver.names_to_deptargets["c"].inverse_deps.__class__, set)
+        self.assertEqual(solver.task_invoker.total_tasks_count, 5)
         solver.exec()
         self.assertEqual(obj, {"a": True, "b": True, "c": True, "d": True, "e": True})
