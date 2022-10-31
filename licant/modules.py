@@ -195,4 +195,4 @@ modules_target = licant.core.Target(
     __help__="Info about modules",
 )
 
-licant.core.core.add(modules_target)
+licant.core.default_core().add(modules_target)

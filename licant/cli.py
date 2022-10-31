@@ -122,7 +122,7 @@ def cliexecute(
         default=None,
         colorwrap=False,
         argv=sys.argv[1:],
-        core=licant.core.core):
+        core=licant.core.default_core()):
     if colorwrap:
         print(licant.util.green("[start]"))
 
@@ -139,7 +139,10 @@ def cliexecute(
     if opts.printruntime:
         print("PRINT RUNTIME:", core.runtime)
 
-    __cliexecute(args, default=default, core=core)
+    try:
+        __cliexecute(args, default=default, core=core)
+    except KeyboardInterrupt:
+        licant.util.error("interrupted by user")
 
     if colorwrap:
         print(licant.util.yellow("[finish]"))

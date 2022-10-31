@@ -90,7 +90,7 @@ def include(lib, path=None, local_tunel=None):
 
 
 def print_about_lib(lib, path):
-    if licant.core.core.runtime["debug"]:
+    if licant.core.default_core().runtime["debug"]:
         print(f"LICANTLIB {lib} {path}")
 
 
@@ -120,4 +120,4 @@ libs_target = licant.core.Target(
     }, __help__="Licant libs info"
 )
 
-licant.core.core.add(libs_target)
+licant.core.default_core().add(libs_target)

@@ -1,7 +1,7 @@
 # coding: utf-8
 
 from cmath import inf
-from licant.modules import mlibrary
+from licant.modules import mlibrary, module
 from licant.cxx_make import host_toolchain
 from licant.core import default_core
 from licant.util import red, yellow, cxx_read_depends
@@ -290,7 +290,7 @@ def qt_ui_paths(opts):
 def link_objects(srcs, objs, deps, cxxopts, adddeps):
 
     for s, o, d in zip(srcs, objs, deps):
-        if s not in licant.core.core.targets:
+        if s not in default_core().targets:
             licant.make.source(s)
 
         headers = cxx_read_depends(d)
@@ -299,7 +299,7 @@ def link_objects(srcs, objs, deps, cxxopts, adddeps):
             headers = []
         else:
             for h in headers:
-                if h not in licant.core.core.targets:
+                if h not in default_core().targets:
                     licant.make.source(h)
 
         licant.cxx_make.depend(
@@ -378,7 +378,7 @@ def collect_modules(mod):
         add_included_from(name, incfrom)
 
     def collect_modules(mod):
-        if licant.core.core.runtime["trace"]:
+        if default_core().runtime["trace"]:
             print("trace: collect_modules( {} )".format(mod.name))
 
         for md in mod.opts["mdepends"]:
@@ -548,14 +548,21 @@ def prepare_targets(name, impl=None, core=licant.core.default_core(), **kwargs):
 def task(name, target, impl, type, core, **kwargs):
     if type != "objects":
         if target is None or target == name:
-            target = "./" + name
-        licant.modules.module(name, impl=impl, type=type,
+            target = name
+            module_name = name + "__" + "module"
+        else:
+            module_name = name + "__" + "module"
+        licant.modules.module(module_name, impl=impl, type=type,
                               target=target, **kwargs)
     else:
         licant.modules.module(name, impl=impl, type=type, **kwargs)
-    ret, opts = prepare_targets(name, core=core)
-    licant.make.fileset(tgt=name, targets=ret, finalopts=opts, core=core)
-    return ret
+    ret, opts = prepare_targets(module_name, core=core)
+    #licant.make.fileset(tgt=name, targets=ret, finalopts=opts, core=core)
+
+    if type != "objects":
+        return ret[0]
+    else:
+        return licant.make.fileset(tgt=name, targets=ret, finalopts=opts, core=core)
 
 
 def application(name, target=None, impl=None, type="application", core=licant.core.default_core(), **kwargs):
@@ -582,9 +589,10 @@ def library(*args, shared=True, **kwargs):
 
 
 def static_and_shared(name, static_lib, shared_lib, **kwargs):
-    static_library(static_lib, **kwargs)
-    shared_library(shared_lib, **kwargs)
-    return licant.fileset(tgt=name, targets=[static_lib, shared_lib])
+    a = static_library(static_lib, **kwargs)
+    b = shared_library(shared_lib, **kwargs)
+    licant.make.fileset(name, [a, b])
+    return a, b
 
 
 def print_collect_list(target, *args):
@@ -629,4 +637,4 @@ modules_target = licant.core.Target(
     __help__="Info about collected modules",
 )
 
-licant.core.core.add(modules_target)
+licant.core.default_core().add(modules_target)

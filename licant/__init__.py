@@ -1,8 +1,8 @@
 import subprocess
 import os
 from licant.cli import cliexecute as ex
-from licant.core import Core, Target, UpdatableTarget, UpdateStatus
-from licant.core import core as default_core
+from licant.core import Core, Target, UpdatableTarget
+from licant.core import default_core
 from licant.core import routine_decorator as routine
 from licant.core import do
 from licant.core import get_target
@@ -22,7 +22,7 @@ from licant.cxx_make import gcc_toolchain, clang_toolchain, host_toolchain
 import licant.scripter
 from licant.libs import include
 
-__version__ = "1.12.5"
+__version__ = "1.13.0"
 
 
 def directory():
@@ -106,7 +106,6 @@ __all__ = [
     "routine",
     "routine_decorator",
     "mtime",
-    "UpdateStatus",
     "UpdatableTarget",
     "Core",
     "core",

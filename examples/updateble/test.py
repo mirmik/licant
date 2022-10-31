@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
+from licant import UpdatableTarget
+import licant
 import os
 import sys
 
 sys.path.insert(0, "../..")
 
-import licant
-from licant import UpdateStatus, UpdatableTarget
 
 core = licant.Core()
 
@@ -32,31 +32,22 @@ core.add(
         src="a",
         tgtpath="b",
         deps=[],
-        update=copy,
-        update_status=UpdateStatus.Keeped,
+        update=copy
     )
 )
 core.add(
     UpdatableTarget(
         tgt="hello_world_0",
         deps=[],
-        update=hello_world_0,
-        update_status=UpdateStatus.Keeped,
+        update=hello_world_0
     )
 )
 core.add(
     UpdatableTarget(
         tgt="hello_world_1",
         deps=["hello_world_0", "copy"],
-        update=hello_world_1,
-        update_status=UpdateStatus.Keeped,
+        update=hello_world_1
     )
 )
 
-stree = core.subtree("hello_world_1")
-
-print("stree:")
-print(stree)
-print()
-
-stree.reverse_recurse_invoke("update_if_need", threads=1)
+core.do("hello_world_1", "recurse_update")

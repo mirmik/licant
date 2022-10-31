@@ -1,4 +1,4 @@
-from licant.core import core
+from licant.core import default_core
 from licant.util import yellow
 import licant.make
 from licant.make import MakeCore
@@ -116,7 +116,7 @@ cc_ext_list = ["c"]
 asm_ext_list = ["asm", "s", "S"]
 
 
-def object(src, tgt, opts=options(), type=None, deps=None, message="OBJECT {tgt}"):
+def object(src, tgt, opts=options(), type=None, deps=None, core=default_core(), message="OBJECT {tgt}"):
     if deps is None:
         deps = [src]
 
@@ -141,18 +141,18 @@ def object(src, tgt, opts=options(), type=None, deps=None, message="OBJECT {tgt}
     else:
         print(licant.util.red("Unrecognized extention"))
         exit(-1)
-    core.add(
+    return core.add(
         licant.make.FileTarget(
             opts=opts, tgt=tgt, src=src, deps=deps, build=build, message=message
         )
     )
 
 
-def qt_moc(src, tgt, opts=options(), type=None, deps=None, message="MOC {tgt}"):
+def qt_moc(src, tgt, opts=options(), type=None, deps=None, core=default_core(), message="MOC {tgt}"):
     if deps is None:
         deps = [src]
 
-    core.add(
+    return core.add(
         licant.make.FileTarget(
             opts=opts,
             tgt=tgt,
@@ -164,11 +164,11 @@ def qt_moc(src, tgt, opts=options(), type=None, deps=None, message="MOC {tgt}"):
     )
 
 
-def qt_uic(src, tgt, opts=options(), type=None, deps=None, message="UIC {tgt}"):
+def qt_uic(src, tgt, opts=options(), type=None, deps=None, core=default_core(), message="UIC {tgt}"):
     if deps is None:
         deps = [src]
 
-    core.add(
+    return core.add(
         licant.make.FileTarget(
             opts=opts,
             tgt=tgt,
@@ -181,7 +181,10 @@ def qt_uic(src, tgt, opts=options(), type=None, deps=None, message="UIC {tgt}"):
 
 
 def depend(
-        src, tgt, opts=options(), type=None, deps=None, message="DEPENDS {tgt}", **kwargs
+        src,
+        tgt, opts=options(), type=None, deps=None, message="DEPENDS {tgt}",
+        core=default_core(),
+        **kwargs
 ):
     if deps is None:
         deps = [src]
@@ -208,7 +211,7 @@ def depend(
         print(licant.util.red("Unrecognized extention"))
         exit(-1)
 
-    core.add(
+    return core.add(
         licant.make.FileTarget(
             opts=opts,
             tgt=tgt,
@@ -221,8 +224,8 @@ def depend(
     )
 
 
-def executable(tgt, srcs, opts=options(), message="EXECUTABLE {tgt}"):
-    core.add(
+def executable(tgt, srcs, opts=options(), core=default_core(), message="EXECUTABLE {tgt}"):
+    return core.add(
         licant.make.FileTarget(
             opts=opts,
             tgt=tgt,
@@ -234,8 +237,8 @@ def executable(tgt, srcs, opts=options(), message="EXECUTABLE {tgt}"):
     )
 
 
-def dynamic_library(tgt, srcs, opts=options(), message="DYNLIB {tgt}"):
-    core.add(
+def dynamic_library(tgt, srcs, opts=options(), core=default_core(), message="DYNLIB {tgt}"):
+    return core.add(
         licant.make.FileTarget(
             opts=opts,
             tgt=tgt,
@@ -247,8 +250,8 @@ def dynamic_library(tgt, srcs, opts=options(), message="DYNLIB {tgt}"):
     )
 
 
-def static_library(tgt, srcs, opts=options(), message="STATLIB {tgt}"):
-    core.add(
+def static_library(tgt, srcs, opts=options(), core=default_core(), message="STATLIB {tgt}"):
+    return core.add(
         licant.make.FileTarget(
             opts=opts,
             tgt=tgt,
@@ -270,7 +273,7 @@ def make_gcc_binutils(pref):
     )
 
 
-def disassembler(target, *args):
+def disassembler(target, core=default_core(), *args):
     if len(args) <= 1:
         print("usage: disasm object_path asmlist_path")
 
@@ -294,7 +297,7 @@ def objcopy(toolchain, tgt, src, format, sections, message="OBJCOPY {tgt}"):
     opts.src = src
     opts.tgt = tgt
 
-    core.add(
+    return core.add(
         licant.make.FileTarget(
             opts=opts,
             deps=[src],
@@ -309,7 +312,7 @@ binutils_target = licant.core.Target(
     tgt="binutils", deps=[], disasm=disassembler, actions={"disasm"}
 )
 
-core.add(binutils_target)
+default_core().add(binutils_target)
 
 
 class CxxCore(MakeCore):

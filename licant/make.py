@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 import licant
-from licant.core import UpdatableTarget, UpdateStatus, Core, core
+from licant.core import UpdatableTarget, Core, default_core
 from licant.cache import fcache
 from licant.util import purple, quite
 import threading
@@ -12,11 +12,14 @@ import time
 import subprocess
 import fcntl
 import sys
+import traceback
 
 _rlock = threading.RLock()
 
 
 def do_execute(target, rule, msgfield, prefix=None):
+    core = target.core
+
     def sprint(*args, **kwargs):
         """print for multithread build"""
         try:
@@ -51,8 +54,8 @@ def do_execute(target, rule, msgfield, prefix=None):
     sprint(stderr.read().decode("utf-8"), end="")
     sys.stderr.flush()
 
-    if target.isfile:
-        target.update_info(target)
+    if target.is_file():
+        target.update_info()
 
     return True if ret == 0 else False
 
@@ -85,11 +88,27 @@ class MakeFileTarget(UpdatableTarget):
         self.default_action = "makefile"
 
     def clean(self):
-        stree = self.core.subtree(self.tgt)
-        return stree.invoke_foreach(ops="clr", cond=if_file_and_exist)
+        stree = self.core.depends_as_set(self.tgt, incroot=True)
+        stree = [self.core.get(s) for s in stree]
+
+        for target in stree:
+            if if_file_and_exist(target) and target.clr:
+                target.clr()
 
     def makefile(self):
         return self.recurse_update()
+
+    def is_file(self):
+        return True
+
+    def mtime(self):
+        """fileset mtime"""
+        maxtime = 0
+        for d in self.deps:
+            if os.path.exists(d):
+                maxtime = max(maxtime, os.path.getmtime(d))
+
+        return maxtime
 
 
 class FileTarget(MakeFileTarget):
@@ -114,15 +133,14 @@ class FileTarget(MakeFileTarget):
         print("deps mtime:")
         maxtime = 0
         for dep in self.get_deplist():
-            if isinstance(dep, (FileTarget, FileSet)) and dep.mtime() > maxtime:
+            if isinstance(dep, (FileTarget, MakeFileTarget)) and dep.mtime() > maxtime:
                 print("\t", dep.tgt, dep.mtime())
             else:
                 print("\t", dep.tgt, "not a file:", dep.__class__)
-        print("is update needed:", self.self_need())
+        print("is update needed:", self.internal_need_if())
 
-    def update_info(self, _self):
+    def update_info(self):
         fcache.update_info(self.tgt)
-        return True
 
     def mtime(self):
         curinfo = fcache.get_info(self.tgt)
@@ -148,13 +166,13 @@ class FileTarget(MakeFileTarget):
         """Delete this file."""
         do_execute(self, "rm -f {tgt}", "clrmsg")
 
-    def self_need(self):
+    def internal_need_if(self):
         if self.force or not self.is_exist():
             return True
 
         maxtime = 0
         for dep in self.get_deplist():
-            if isinstance(dep, (FileTarget, FileSet)) and dep.mtime() > maxtime:
+            if dep.is_file() and dep.mtime() > maxtime:
                 maxtime = dep.mtime()
 
         if maxtime > self.mtime():
@@ -162,11 +180,10 @@ class FileTarget(MakeFileTarget):
 
         return False
 
-    def needs_update(self):
-        return self.self_need()
-
     def update(self):
-        return self.build(self)
+        sts = self.build(self)
+        self.update_info()
+        return sts
 
     def __lt__(self, other):
         return str(self) < str(other)
@@ -176,7 +193,7 @@ class FileTarget(MakeFileTarget):
 
 
 class DirectoryTarget(FileTarget):
-    def self_need(self):
+    def internal_need_if(self):
         if not self.is_exist():
             return True
         return False
@@ -185,12 +202,9 @@ class DirectoryTarget(FileTarget):
         return 0
 
     def update_if_need(self):
-        #print(self.tgt, self.self_need())
-        if self.self_need():  # self.invoke("self_need"):
-            self.update_status = UpdateStatus.Updated
-            return self.update()  # self.invoke("update")
+        if self.internal_need_if():
+            return self.update()
         else:
-            self.update_status = UpdateStatus.Keeped
             return True
 
     def clr(self):
@@ -198,63 +212,62 @@ class DirectoryTarget(FileTarget):
         pass
 
 
-class FileSet(MakeFileTarget):
-    """Virtual file target`s set.
+# class FileSet(MakeFileTarget):
+#     """Virtual file target`s set.
 
-        For link a set of file objects to the licant tree
-        without depend`s overhead."""
+#         For link a set of file objects to the licant tree
+#         without depend`s overhead."""
 
-    def __init__(self, tgt, targets, deps, **kwargs):
-        MakeFileTarget.__init__(self, tgt=tgt, deps=targets+deps, **kwargs)
-        self.targets = targets
-        self.__mtime = None
+#     def __init__(self, tgt, targets, deps, **kwargs):
+#         MakeFileTarget.__init__(self, tgt=tgt, deps=targets+deps, **kwargs)
+#         self.targets = targets
+#         self.__mtime = None
 
-    def self_need(self):
-        return False
+#     def internal_need_if(self):
+#         return False
 
-    def update(self):
-        pass
+#     def update(self):
+#         pass
 
-    def clean(self):
-        for target in self.targets:
-            target = self.core.get(target)
-            target.invoke("clean")
+#     def clean(self):
+#         for target in self.targets:
+#             target = self.core.get(target)
+#             target.invoke("clean")
 
-    def mtime(self):
-        if self.__mtime is None:
-            maxtime = 0
-            for dep in self.get_deplist():
-                if dep.mtime() > maxtime:
-                    maxtime = dep.mtime()
-            self.__mtime = maxtime
+#     def mtime(self):
+#         if self.__mtime is None:
+#             maxtime = 0
+#             for dep in self.get_deplist():
+#                 if dep.mtime() > maxtime:
+#                     maxtime = dep.mtime()
+#             self.__mtime = maxtime
 
-        return self.__mtime
+#         return self.__mtime
 
-    def __lt__(self, other):
-        return str(self) < str(other)
+#     def __lt__(self, other):
+#         return str(self) < str(other)
 
-    def __gt__(self, other):
-        return str(self) > str(other)
+#     def __gt__(self, other):
+#         return str(self) > str(other)
 
 
 def source(tgt, deps=[]):
     """Index source file by licant core."""
 
-    if core.exist(tgt):
+    if default_core().exist(tgt):
         return
 
     target = FileTarget(
         build=lambda self: self.warn_if_not_exist(), deps=deps, tgt=tgt)
     target.clr = None
     target.dirkeep = licant.util.do_nothing
-    target.update_status = UpdateStatus.Keeped
-    return core.add(target)
+    return default_core().add(target)
 
 
 def dirkeep(dirpath, message="MKDIR {tgt}"):
     """Create directory tree for this file if needed."""
     base_directory_path = os.path.normpath(os.path.dirname(dirpath))
-    return core.add(
+    return default_core().add(
         DirectoryTarget(
             tgt=dirpath,
             build=DirectoryKeeper(),
@@ -269,7 +282,7 @@ def makedir(dirpath, message="MKDIR {tgt}"):
     return dirkeep(dirpath, message)
 
 
-def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
+def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}", core=default_core()):
     """Make the file copy target."""
     src = os.path.expanduser(str(src))
     tgt = os.path.expanduser(str(tgt))
@@ -287,7 +300,7 @@ def copy(tgt, src, adddeps=[], message="COPY {src} {tgt}"):
     return tgt
 
 
-def makefile(tgt, deps, do, **kwargs):
+def makefile(tgt, deps, do, core=default_core(), **kwargs):
     """Makefile target."""
     return core.add(
         FileTarget(
@@ -299,9 +312,9 @@ def makefile(tgt, deps, do, **kwargs):
     )
 
 
-def fileset(tgt, targets, deps=[], **kwargs):
+def fileset(tgt, targets, deps=[], core=default_core(), **kwargs):
     """Make a fileset."""
-    core.add(FileSet(tgt=tgt, targets=targets, deps=deps, **kwargs))
+    core.add(MakeFileTarget(tgt=tgt, deps=deps + targets, core=core, **kwargs))
     return tgt
 
 
@@ -387,7 +400,6 @@ class MakeCore(Core):
         ))
         target.clr = None
         target.dirkeep = licant.util.do_nothing
-        target.update_status = UpdateStatus.Keeped
         return target
 
     def ftarget(self, tgt, build=None, deps=[], exec=None, message="FTARGET {tgt}"):

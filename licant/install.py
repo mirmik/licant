@@ -3,6 +3,7 @@ import sys
 import licant.make
 import licant.util
 import subprocess
+from licant.core import default_core
 
 error_in_install_library = False
 termux_dir = "/data/data/com.termux/files"
@@ -49,12 +50,12 @@ def find_headers_path():
     if "PREFIX" in os.environ:
         return os.path.join(os.environ["PREFIX"], "include")
 
-    #if is_termux:
+    # if is_termux:
     #    return os.path.join(termux_dir, "usr/include")
 
     if is_windows:
         return "/usr/local/include"
-        
+
     return "/usr/local/include"
 
 
@@ -123,7 +124,7 @@ def install_library(tgt, hroot, headers, headers_patterns=("*.h", "*.hxx", "*.hp
     if error_in_install_library:
         return None
 
-    ltgt=[]
+    ltgt = []
     if libtgt is None:
         pass
     elif isinstance(libtgt, list):
@@ -131,7 +132,7 @@ def install_library(tgt, hroot, headers, headers_patterns=("*.h", "*.hxx", "*.hp
             ltgt.append(install_shared_library(l))
     else:
         ltgt.append(install_shared_library(libtgt))
-    
+
     deps = []
     if libtgt is None:
         pass
@@ -140,18 +141,18 @@ def install_library(tgt, hroot, headers, headers_patterns=("*.h", "*.hxx", "*.hp
             deps.append(l)
     else:
         deps.append(libtgt)
-    
+
     htgt, rawtgts = install_headers(
         tgtdir=hroot, srcdir=headers, patterns=headers_patterns, adddeps=deps)
 
     tgts = [htgt] + ltgt if libtgt else [htgt]
- 
+
     if uninstall:
         # Add uninstall target as fake makefile
         # with weak targets binding.
         # makefile routine changed to 'clean'
         # TODO: Create explicit Uninstall target in .make.py
-        licant.core.core.add(
+        default_core().add(
             licant.make.MakeFileTarget(
                 tgt=uninstall,
                 build=licant.make.MakeFileTarget.clean,

@@ -31,10 +31,15 @@ class MyTest(unittest.TestCase):
         def foo(x):
             x["a"] = 1
 
-        core.updtarget("nonupdated", update=lambda s: foo(x),
-                       need_if=lambda s: False)
-        core.updtarget("updated", update=lambda s: foo(y),
-                       need_if=lambda s: True)
+        u0 = core.updtarget("nonupdated", update=lambda s: foo(x),
+                            need_if=lambda s: False)
+        u1 = core.updtarget("updated", update=lambda s: foo(y),
+                            need_if=lambda s: True)
+
+        self.assertFalse(u0.need_to_update())
+        self.assertTrue(u1.need_to_update())
+        self.assertFalse(u0.has_updated_depends())
+        self.assertFalse(u1.has_updated_depends())
 
         core.do("nonupdated", action="update_if_need")
         core.do("updated", action="update_if_need")
@@ -59,34 +64,6 @@ class MyTest(unittest.TestCase):
         self.assertTrue(os.path.exists("/tmp/licant/test/"))
         core.do("clean")
         self.assertFalse(os.path.exists("/tmp/licant/test/"))
-
-    def test_target_depens(self):
-        core = licant.Core(debug=True)
-        x = {"a": 0}
-        core.updtarget("nonupdated", need_if=lambda s: False)
-        core.updtarget("target",
-                       update=lambda s: setattr(x, "a", 1),
-                       deps=["nonupdated"]
-                       )
-
-        self.assertEqual(core.get("target").get_deplist(),
-                         [core.get("nonupdated")])
-
-        subtree = core.subtree("target")
-        subtree.generate_rdepends()
-        self.assertEqual(core.get("nonupdated").rdepends, ["target"])
-        self.assertEqual(core.get("target").rdepends, [])
-        self.assertEqual(core.get("nonupdated").rcounter, 0)
-        self.assertEqual(core.get("target").rcounter, 0)
-        self.assertEqual(subtree.depset, ["nonupdated", "target"])
-
-        subtree = core.subtree("target")
-        subtree.reverse_recurse_invoke_single("update_if_need")
-        self.assertEqual(core.get("nonupdated").rcounter, 0)
-        self.assertEqual(core.get("target").rcounter, 1)
-
-        core.do("target", action="recurse_update", kwargs={"threads": 1})
-        self.assertEqual(x["a"], 0)
 
     def test_makecore_touch(self):
         core = licant.MakeCore(debug=True)

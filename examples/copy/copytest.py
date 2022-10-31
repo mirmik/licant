@@ -10,6 +10,7 @@ core = MakeCore()
 
 a = core.source("a.txt")
 core.copy(dst="build/b.txt", src=a)
+#core.copy(dst="build/f.txt", src=a)
 core.copy(dst="build/c.txt", src="build/b.txt")
 
 licant.ex("build/c.txt", core=core)

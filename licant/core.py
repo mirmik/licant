@@ -6,9 +6,11 @@ import types
 import inspect
 from enum import Enum
 import re
+from functools import partial
 import random
 import glob
 import os
+from licant.solver import DependableTarget, DependableTargetRuntime, TaskInvoker, InverseRecursiveSolver
 
 
 class WrongAction(Exception):
@@ -64,24 +66,19 @@ class Core:
         """Check if target exists"""
         return tgt in self.targets
 
-    def subtree(self, root):
-        """Construct Subtree accessor for root target"""
-        return SubTree(root=root, core=self)
-
-    def depends_as_set(self, tgt, incroot=True):
-        """TODO: as_set, but list returned???"""
-        res = set()
-        if incroot:
-            res.add(str(tgt))
-
+    def depends_as_set_impl(self, tgt, accum):
         target = self.get(str(tgt))
-
         for d in target.deps:
-            if d not in res:
-                res.add(d)
-                subres = self.depends_as_set(d)
-                res = res.union(subres)
-        return sorted(res)
+            if d not in accum:
+                accum.add(d)
+                self.depends_as_set_impl(d, accum)
+
+    def depends_as_set(self, tgt, incroot):
+        accumulator = set()
+        if incroot:
+            accumulator.add(str(tgt))
+        self.depends_as_set_impl(tgt, accumulator)
+        return sorted(accumulator)
 
     def target(self, name, deps=[], **kwargs):
         """Create new target"""
@@ -119,189 +116,11 @@ class Core:
             return decorator
 
 
-# Объект ядра с которым библиотеки работают по умолчанию.
-core = Core()
+_default_core = Core()
 
 
 def default_core():
-    return core
-
-
-class SubTree:
-    def __init__(self, core, root):
-        self.root = root
-        self.core = core
-        self.depset = core.depends_as_set(root)
-        self.weakdepsset = list(self.core.get(root).weakdeps)
-
-    def invoke_foreach(self, ops, cond=licant.util.always_true):
-        if core.runtime["debug"]:
-            print("FOREACH(root={}, ops={}, cond={})".format(self.root, ops, cond))
-
-        sum = 0
-        ret = None
-
-        for d in self.depset + self.weakdepsset:
-            target = self.core.get(d)
-            if cond(target):
-                ret = target.invoke(ops)
-
-            if ret is not None:
-                sum += 1
-
-        return sum
-
-    def __generate_rdepends_lists(self, targets):
-        for t in targets:
-            t.rdepends = []
-            t.rcounter = 0
-
-        for t in targets:
-            for dname in t.deps:
-                dtarget = self.core.get(dname)
-                dtarget.rdepends.append(t.tgt)
-
-    def generate_rdepends(self):
-        targets = [self.core.get(t) for t in self.depset]
-        self.__generate_rdepends_lists(targets)
-
-    def reverse_recurse_invoke_single(
-        self, ops, threads=None, cond=licant.util.always_true
-    ):
-        if core.runtime["trace"]:
-            print(
-                "SINGLETHREAD MODE(root={}, ops={}, cond={})".format(
-                    self.root, ops, cond
-                )
-            )
-        targets = [self.core.get(t) for t in self.depset]
-
-        self.__generate_rdepends_lists(targets)
-
-        works = licant.util.queue()
-
-        for t in targets:
-            if t.rcounter == len(t.deps):
-                works.put(t)
-
-        while not works.empty():
-            w = works.get()
-
-            if cond(w):
-                ret = w.invoke(ops)
-                if ret is False:
-                    print(licant.util.red("runtime error"))
-                    exit(-1)
-
-            for r in [self.core.get(t) for t in w.rdepends]:
-                r.rcounter = r.rcounter + 1
-                if r.rcounter == len(r.deps):
-                    works.put(r)
-
-    def reverse_recurse_invoke_threads(
-        self, ops, threads, cond=licant.util.always_true
-    ):
-        if core.runtime["trace"]:
-            print(
-                "MULTITHREAD MODE(root={}, threads={}, ops={}, cond={})".format(
-                    self.root, threads, ops, cond
-                )
-            )
-
-        targets = [self.core.get(t) for t in self.depset]
-
-        self.__generate_rdepends_lists(targets)
-        works = licant.util.queue()
-
-        class info_cls:
-            def __init__(self):
-                self.have_done = 0
-                self.need_done = len(targets)
-                self.sum = 0
-                self.err = False
-
-        info = info_cls()
-
-        for t in targets:
-            if t.rcounter == len(t.deps):
-                works.put(t)
-
-        lock = threading.Lock()
-
-        def thread_func(index):
-            while info.have_done != info.need_done:
-                if info.err:
-                    break
-
-                lock.acquire()
-                if not works.empty():
-                    w = works.get()
-                    lock.release()
-
-                    if core.runtime["trace"]:
-                        print(
-                            "TRACE: THREAD {0} get work {1}".format(index, w))
-
-                    if cond(w):
-                        try:
-                            ret = w.invoke(ops)
-                        except Exception:
-                            info.err = True
-                            return
-                        if ret is False:
-                            info.err = True
-                            return
-                        if ret == 0:
-                            info.sum += 1
-
-                    for r in [self.core.get(t) for t in w.rdepends]:
-                        r.rcounter = r.rcounter + 1
-                        if r.rcounter == len(r.deps):
-                            works.put(r)
-
-                    info.have_done += 1
-
-                    if core.runtime["trace"]:
-                        print(
-                            "TRACE: THREAD {0} finished with work {1}".format(
-                                index, w)
-                        )
-
-                    continue
-                lock.release()
-
-        threads_list = [
-            threading.Thread(target=thread_func, args=(i,)) for i in range(0, threads)
-        ]
-
-        for t in threads_list:
-            t.start()
-
-        for t in threads_list:
-            t.join()
-
-        if info.err:
-            print(licant.util.red("runtime error (multithreads mode)"))
-            exit(-1)
-        return info.sum
-
-    def reverse_recurse_invoke(self, *args, **kwargs):
-        if "threads" in kwargs:
-            if kwargs["threads"] == 1:
-                return self.reverse_recurse_invoke_single(*args, **kwargs)
-            else:
-                return self.reverse_recurse_invoke_threads(*args, **kwargs)
-        else:
-            return self.reverse_recurse_invoke_single(*args, **kwargs)
-
-    def __str__(self):
-        ret = ""
-        for d in sorted(self.depset):
-            t = self.core.get(d)
-            s = "{}: {}\n".format(d, sorted(t.deps))
-            ret += s
-        ret = ret[:-1]
-        return ret
+    return _default_core
 
 
 class Target:
@@ -331,6 +150,9 @@ class Target:
 
     def name(self):
         return self.tgt
+
+    def is_file(self):
+        return False
 
     def expand_globs(self, deps):
         import licant.make
@@ -372,7 +194,7 @@ class Target:
                 critical -- Действует для строкового вызова. Если данный attr отсутствует у цели,
                 то в зависимости от данного параметра может быть возвращен None или выброшено исключение.
                 """
-        if core.runtime["trace"]:
+        if self.core.runtime["trace"]:
             print(
                 "TRACE: Invoke: tgt:{}, act:{}, args:{}, kwargs:{}".format(
                     self.tgt, funcname, args, kwargs
@@ -399,12 +221,6 @@ class Target:
         return self.tgt
 
 
-class UpdateStatus(Enum):
-    Waiting = 0
-    Keeped = 1
-    Updated = 2
-
-
 class UpdatableTarget(Target):
     __actions__ = Target.__actions__.union(
         {"recurse_update", "recurse_update_get_args", "update", "update_if_need"}
@@ -414,40 +230,33 @@ class UpdatableTarget(Target):
         self,
         tgt,
         deps,
-        need_if=lambda s: False,
+        need_if=None,
         default_action="recurse_update_get_args",
-        update_status=UpdateStatus.Waiting,
-        **kwargs
+        ** kwargs
     ):
         Target.__init__(self, tgt, deps,
                         default_action=default_action, **kwargs)
-        self.update_status = update_status
         self.need_if = need_if
 
     def recurse_update_get_args(self):
-        return self.recurse_update(threads=core.runtime["threads"])
+        return self.recurse_update(threads=self.core.runtime["threads"])
 
     def update(self, *args, **kwargs):
-        licant.error("Unoverrided update method")
-
-    def self_need(self):
-        if self.need_if is not None:
-            return self.need_if(self)
-        return False
+        return True
 
     def has_updated_depends(self):
-        depends = self.get_deplist()
+        alldeps = self.core.depends_as_set(self, incroot=False)
+        alldeps = [self.core.get(d) for d in alldeps]
 
-        for d in depends:
+        for d in alldeps:
             if (
                 not isinstance(d, UpdatableTarget)
-                or d.update_status == UpdateStatus.Updated
             ):
-                return True
+                raise Exception("Nonupdateble target used: {}".format(d))
 
-            if d.update_status == UpdateStatus.Waiting:
-                print(d)
-                licant.error("Unwalked depends in UpdatableTarget")
+        for d in alldeps:
+            if d.need_to_update():
+                return True
 
         return False
 
@@ -457,19 +266,42 @@ class UpdatableTarget(Target):
         else:
             return act(self)
 
+    def internal_need_if(self):
+        return False
+
+    def need_to_update(self):
+        if self.need_if is not None:
+            return self.need_if(self)
+        else:
+            return self.internal_need_if()
+
     def update_if_need(self):
-        if self.has_updated_depends() or self.self_need():  # self.invoke("self_need"):
-            self.update_status = UpdateStatus.Updated
-            # self.invoke("update")
+        if self.has_updated_depends() or self.need_to_update():
             return self.invoke_function_or_method(self.update)
         else:
-            self.update_status = UpdateStatus.Keeped
             return True
 
     def recurse_update(self, threads=1):
-        stree = self.core.subtree(self.tgt)
-        stree.reverse_recurse_invoke(
-            ops="update_if_need", threads=threads)
+        depset = self.core.depends_as_set(self, incroot=True)
+        depset = [self.core.get(d) for d in depset]
+
+        curdep = None
+        dtargets = []
+        for d in depset:
+            def what_to_do(d):
+                d.update_if_need()
+            dtgt = DependableTarget(name=d.tgt,
+                                    deps=d.deps,
+                                    what_to_do=partial(what_to_do, d),
+                                    args=[],
+                                    kwargs={})
+            dtargets.append(dtgt)
+            if d.tgt == self.tgt:
+                curdep = dtgt
+
+        InverseRecursiveSolver(dtargets, count_of_threads=threads,
+                               trace=self.core.runtime["trace"]).exec()
+        assert curdep.is_done()
 
 
 class Routine(UpdatableTarget):
@@ -502,7 +334,7 @@ class Routine(UpdatableTarget):
         super().recurse_update(**kwargs)
 
 
-def routine_decorator_do(func=None, deps=[], update_if=lambda s: False, tgt=None):
+def routine_decorator_do(func=None, deps=[], update_if=lambda s: False, tgt=None, core=default_core()):
     core.add(Routine(func=func, deps=deps, update_if=update_if, tgt=tgt))
     return func
 
@@ -567,12 +399,12 @@ corediag_target = Target(
     __help__="Core state info",
 )
 
-core.add(corediag_target)
+default_core().add(corediag_target)
 
 
 def do(target, action=None, args=[], kwargs={}):
-    core.do(target=target, action=action, args=args, kwargs=kwargs)
+    default_core().do(target=target, action=action, args=args, kwargs=kwargs)
 
 
 def get_target(name):
-    return core.get(name)
+    return default_core().get(name)

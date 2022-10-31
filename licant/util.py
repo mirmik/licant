@@ -267,3 +267,7 @@ def recursive_glob(treeroot, pattern):
         goodfiles = fnmatch.filter(files, pattern)
         results.extend(os.path.join(base, f) for f in goodfiles)
     return results
+
+
+def canonical_path(path):
+    return os.path.realpath(os.path.abspath(path))
