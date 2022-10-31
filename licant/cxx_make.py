@@ -286,7 +286,7 @@ def disassembler(target, core=default_core(), *args):
     os.system(cmd)
 
 
-def objcopy(toolchain, tgt, src, format, sections, message="OBJCOPY {tgt}"):
+def objcopy(toolchain, tgt, src, format, sections, core=default_core(), message="OBJCOPY {tgt}"):
     sections_str = " ".join(["-j {}".format(s) for s in sections])
     rule = "{opts.toolchain.objcopy} -O {opts.format} {opts.sections_str} {opts.src} {opts.tgt}"
 
