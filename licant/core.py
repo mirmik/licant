@@ -348,58 +348,58 @@ def routine_decorator(func=None, **kwargs):
         return decorator
 
 
-def print_targets_list(target, *args):
-    if core.runtime["debug"]:
-        print("print_targets_list args:{}".format(args))
+# def print_targets_list(target, *args):
+#     if core.runtime["debug"]:
+#         print("print_targets_list args:{}".format(args))
 
-    if len(core.targets) == 0:
-        print("targets doesn't founded")
-        return
+#     if len(core.targets) == 0:
+#         print("targets doesn't founded")
+#         return
 
-    keys = sorted(core.targets.keys())
+#     keys = sorted(core.targets.keys())
 
-    if len(args) > 0:
-        keys = [m for m in keys if re.search(args[0], m)]
+#     if len(args) > 0:
+#         keys = [m for m in keys if re.search(args[0], m)]
 
-    for k in keys:
-        print(k)
-
-
-def print_target_info(taget, *args):
-    if len(args) == 0:
-        licant.error("Need target mnemo")
-
-    print("name:", core.get(args[0]))
-    print("deps:", sorted(core.get(args[0]).deps))
+#     for k in keys:
+#         print(k)
 
 
-def print_deps(taget, *args):
-    if len(args) == 0:
-        name = licant.cli.default_target
-    else:
-        name = args[0]
+# def print_target_info(taget, *args):
+#     if len(args) == 0:
+#         licant.error("Need target mnemo")
 
-    lst = sorted(core.depends_as_set(name))
-    for l in lst:
-        print(l)
+#     print("name:", core.get(args[0]))
+#     print("deps:", sorted(core.get(args[0]).deps))
 
 
-def print_subtree(target, tgt):
-    print(core.subtree(tgt))
+# def print_deps(taget, *args):
+#     if len(args) == 0:
+#         name = licant.cli.default_target
+#     else:
+#         name = args[0]
+
+#     lst = sorted(core.depends_as_set(name))
+#     for l in lst:
+#         print(l)
 
 
-corediag_target = Target(
-    tgt="corediag",
-    deps=[],
-    targets=print_targets_list,
-    tgtinfo=print_target_info,
-    subtree=print_subtree,
-    printdeps=print_deps,
-    actions={"targets", "tgtinfo", "subtree", "printdeps"},
-    __help__="Core state info",
-)
+# def print_subtree(target, tgt):
+#     print(core.subtree(tgt))
 
-default_core().add(corediag_target)
+
+# corediag_target = Target(
+#     tgt="corediag",
+#     deps=[],
+#     targets=print_targets_list,
+#     tgtinfo=print_target_info,
+#     subtree=print_subtree,
+#     printdeps=print_deps,
+#     actions={"targets", "tgtinfo", "subtree", "printdeps"},
+#     __help__="Core state info",
+# )
+
+# default_core().add(corediag_target)
 
 
 def do(target, action=None, args=[], kwargs={}):
