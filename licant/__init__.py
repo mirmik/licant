@@ -29,10 +29,6 @@ def directory():
     return licant.scripter.scriptq.curdir()
 
 
-def subtree(tgt):
-    return default_core.subtree(tgt)
-
-
 def execute(path):
     licant.scripter.scriptq.execute(path)
 
