@@ -76,13 +76,26 @@ class TaskInvoker:
         self.trace = trace
 
     def start(self):
+        if self.threads_count == 1:
+            if self.trace:
+                print("[Trace] single thread mode")
+            self.single_worker()
+            return
+
+        if self.trace:
+            print(f"[Trace] start with {self.threads_count} threads")
+
         for i in range(self.threads_count):
             t = Thread(target=self.worker, args=(i,))
             t.start()
             self.threads.append(t)
 
-        if self.trace:
-            print(f"[Trace] start with {len(self.threads)} threads")
+    def single_worker(self):
+        while not self.queue.empty():
+            task = self.queue.get()
+            if self.trace:
+                print(f"[Trace] do: {task.name()}")
+            task.doit()
 
     def worker(self, no):
         while not self.done:

@@ -116,7 +116,7 @@ class MakeFileTarget(UpdatableTarget):
 
 class FileTarget(MakeFileTarget):
     __actions__ = MakeFileTarget.__actions__.union(
-        {"build", "clr", "mtime_info"})
+        {"build", "clr"})
 
     def __init__(self, tgt, deps, force=False, use_dirkeep=True, **kwargs):
 
@@ -133,30 +133,12 @@ class FileTarget(MakeFileTarget):
         self.force = force
         self.clrmsg = "DELETE {tgt}"
 
-    def mtime_info(self):
-        print("self mtime:")
-        print("\t", self.tgt, self.mtime())
-        print("deps mtime:")
-        maxtime = 0
-        for dep in self.get_deplist():
-            if isinstance(dep, (FileTarget, MakeFileTarget)) and dep.mtime() > maxtime:
-                print("\t", dep.tgt, dep.mtime())
-            else:
-                print("\t", dep.tgt, "not a file:", dep.__class__)
-        print("is update needed:", self.internal_need_if())
-
     def update_info(self):
         fcache.update_info(self.tgt)
 
     def mtime(self):
         curinfo = fcache.get_info(self.tgt)
         return curinfo.mtime
-        # return os.path.getmtime(self.tgt)
-        #curinfo = fcache.get_info(self.tgt)
-        # if not curinfo.exist:
-        #    return 0
-        # else:
-        #    return curinfo.mtime
 
     def is_exist(self):
         #        print("is_exist", self.tgt, fcache.get_info(self.tgt).exist)
@@ -179,8 +161,9 @@ class FileTarget(MakeFileTarget):
 
         maxtime = 0
         for dep in self.get_deplist():
-            if dep.is_file() and dep.mtime() > maxtime:
-                maxtime = dep.mtime()
+            depmtime = dep.mtime()
+            if dep.is_file() and depmtime > maxtime:
+                maxtime = depmtime
 
         if maxtime > self.mtime():
             return True

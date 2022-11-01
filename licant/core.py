@@ -39,6 +39,7 @@ class Core:
         self.help_showed_targets = []
         self.runtime = NoneDictionary()
         self.debug = debug
+        self.depends_as_set_lazy_cache = {}
 
     def trace_mode(self):
         return self.runtime["trace"]
@@ -65,13 +66,23 @@ class Core:
             return self._targets[str(tgt)]
 
         if licant.util.canonical_path(tgt) in self._targets:
+            # access optimization becouse canonical_path is very slow
+            self._targets[tgt] = self._targets[licant.util.canonical_path(tgt)]
             return self._targets[licant.util.canonical_path(tgt)]
 
         licant.util.error("unregistred target " + licant.util.yellow(tgt))
 
     def has(self, tgt):
         """Check if target exists"""
-        return tgt in self._targets or licant.util.canonical_path(tgt) in self._targets
+        if tgt in self._targets:
+            return True
+
+        if licant.util.canonical_path(tgt) in self._targets:
+            # access optimization becouse canonical_path is very slow
+            self._targets[tgt] = self._targets[licant.util.canonical_path(tgt)]
+            return True
+
+        return False
 
     def depends_as_set_impl(self, tgt, accum):
         target = self.get(str(tgt))
@@ -81,11 +92,17 @@ class Core:
                 self.depends_as_set_impl(d, accum)
 
     def depends_as_set(self, tgt, incroot):
+        if tgt in self.depends_as_set_lazy_cache:
+            return self.depends_as_set_lazy_cache[tgt]
+
         accumulator = set()
         if incroot:
             accumulator.add(str(tgt))
         self.depends_as_set_impl(tgt, accumulator)
-        return sorted(accumulator)
+
+        ret = sorted(accumulator)
+        self.depends_as_set_lazy_cache[tgt] = ret
+        return ret
 
     def target(self, name, deps=[], **kwargs):
         """Create new target"""
@@ -152,6 +169,7 @@ class Target:
 
         self.need_by_self = None
         self.need_by_deps = None
+        self.cached_deplist = None
 
     def to_name_if_needed(self, dep):
         if isinstance(dep, Target):
@@ -191,7 +209,10 @@ class Target:
             self.action(self)
 
     def get_deplist(self):
-        return [self.core.get(d) for d in self.deps]
+        if self.cached_deplist is None:
+            self.cached_deplist = [self.core.get(d) for d in self.deps]
+
+        return self.cached_deplist
 
     def actlist(self):
         print(licant.util.get_actions(self))

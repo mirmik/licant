@@ -17,9 +17,15 @@ class FileCache:
         self.cache[path] = self.fileinfo(path)
 
     def get_info(self, path):
-        if path not in self.cache:
+        # if path not in self.cache:
+        #    self.update_info(path)
+        # return self.cache[path]
+
+        try:
+            return self.cache[path]
+        except KeyError:
             self.update_info(path)
-        return self.cache[path]
+            return self.cache[path]
 
 
 fcache = FileCache()
