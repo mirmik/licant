@@ -285,7 +285,8 @@ class UpdatableTarget(Target):
         has_updated_depends = self.has_updated_depends()
         need_to_update = self.need_to_update()
         if self.core.runtime["trace"]:
-                print(f"[Trace] {self.tgt} updatable reasons: by_depends:{has_updated_depends}, by_self:{need_to_update}")
+            print(
+                f"[Trace] {self.tgt} updatable reasons: by_depends:{has_updated_depends}, by_self:{need_to_update}")
 
         if has_updated_depends or need_to_update:
             return self.invoke_function_or_method(self.update)
@@ -419,3 +420,6 @@ def do(target, action=None, args=[], kwargs={}):
 
 def get_target(name):
     return default_core().get(name)
+
+
+core = default_core()
