@@ -145,6 +145,9 @@ class FileTarget(MakeFileTarget):
         curinfo = fcache.get_info(self.tgt)
         return curinfo.exist
 
+    def exists(self):
+        return self.is_exist()
+
     def warn_if_not_exist(self):
         """Print warn if file isn't exist"""
         info = fcache.get_info(self.tgt)
