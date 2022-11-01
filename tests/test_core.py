@@ -58,7 +58,7 @@ class MyTest(unittest.TestCase):
         def make():
             licant.system("mkdir -p /tmp/licant/test/")
 
-        self.assertEqual(len(core.targets), 2)
+        self.assertEqual(len(core._targets), 2)
         core.do("clean")
         core.do("make")
         self.assertTrue(os.path.exists("/tmp/licant/test/"))

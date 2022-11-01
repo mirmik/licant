@@ -290,7 +290,7 @@ def qt_ui_paths(opts):
 def link_objects(srcs, objs, deps, cxxopts, adddeps):
 
     for s, o, d in zip(srcs, objs, deps):
-        if s not in default_core().targets:
+        if not default_core().has(s):
             licant.make.source(s)
 
         headers = cxx_read_depends(d)
@@ -299,7 +299,7 @@ def link_objects(srcs, objs, deps, cxxopts, adddeps):
             headers = []
         else:
             for h in headers:
-                if h not in default_core().targets:
+                if not default_core().has(h):
                     licant.make.source(h)
 
         licant.cxx_make.depend(

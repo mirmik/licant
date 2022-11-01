@@ -87,7 +87,7 @@ def __cliexecute(args, default, core):
     fnd = args[0]
 
     # Try look up fnd in targets
-    if fnd in core.targets:
+    if core.has(fnd):
         target = core.get(fnd)
 
         if len(args) == 1 or isinstance(target, licant.core.Routine):

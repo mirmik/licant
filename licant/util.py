@@ -270,4 +270,4 @@ def recursive_glob(treeroot, pattern):
 
 
 def canonical_path(path):
-    return os.path.realpath(os.path.abspath(path))
+    return os.path.abspath(os.path.normpath(path))

@@ -34,7 +34,7 @@ lmake.source("a.txt")
 lmake.copy(tgt = "build/b.txt", src = "a.txt")
 lmake.copy(tgt = "build/c.txt", src = "build/b.txt")
 
-print("licant targets list:" + str(licant.core.core.targets))
+print("licant targets list:" + str(licant.default_core().targets))
 
 licant.ex(default = "build/c.txt")
 ```

@@ -116,6 +116,9 @@ class FileTarget(MakeFileTarget):
         {"build", "clr", "mtime_info"})
 
     def __init__(self, tgt, deps, force=False, use_dirkeep=True, **kwargs):
+
+        tgt = licant.util.canonical_path(tgt)
+
         if use_dirkeep:
             dirpath = os.path.normpath(os.path.dirname(tgt))
             if not os.path.exists(dirpath):

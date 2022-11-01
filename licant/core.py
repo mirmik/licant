@@ -35,7 +35,7 @@ class NoneDictionary(dict):
 
 class Core:
     def __init__(self, debug=False):
-        self.targets = {}
+        self._targets = {}
         self.help_showed_targets = []
         self.runtime = NoneDictionary()
         self.debug = debug
@@ -44,12 +44,12 @@ class Core:
         return self.runtime["trace"]
 
     def exist(self, name):
-        return name in self.targets
+        return self.has(name)
 
     def add(self, target):
         """Add new target"""
         target.core = self
-        self.targets[target.tgt] = target
+        self._targets[target.tgt] = target
 
         if self.debug:
             print("add target: " + target.tgt)
@@ -61,13 +61,17 @@ class Core:
 
     def get(self, tgt):
         """Get target object"""
-        if str(tgt) in self.targets:
-            return self.targets[str(tgt)]
+        if str(tgt) in self._targets:
+            return self._targets[str(tgt)]
+
+        if licant.util.canonical_path(tgt) in self._targets:
+            return self._targets[licant.util.canonical_path(tgt)]
+
         licant.util.error("unregistred target " + licant.util.yellow(tgt))
 
     def has(self, tgt):
         """Check if target exists"""
-        return tgt in self.targets
+        return tgt in self._targets or licant.util.canonical_path(tgt) in self._targets
 
     def depends_as_set_impl(self, tgt, accum):
         target = self.get(str(tgt))
@@ -309,8 +313,10 @@ class UpdatableTarget(Target):
         for d in depset:
             def what_to_do(d):
                 d.update_if_need()
+            # Это нужно для корректной обработки путей файлов.
+            deps_as_targets_names = [self.core.get(d).tgt for d in d.deps]
             dtgt = DependableTarget(name=d.tgt,
-                                    deps=d.deps,
+                                    deps=deps_as_targets_names,
                                     what_to_do=partial(what_to_do, d),
                                     args=[],
                                     kwargs={})
