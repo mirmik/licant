@@ -10,7 +10,7 @@ from functools import partial
 import random
 import glob
 import os
-from licant.solver import DependableTarget, DependableTargetRuntime, TaskInvoker, InverseRecursiveSolver
+from licant.solver import DependableTarget, InverseRecursiveSolver
 
 
 class WrongAction(Exception):
@@ -39,6 +39,9 @@ class Core:
         self.help_showed_targets = []
         self.runtime = NoneDictionary()
         self.debug = debug
+
+    def trace_mode(self):
+        return self.runtime["trace"]
 
     def exist(self, name):
         return name in self.targets
@@ -144,6 +147,9 @@ class Target:
 
         self.need_by_self = None
         self.need_by_deps = None
+
+    def trace_mode(self):
+        return self.core.trace_mode()
 
     def dependies(self):
         print(self.deps)
@@ -276,7 +282,12 @@ class UpdatableTarget(Target):
             return self.internal_need_if()
 
     def update_if_need(self):
-        if self.has_updated_depends() or self.need_to_update():
+        has_updated_depends = self.has_updated_depends()
+        need_to_update = self.need_to_update()
+        if self.core.runtime["trace"]:
+                print(f"[Trace] {self.tgt} updatable reasons: by_depends:{has_updated_depends}, by_self:{need_to_update}")
+
+        if has_updated_depends or need_to_update:
             return self.invoke_function_or_method(self.update)
         else:
             return True
