@@ -305,6 +305,9 @@ class UpdatableTarget(Target):
             return True
 
     def recurse_update(self, threads=1):
+        if "threads" in self.core.runtime:
+            threads = self.core.runtime["threads"]
+
         depset = self.core.depends_as_set(self, incroot=True)
         depset = [self.core.get(d) for d in depset]
 

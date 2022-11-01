@@ -46,10 +46,7 @@ class DependableTargetRuntime:
             self.task_invoker.add_target(self)
         assert self.depcount >= 0
 
-    def doit(self, trace):
-        if trace:
-            print(f"[Trace] {self.name()}: doit", self.name())
-
+    def doit(self):
         self.deptarget.doit()
         with self.task_invoker.mtx:
             for dep in self.inverse_deps:
@@ -84,13 +81,18 @@ class TaskInvoker:
             t.start()
             self.threads.append(t)
 
+        if self.trace:
+            print(f"[Trace] start with {len(self.threads)} threads")
+
     def worker(self, no):
         while not self.done:
             try:
                 task = self.queue.get(timeout=0.4)
                 with self.mtx:
                     self.thread_on_base[no] = False
-                task.doit(self.trace)
+                if self.trace:
+                    print(f"[Trace] thread:{no} do: {task.name()}")
+                task.doit()
 
                 with self.mtx:
                     self.thread_on_base[no] = True
@@ -152,6 +154,7 @@ class ConnectivityError(Exception):
 
 class InverseRecursiveSolver:
     def __init__(self, targets: list, count_of_threads: int = 1, trace: bool = False):
+        self.trace = trace
         self.check(targets)
         self.double_depends_check(targets)
         self.task_invoker = TaskInvoker(count_of_threads, trace)
@@ -175,7 +178,6 @@ class InverseRecursiveSolver:
         if len(non_dependable_targets) == 0:
             raise NoOneNonDependableTarget()
 
-        self.deep_cyclic_check(self.deptargets, non_dependable_targets)
         self.connectivity_check(self.deptargets, non_dependable_targets)
 
     def double_depends_check(self, targets):
@@ -207,18 +209,6 @@ class InverseRecursiveSolver:
         if len(visited) != len(deptargets):
             nonvisited = set(deptargets) - visited
             raise ConnectivityError(nonvisited)
-
-    def deep_cyclic_check_for_target(self, target, lst):
-        if target in lst:
-            raise CircularDependencyError(lst)
-        lst.append(target)
-        for dep in target.inverse_deps:
-            self.deep_cyclic_check_for_target(dep, lst)
-        lst.pop()
-
-    def deep_cyclic_check(self, deptargets, non_dependable_targets):
-        for target in non_dependable_targets:
-            self.deep_cyclic_check_for_target(target, [])
 
     def collect_depends_of_targets(self, deptargets, names_to_deptargets):
         try:
