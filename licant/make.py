@@ -105,8 +105,10 @@ class MakeFileTarget(UpdatableTarget):
         """fileset mtime"""
         maxtime = 0
         for d in self.deps:
-            if os.path.exists(d):
-                maxtime = max(maxtime, os.path.getmtime(d))
+            dtgt = self.core.get(d)
+            mtime = dtgt.mtime()
+            if mtime is not None and mtime > maxtime:
+                maxtime = mtime
 
         return maxtime
 
@@ -147,7 +149,8 @@ class FileTarget(MakeFileTarget):
 
     def mtime(self):
         curinfo = fcache.get_info(self.tgt)
-        return os.path.getmtime(self.tgt)
+        return curinfo.mtime
+        # return os.path.getmtime(self.tgt)
         #curinfo = fcache.get_info(self.tgt)
         # if not curinfo.exist:
         #    return 0
