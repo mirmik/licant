@@ -324,21 +324,18 @@ def link_qt_ui(uis, srcs, cxxopts, adddeps):
 
 def executable(srcs, opts):
     cxxopts = cxx_options_from_modopts(opts)
-    licant.cxx_make.executable(tgt=opts["target"], srcs=srcs, opts=cxxopts)
-    return opts["target"]
+    return licant.cxx_make.executable(tgt=opts["target"], srcs=srcs, opts=cxxopts)
 
 
 def dynlib(srcs, opts):
     cxxopts = cxx_options_from_modopts(opts)
-    licant.cxx_make.dynamic_library(
+    return licant.cxx_make.dynamic_library(
         tgt=opts["target"], srcs=srcs, opts=cxxopts)
-    return opts["target"]
 
 
 def statlib(srcs, opts):
     cxxopts = cxx_options_from_modopts(opts)
-    licant.cxx_make.static_library(tgt=opts["target"], srcs=srcs, opts=cxxopts)
-    return opts["target"]
+    return licant.cxx_make.static_library(tgt=opts["target"], srcs=srcs, opts=cxxopts)
 
 
 def virtual(srcs, opts):
@@ -591,7 +588,7 @@ def library(*args, shared=True, **kwargs):
 def static_and_shared(name, static_lib, shared_lib, **kwargs):
     a = static_library(static_lib, **kwargs)
     b = shared_library(shared_lib, **kwargs)
-    licant.make.fileset(name, [a, b])
+    licant.make.fileset(name, [a.tgt, b.tgt])
     return a, b
 
 

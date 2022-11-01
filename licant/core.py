@@ -131,6 +131,7 @@ class Target:
 
     def __init__(self, tgt, deps=[], action=lambda s: None, need_if=lambda s: True, weakdeps=[], actions=None, __help__=None, **kwargs):
         self.tgt = tgt
+        deps = [self.to_name_if_needed(dep) for dep in deps]
         deps = self.expand_globs(deps)
         self.deps = deps
         self.need_if = need_if
@@ -147,6 +148,12 @@ class Target:
 
         self.need_by_self = None
         self.need_by_deps = None
+
+    def to_name_if_needed(self, dep):
+        if isinstance(dep, Target):
+            return dep.tgt
+        else:
+            return dep
 
     def trace_mode(self):
         return self.core.trace_mode()
