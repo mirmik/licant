@@ -75,8 +75,9 @@ class DirectoryKeeper():
 
     def __call__(self, target, **kwargs):
         print("MAKEDIRS", target.tgt)
-        if not os.path.exists(target.tgt):
+        if not target.exists():
             os.makedirs(target.tgt)
+            target.update_info()
 
 
 class MakeFileTarget(UpdatableTarget):
