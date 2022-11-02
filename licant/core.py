@@ -282,6 +282,16 @@ class UpdatableTarget(Target):
     def update(self, *args, **kwargs):
         return True
 
+    def recursive_update_needed_request(self):
+        if self.need_to_update():
+            return True
+
+        for dep in self.get_deplist():
+            if dep.recursive_update_needed_request():
+                return True
+
+        return False
+
     def has_updated_depends(self):
         alldeps = self.core.depends_as_set(self, incroot=False)
         alldeps = [self.core.get(d) for d in alldeps]
@@ -314,13 +324,18 @@ class UpdatableTarget(Target):
             return self.internal_need_if()
 
     def update_if_need(self):
-        has_updated_depends = self.has_updated_depends()
-        need_to_update = self.need_to_update()
-        if self.core.runtime["trace"]:
-            print(
-                f"[Trace] {self.tgt} updatable reasons: by_depends:{has_updated_depends}, by_self:{need_to_update}")
+        #has_updated_depends = self.has_updated_depends()
+        #need_to_update = self.need_to_update()
+        # if self.core.runtime["trace"]:
+        #    print(
+        #        f"[Trace] {self.tgt} updatable reasons: by_depends:{has_updated_depends}, by_self:{need_to_update}")
 
-        if has_updated_depends or need_to_update:
+        # if has_updated_depends or need_to_update:
+        #    return self.invoke_function_or_method(self.update)
+        # else:
+        #    return True
+
+        if self.recursive_update_needed_request():
             return self.invoke_function_or_method(self.update)
         else:
             return True
@@ -336,7 +351,7 @@ class UpdatableTarget(Target):
         dtargets = []
         for d in depset:
             def what_to_do(d):
-                d.update_if_need()
+                return d.update_if_need()
             # Это нужно для корректной обработки путей файлов.
             deps_as_targets_names = [self.core.get(d).tgt for d in d.deps]
             dtgt = DependableTarget(name=d.tgt,
@@ -348,9 +363,11 @@ class UpdatableTarget(Target):
             if d.tgt == self.tgt:
                 curdep = dtgt
 
-        InverseRecursiveSolver(dtargets, count_of_threads=threads,
-                               trace=self.core.runtime["trace"]).exec()
-        assert curdep.is_done()
+        success = InverseRecursiveSolver(dtargets, count_of_threads=threads,
+                                         trace=self.core.runtime["trace"]).exec()
+        if success:
+            assert curdep.is_done()
+        return success
 
 
 class Routine(UpdatableTarget):

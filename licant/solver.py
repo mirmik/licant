@@ -4,7 +4,7 @@ from queue import Queue
 import queue
 import threading
 import sys
-from licant.util import invert_depends_dictionary
+from licant.util import invert_depends_dictionary, red
 
 
 class DependableTarget:
@@ -17,8 +17,9 @@ class DependableTarget:
         self._is_done = False
 
     def doit(self):
-        self.what_to_do(*self.args, **self.kwargs)
+        result = self.what_to_do(*self.args, **self.kwargs)
         self._is_done = True
+        return result
 
     def is_done(self):
         return self._is_done
@@ -47,10 +48,11 @@ class DependableTargetRuntime:
         assert self.depcount >= 0
 
     def doit(self):
-        self.deptarget.doit()
+        result = self.deptarget.doit()
         with self.task_invoker.mtx:
             for dep in self.inverse_deps:
                 dep.decrease_inverse_deps_count()
+        return result
 
     def count_of_deps(self):
         return len(self.deptarget.deps)
@@ -74,6 +76,7 @@ class TaskInvoker:
         self.done = False
         self.mtx = threading.Lock()
         self.trace = trace
+        self.error_while_execution = False
 
     def start(self):
         if self.threads_count == 1:
@@ -95,7 +98,15 @@ class TaskInvoker:
             task = self.queue.get()
             if self.trace:
                 print(f"[Trace] do: {task.name()}")
-            task.doit()
+            result = task.doit()
+            if self.trace:
+                print(f"[Trace] result of last task: ", result)
+            if result is False:
+                self.done = True
+                self.error_while_execution = True
+                print(
+                    f"{red('LicantError')}: Error while executing task {task.name()}")
+                break
 
     def worker(self, no):
         while not self.done:
@@ -104,8 +115,20 @@ class TaskInvoker:
                 with self.mtx:
                     self.thread_on_base[no] = False
                 if self.trace:
-                    print(f"[Trace] thread:{no} do: {task.name()}")
-                task.doit()
+                    print(f"[Trace] thread:{no} do task: {task.name()}")
+                result = task.doit()
+
+                if self.done:
+                    break
+
+                if self.trace:
+                    print(f"[Trace] thread:{no} result of last task: ", result)
+                if result is False:
+                    self.done = True
+                    self.error_while_execution = True
+                    print(
+                        f"{red('LicantError')}: Error while executing task {task.name()}")
+                    break
 
                 with self.mtx:
                     self.thread_on_base[no] = True
@@ -118,6 +141,7 @@ class TaskInvoker:
                     break
             except KeyboardInterrupt:
                 self.done = True
+                self.error_while_execution = True
                 break
 
     def add_target(self, target):
@@ -134,8 +158,9 @@ class TaskInvoker:
             for t in self.threads:
                 t.join()
         except KeyboardInterrupt:
-            print("Execution was interrupted by user")
+            print(f"{red('LicantError')}: Execution was interrupted by user")
             self.done = True
+            self.error_while_execution = True
             for t in self.threads:
                 t.join()
 
@@ -172,9 +197,11 @@ class InverseRecursiveSolver:
         self.double_depends_check(targets)
         self.task_invoker = TaskInvoker(count_of_threads, trace)
 
-        self.deptargets = [DependableTargetRuntime(target, self.task_invoker) for target in targets]
+        self.deptargets = [DependableTargetRuntime(
+            target, self.task_invoker) for target in targets]
 
-        self.names_to_deptargets = {target.name(): target for target in self.deptargets}
+        self.names_to_deptargets = {
+            target.name(): target for target in self.deptargets}
         deps_of_targets = self.collect_depends_of_targets(self.deptargets,
                                                           self.names_to_deptargets)
         inverse_deps_of_targets = invert_depends_dictionary(deps_of_targets)
@@ -237,7 +264,8 @@ class InverseRecursiveSolver:
     def check(self, targets):
         for target in targets:
             if not isinstance(target, DependableTarget):
-                raise TypeError("Target must be DependableTarget, but:", target.__class__)
+                raise TypeError(
+                    "Target must be DependableTarget, but:", target.__class__)
             for dep in target.deps:
                 if not isinstance(dep, str):
                     raise TypeError("Dep must be str")
@@ -248,6 +276,11 @@ class InverseRecursiveSolver:
     def exec(self):
         self.task_invoker.start()
         self.task_invoker.wait()
-        assert self.task_invoker.queue.empty()
-        assert all(d.depcount == 0 for d in self.deptargets)
-        assert all(d.is_done() for d in self.deptargets)
+        if not self.task_invoker.error_while_execution:
+            assert self.task_invoker.queue.empty()
+            assert all(d.depcount == 0 for d in self.deptargets)
+            assert all(d.is_done() for d in self.deptargets)
+        if self.trace:
+            print("[Trace] Execution finished. Status:",
+                  not self.task_invoker.error_while_execution)
+        return not self.task_invoker.error_while_execution

@@ -141,7 +141,6 @@ class FileTarget(MakeFileTarget):
         return curinfo.mtime
 
     def is_exist(self):
-        #        print("is_exist", self.tgt, fcache.get_info(self.tgt).exist)
         curinfo = fcache.get_info(self.tgt)
         return curinfo.exist
 
@@ -203,45 +202,6 @@ class DirectoryTarget(FileTarget):
     def clr(self):
         """Prevent directory deletion."""
         pass
-
-
-# class FileSet(MakeFileTarget):
-#     """Virtual file target`s set.
-
-#         For link a set of file objects to the licant tree
-#         without depend`s overhead."""
-
-#     def __init__(self, tgt, targets, deps, **kwargs):
-#         MakeFileTarget.__init__(self, tgt=tgt, deps=targets+deps, **kwargs)
-#         self.targets = targets
-#         self.__mtime = None
-
-#     def internal_need_if(self):
-#         return False
-
-#     def update(self):
-#         pass
-
-#     def clean(self):
-#         for target in self.targets:
-#             target = self.core.get(target)
-#             target.invoke("clean")
-
-#     def mtime(self):
-#         if self.__mtime is None:
-#             maxtime = 0
-#             for dep in self.get_deplist():
-#                 if dep.mtime() > maxtime:
-#                     maxtime = dep.mtime()
-#             self.__mtime = maxtime
-
-#         return self.__mtime
-
-#     def __lt__(self, other):
-#         return str(self) < str(other)
-
-#     def __gt__(self, other):
-#         return str(self) > str(other)
 
 
 def source(tgt, deps=[]):
