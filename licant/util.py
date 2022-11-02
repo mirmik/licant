@@ -269,5 +269,14 @@ def recursive_glob(treeroot, pattern):
     return results
 
 
+canonical_path_lazy_store = {}
+
+
 def canonical_path(path):
-    return os.path.abspath(os.path.normpath(path))
+    try:
+        return canonical_path_lazy_store[path]
+    except KeyError:
+        # os.path.abspath(os.path.normpath(path))
+        ret = os.path.realpath(path)
+        canonical_path_lazy_store[path] = ret
+        return ret

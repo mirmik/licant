@@ -62,11 +62,12 @@ class Core:
 
     def get(self, tgt):
         """Get target object"""
+
         if str(tgt) in self._targets:
             return self._targets[str(tgt)]
 
         if licant.util.canonical_path(tgt) in self._targets:
-            # access optimization becouse canonical_path is very slow
+            # access optimization by lazy technique
             self._targets[tgt] = self._targets[licant.util.canonical_path(tgt)]
             return self._targets[licant.util.canonical_path(tgt)]
 
@@ -78,7 +79,7 @@ class Core:
             return True
 
         if licant.util.canonical_path(tgt) in self._targets:
-            # access optimization becouse canonical_path is very slow
+            # access optimization by lazy technique
             self._targets[tgt] = self._targets[licant.util.canonical_path(tgt)]
             return True
 
@@ -231,6 +232,8 @@ class Target:
                 или название локального метода.
                 critical -- Действует для строкового вызова. Если данный attr отсутствует у цели,
                 то в зависимости от данного параметра может быть возвращен None или выброшено исключение.
+
+                TODO: Насколько я понимаю, critical более не используется.
                 """
         if self.core.runtime["trace"]:
             print(
@@ -247,11 +250,9 @@ class Target:
             return None
 
         if isinstance(func, types.MethodType):
-            # return licant.util.cutinvoke(func, *args, **kwargs)
             return func(*args, **kwargs)
 
         else:
-            # return licant.util.cutinvoke(func, self, *args, **kwargs)
             return func(self, *args, **kwargs)
 
     def __repr__(self):
@@ -324,17 +325,6 @@ class UpdatableTarget(Target):
             return self.internal_need_if()
 
     def update_if_need(self):
-        #has_updated_depends = self.has_updated_depends()
-        #need_to_update = self.need_to_update()
-        # if self.core.runtime["trace"]:
-        #    print(
-        #        f"[Trace] {self.tgt} updatable reasons: by_depends:{has_updated_depends}, by_self:{need_to_update}")
-
-        # if has_updated_depends or need_to_update:
-        #    return self.invoke_function_or_method(self.update)
-        # else:
-        #    return True
-
         if self.recursive_update_needed_request():
             return self.invoke_function_or_method(self.update)
         else:
@@ -345,7 +335,11 @@ class UpdatableTarget(Target):
             threads = self.core.runtime["threads"]
 
         depset = self.core.depends_as_set(self, incroot=True)
-        depset = [self.core.get(d) for d in depset]
+
+        # It is set! It is not list because we need to remove repeated elements
+        # from it. In can be repeated because of deps in target is not strong
+        # one target have different names.
+        depset = {self.core.get(d) for d in depset}
 
         curdep = None
         dtargets = []
