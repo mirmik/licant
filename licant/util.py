@@ -6,6 +6,7 @@ import fnmatch
 import functools
 import warnings
 import random
+from collections import defaultdict
 
 string_types = (type(b""), type(u""))
 
@@ -269,14 +270,19 @@ def recursive_glob(treeroot, pattern):
     return results
 
 
-canonical_path_lazy_store = {}
+class DefaultDictLazy(defaultdict):
+    def __init__(self, foo):
+        super().__init__()
+        self.foo = foo
+
+    def __missing__(self, key):
+        val = self.foo(key)
+        self[key] = val
+        return val
+
+
+canonical_path_lazy_store = DefaultDictLazy(lambda path: os.path.realpath(path))
 
 
 def canonical_path(path):
-    try:
-        return canonical_path_lazy_store[path]
-    except KeyError:
-        # os.path.abspath(os.path.normpath(path))
-        ret = os.path.realpath(path)
-        canonical_path_lazy_store[path] = ret
-        return ret
+    return canonical_path_lazy_store[path]
