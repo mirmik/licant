@@ -11,7 +11,7 @@ class FileCache:
             if self.exist:
                 self.mtime = os.stat(path).st_mtime
             else:
-                self.mtime = None
+                self.mtime = 0
 
     def update_info(self, path):
         self.cache[path] = self.fileinfo(path)

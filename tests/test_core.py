@@ -32,14 +32,9 @@ class MyTest(unittest.TestCase):
             x["a"] = 1
 
         u0 = core.updtarget("nonupdated", update=lambda s: foo(x),
-                            need_if=lambda s: False)
+                            update_if=lambda s: False)
         u1 = core.updtarget("updated", update=lambda s: foo(y),
-                            need_if=lambda s: True)
-
-        self.assertFalse(u0.need_to_update())
-        self.assertTrue(u1.need_to_update())
-        self.assertFalse(u0.has_updated_depends())
-        self.assertFalse(u1.has_updated_depends())
+                            update_if=lambda s: True)
 
         core.do("nonupdated", action="update_if_need")
         core.do("updated", action="update_if_need")

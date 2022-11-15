@@ -128,7 +128,11 @@ class FileTarget(MakeFileTarget):
                 dirkeep(dirpath)
                 deps = deps + [dirpath]
 
-        MakeFileTarget.__init__(self, tgt, deps, **kwargs)
+        MakeFileTarget.__init__(self,
+                                tgt,
+                                deps,
+                                update_if=lambda s: s.internal_update_if(),
+                                **kwargs)
         self.isfile = True
         self.force = force
         self.clrmsg = "DELETE {tgt}"
@@ -157,7 +161,7 @@ class FileTarget(MakeFileTarget):
         """Delete this file."""
         do_execute(self, "rm -f {tgt}", "clrmsg")
 
-    def internal_need_if(self):
+    def internal_update_if(self):
         if self.force or not self.is_exist():
             return True
 
@@ -185,7 +189,7 @@ class FileTarget(MakeFileTarget):
 
 
 class DirectoryTarget(FileTarget):
-    def internal_need_if(self):
+    def internal_update_if(self):
         if not self.is_exist():
             return True
         return False
@@ -194,7 +198,7 @@ class DirectoryTarget(FileTarget):
         return 0
 
     def update_if_need(self):
-        if self.internal_need_if():
+        if self.internal_update_if():
             return self.update()
         else:
             return True

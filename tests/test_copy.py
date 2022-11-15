@@ -37,8 +37,6 @@ class CopyTest(unittest.TestCase):
         # get modification time
         mtime = os.path.getmtime(f"/tmp/licant/test2{tmpname}.txt")
 
-        self.assertFalse(copy_target.need_to_update())
-
         # check test file content
         with open(f"/tmp/licant/test{tmpname}.txt", "r") as f:
             self.assertEqual(f.read(), "test")
@@ -57,8 +55,6 @@ class CopyTest(unittest.TestCase):
 
         source_mtime2 = source_target.mtime()
         self.assertNotEqual(source_mtime, source_mtime2)
-
-        self.assertTrue(copy_target.need_to_update())
 
         time.sleep(0.1)
 

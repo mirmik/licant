@@ -28,5 +28,5 @@ def routine4(arg0, arg1):
     print(arg0, arg1)
 
 
-core.do(target="routine4", args=["Hello", "World"])
+core.do("routine4", args=["Hello", "World"])
 licant.ex("routine3", core=core)

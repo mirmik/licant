@@ -41,6 +41,22 @@ class Core:
         self.debug = debug
         self.depends_as_set_lazy_cache = {}
 
+    def nullify_update_needity(self):
+        if self.trace_mode():
+            print("[Trace] nullify_update_needity phase.")
+        for target in self._targets.values():
+            target.nullify_update_needity()
+
+    def evaluate_update_needity(self):
+        if self.trace_mode():
+            print("[Trace] evaluate_update_needity phase.")
+        for target in self._targets.values():
+            target.evaluate_update_needity()
+
+    def update_update_needity(self):
+        self.nullify_update_needity()
+        self.evaluate_update_needity()
+
     def trace_mode(self):
         return self.runtime["trace"]
 
@@ -67,8 +83,6 @@ class Core:
             return self._targets[str(tgt)]
 
         if licant.util.canonical_path(tgt) in self._targets:
-            # access optimization by lazy technique
-            self._targets[tgt] = self._targets[licant.util.canonical_path(tgt)]
             return self._targets[licant.util.canonical_path(tgt)]
 
         licant.util.error("unregistred target " + licant.util.yellow(tgt))
@@ -93,8 +107,8 @@ class Core:
                 self.depends_as_set_impl(d, accum)
 
     def depends_as_set(self, tgt, incroot):
-        if tgt in self.depends_as_set_lazy_cache:
-            return self.depends_as_set_lazy_cache[tgt]
+        if (tgt, incroot) in self.depends_as_set_lazy_cache:
+            return self.depends_as_set_lazy_cache[(tgt, incroot)]
 
         accumulator = set()
         if incroot:
@@ -128,11 +142,24 @@ class Core:
 
         target.invoke(action, args=args, kwargs=kwargs)
 
-    def routine_do(self, func=None, deps=[], update_if=lambda s: False, tgt=None):
+    def routine_do(self, func=None, deps=[], update_if=lambda s: True, tgt=None):
         self.add(Routine(func=func, deps=deps, update_if=update_if, tgt=tgt))
         return func
 
     def routine(self, func=None, **kwargs):
+        """Декоратор для создания обновляемых утилит. По умолчанию обновляется
+        всегда. Если нужно обновлять только при изменении зависимостей, следует
+        установить флаг dependable. Кастомную логику обновления можно задать
+        через update_if.
+
+        @param func: функция, которая будет вызываться при обновлении
+        @param deps: список зависимостей
+        @param update_if: функция, которая будет вызываться для проверки
+            необходимости обновления. Если она вернет True, то будет вызвана
+            функция func.
+        @param tgt: имя цели. Если не задано, то будет использовано имя функции.
+        @param core: ядро, в которое будет добавлена цель."""
+
         if inspect.isfunction(func):
             return self.routine_do(func, **kwargs)
         else:
@@ -151,12 +178,20 @@ def default_core():
 class Target:
     __actions__ = {"actlist", "print", "dependies"}
 
-    def __init__(self, tgt, deps=[], action=lambda s: None, need_if=lambda s: True, weakdeps=[], actions=None, __help__=None, **kwargs):
+    def __init__(self,
+                 tgt,
+                 deps=[],
+                 action=lambda s: None,
+                 update_if=lambda s: True,
+                 weakdeps=[],
+                 actions=None,
+                 __help__=None,
+                 **kwargs):
         self.tgt = tgt
         deps = [self.to_name_if_needed(dep) for dep in deps]
         deps = self.expand_globs(deps)
         self.deps = deps
-        self.need_if = need_if
+        self.update_if = update_if
         self.weakdeps = set(weakdeps)
         self.action = action
         self.default_action = "action"
@@ -177,6 +212,12 @@ class Target:
             return dep.tgt
         else:
             return dep
+
+    def evaluate_update_needity(self):
+        pass
+
+    def nullify_update_needity(self):
+        pass
 
     def trace_mode(self):
         return self.core.trace_mode()
@@ -204,7 +245,7 @@ class Target:
         return ret
 
     def action_if_need(self):
-        need = self.need_if(self)
+        need = self.update_if(self)
         self.need_by_self = need
         if need:
             self.action(self)
@@ -242,6 +283,10 @@ class Target:
                 )
             )
 
+        # Любое действия предверяется расчётом нужности обновления
+        # выполняемой глобально для всего ядра
+        self.core.update_update_needity()
+
         func = getattr(self, funcname, None)
         if func is None:
             if critical:
@@ -269,13 +314,22 @@ class UpdatableTarget(Target):
         self,
         tgt,
         deps,
-        need_if=None,
+        update_if=lambda s: False,
         default_action="recurse_update_get_args",
         ** kwargs
     ):
         Target.__init__(self, tgt, deps,
                         default_action=default_action, **kwargs)
-        self.need_if = need_if
+        self.update_if = update_if
+        self.need_update = None
+
+    def evaluate_update_needity(self):
+        self.need_update = self.recursive_update_needed_request()
+        if self.trace_mode():
+            print("[Trace] update_needity: {} {}".format(self.tgt, self.need_update))
+
+    def nullify_update_needity(self):
+        self.need_update = None
 
     def recurse_update_get_args(self):
         return self.recurse_update(threads=self.core.runtime["threads"])
@@ -284,27 +338,14 @@ class UpdatableTarget(Target):
         return True
 
     def recursive_update_needed_request(self):
-        if self.need_to_update():
+        if self.need_update is not None:
+            return self.need_update
+
+        if self.update_if(self):
             return True
 
         for dep in self.get_deplist():
             if dep.recursive_update_needed_request():
-                return True
-
-        return False
-
-    def has_updated_depends(self):
-        alldeps = self.core.depends_as_set(self, incroot=False)
-        alldeps = [self.core.get(d) for d in alldeps]
-
-        for d in alldeps:
-            if (
-                not isinstance(d, UpdatableTarget)
-            ):
-                raise Exception("Nonupdateble target used: {}".format(d))
-
-        for d in alldeps:
-            if d.need_to_update():
                 return True
 
         return False
@@ -315,17 +356,11 @@ class UpdatableTarget(Target):
         else:
             return act(self)
 
-    def internal_need_if(self):
-        return False
-
-    def need_to_update(self):
-        if self.need_if is not None:
-            return self.need_if(self)
-        else:
-            return self.internal_need_if()
-
     def update_if_need(self):
-        if self.recursive_update_needed_request():
+        if self.need_update is None:
+            raise Exception("need_update is None")
+
+        if self.need_update:
             return self.invoke_function_or_method(self.update)
         else:
             return True
@@ -366,100 +401,34 @@ class UpdatableTarget(Target):
 
 class Routine(UpdatableTarget):
     __actions__ = {"recurse_update",
-                   "recurse_update_get_args", "update", "actlist"}
+                   "recurse_update_get_args", "invoke_routine" "update", "actlist"}
 
     def __init__(self,
                  func,
+                 update_if,
                  deps=[],
-                 default_action="update",
-                 update_if=lambda s: False,
+                 default_action="invoke_routine",
                  tgt=None,
                  **kwargs):
         if tgt is None:
             tgt = func.__name__
         UpdatableTarget.__init__(self, tgt=tgt, deps=deps,
-                                 default_action=default_action, **kwargs)
+                                 default_action=default_action,
+                                 update_if=update_if,
+                                 **kwargs)
         self.func = func
-        self.update_if = update_if
         self.args = []
 
-    def update(self, *args, **kwargs):
-        return self.func(*args, **kwargs)
+    def update(self):
+        return self.func(*self.args)
 
-    def self_need(self):
-        return self.update_if(self)
-
-    def recurse_update(self, *args, **kwargs):
-        self.args = args
-        super().recurse_update(**kwargs)
+    def invoke_routine(self, *args, threads=1, **kwargs):
+        self.args = list(args)
+        self.recurse_update(threads=threads)
 
 
-def routine_decorator_do(func=None, deps=[], update_if=lambda s: False, tgt=None, core=default_core()):
-    core.add(Routine(func=func, deps=deps, update_if=update_if, tgt=tgt))
-    return func
-
-
-def routine_decorator(func=None, **kwargs):
-    if inspect.isfunction(func):
-        return routine_decorator_do(func, **kwargs)
-    else:
-        def decorator(func):
-            return routine_decorator_do(func, **kwargs)
-        return decorator
-
-
-# def print_targets_list(target, *args):
-#     if core.runtime["debug"]:
-#         print("print_targets_list args:{}".format(args))
-
-#     if len(core.targets) == 0:
-#         print("targets doesn't founded")
-#         return
-
-#     keys = sorted(core.targets.keys())
-
-#     if len(args) > 0:
-#         keys = [m for m in keys if re.search(args[0], m)]
-
-#     for k in keys:
-#         print(k)
-
-
-# def print_target_info(taget, *args):
-#     if len(args) == 0:
-#         licant.error("Need target mnemo")
-
-#     print("name:", core.get(args[0]))
-#     print("deps:", sorted(core.get(args[0]).deps))
-
-
-# def print_deps(taget, *args):
-#     if len(args) == 0:
-#         name = licant.cli.default_target
-#     else:
-#         name = args[0]
-
-#     lst = sorted(core.depends_as_set(name))
-#     for l in lst:
-#         print(l)
-
-
-# def print_subtree(target, tgt):
-#     print(core.subtree(tgt))
-
-
-# corediag_target = Target(
-#     tgt="corediag",
-#     deps=[],
-#     targets=print_targets_list,
-#     tgtinfo=print_target_info,
-#     subtree=print_subtree,
-#     printdeps=print_deps,
-#     actions={"targets", "tgtinfo", "subtree", "printdeps"},
-#     __help__="Core state info",
-# )
-
-# default_core().add(corediag_target)
+def routine(func=None, **kwargs):
+    return default_core().routine(func=func, **kwargs)
 
 
 def do(target, action=None, args=[], kwargs={}):

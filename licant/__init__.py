@@ -3,7 +3,7 @@ import os
 from licant.cli import cliexecute as ex
 from licant.core import Core, Target, UpdatableTarget
 from licant.core import default_core
-from licant.core import routine_decorator as routine
+from licant.core import routine
 from licant.core import do
 from licant.core import get_target
 from licant.make import copy, fileset, Executor, makefile, source, makedir, MakeCore, DirectoryTarget, FileTarget
