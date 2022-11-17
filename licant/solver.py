@@ -68,7 +68,6 @@ class TaskInvoker:
         self.threads_count = threads_count
         self.tasks = []
         self.thread_on_base = [True] * threads_count
-        self.done = False
         self.mtx = asyncio.Lock()
         self.trace = trace
         self.error_while_execution = False
@@ -90,30 +89,21 @@ class TaskInvoker:
         await asyncio.gather(*self.tasks, return_exceptions=True)
 
     async def worker(self, name, queue, no):
-        while not self.done:
+        while True:
             try:
-                if self.done:
-                    break
-
                 task = await self.queue.get()
-
-                if self.done:
-                    break
-
-                if task is None:
-                    continue
 
                 async with self.mtx:
                     self.thread_on_base[no] = False
                 if self.trace:
                     print(f"[Trace] thread:{no} do task: {task.name()}")
+
                 result = await task.doit()
                 self.queue.task_done()
 
                 if self.trace:
                     print(f"[Trace] thread:{no} result of last task: ", result)
                 if result is False:
-                    self.done = True
                     self.error_while_execution = True
                     print(
                         f"{red('LicantError')}: Error while executing task {task.name()}")
@@ -122,14 +112,11 @@ class TaskInvoker:
                 async with self.mtx:
                     self.thread_on_base[no] = True
                     if all(self.thread_on_base) and self.queue.empty():
-                        self.done = True
                         break
             except queue.Empty:
                 if all(self.thread_on_base) and self.queue.empty():
-                    self.done = True
                     break
             except KeyboardInterrupt:
-                self.done = True
                 self.error_while_execution = True
                 break
 
