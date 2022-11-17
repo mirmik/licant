@@ -1,13 +1,9 @@
 # coding: utf-8
 
 import licant.util
-import threading
 import types
 import inspect
-from enum import Enum
-import re
 from functools import partial
-import random
 import glob
 import os
 from licant.solver import DependableTarget, InverseRecursiveSolver
