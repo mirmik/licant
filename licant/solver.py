@@ -11,8 +11,13 @@ class DependableTarget:
         self.kwargs = kwargs
         self._is_done = False
 
-    def doit(self):
-        result = self.what_to_do(*self.args, **self.kwargs)
+    async def doit_impl(self):
+        return self.what_to_do(*self.args, **self.kwargs)
+
+    async def doit(self):
+        task = asyncio.create_task(self.doit_impl())
+        await task
+        result = task.result()
         self._is_done = True
         return result
 
@@ -43,7 +48,7 @@ class DependableTargetRuntime:
         assert self.depcount >= 0
 
     async def doit(self):
-        result = self.deptarget.doit()
+        result = await self.deptarget.doit()
         async with self.task_invoker.mtx:
             for dep in self.inverse_deps:
                 await dep.decrease_inverse_deps_count()
