@@ -1,9 +1,4 @@
-from concurrent.futures import thread
-from threading import Thread
-from queue import Queue
-import queue
-import threading
-import sys
+import asyncio
 from licant.util import invert_depends_dictionary, red
 
 
@@ -41,17 +36,17 @@ class DependableTargetRuntime:
     def deps(self):
         return self.deptarget.deps
 
-    def decrease_inverse_deps_count(self):
+    async def decrease_inverse_deps_count(self):
         self.depcount -= 1
         if self.depcount == 0:
-            self.task_invoker.add_target(self)
+            await self.task_invoker.add_target(self)
         assert self.depcount >= 0
 
-    def doit(self):
+    async def doit(self):
         result = self.deptarget.doit()
-        with self.task_invoker.mtx:
+        async with self.task_invoker.mtx:
             for dep in self.inverse_deps:
-                dep.decrease_inverse_deps_count()
+                await dep.decrease_inverse_deps_count()
         return result
 
     def count_of_deps(self):
@@ -69,57 +64,51 @@ class DependableTargetRuntime:
 
 class TaskInvoker:
     def __init__(self, threads_count: int, trace=False):
-        self.queue = Queue()
+        self.queue = asyncio.Queue()
         self.threads_count = threads_count
-        self.threads = []
+        self.tasks = []
         self.thread_on_base = [True] * threads_count
         self.done = False
-        self.mtx = threading.Lock()
+        self.mtx = asyncio.Lock()
         self.trace = trace
         self.error_while_execution = False
 
-    def start(self):
-        if self.threads_count == 1:
-            if self.trace:
-                print("[Trace] single thread mode")
-            self.single_worker()
-            return
-
+    async def start(self):
         if self.trace:
             print(f"[Trace] start with {self.threads_count} threads")
 
         for i in range(self.threads_count):
-            t = Thread(target=self.worker, args=(i,))
-            t.start()
-            self.threads.append(t)
+            task = asyncio.create_task(self.worker(f'worker-{i}', self.queue, i))
+            self.tasks.append(task)
 
-    def single_worker(self):
-        while not self.queue.empty():
-            task = self.queue.get()
-            if self.trace:
-                print(f"[Trace] do: {task.name()}")
-            result = task.doit()
-            if self.trace:
-                print(f"[Trace] result of last task: ", result)
-            if result is False:
-                self.done = True
-                self.error_while_execution = True
-                print(
-                    f"{red('LicantError')}: Error while executing task {task.name()}")
-                break
+        await self.queue.join()
 
-    def worker(self, no):
+        for task in self.tasks:
+            task.cancel()
+
+        # Wait until all worker tasks are cancelled.
+        await asyncio.gather(*self.tasks, return_exceptions=True)
+
+    async def worker(self, name, queue, no):
         while not self.done:
             try:
-                task = self.queue.get(timeout=0.4)
-                with self.mtx:
-                    self.thread_on_base[no] = False
-                if self.trace:
-                    print(f"[Trace] thread:{no} do task: {task.name()}")
-                result = task.doit()
+                if self.done:
+                    break
+
+                task = await self.queue.get()
 
                 if self.done:
                     break
+
+                if task is None:
+                    continue
+
+                async with self.mtx:
+                    self.thread_on_base[no] = False
+                if self.trace:
+                    print(f"[Trace] thread:{no} do task: {task.name()}")
+                result = await task.doit()
+                self.queue.task_done()
 
                 if self.trace:
                     print(f"[Trace] thread:{no} result of last task: ", result)
@@ -130,7 +119,7 @@ class TaskInvoker:
                         f"{red('LicantError')}: Error while executing task {task.name()}")
                     break
 
-                with self.mtx:
+                async with self.mtx:
                     self.thread_on_base[no] = True
                     if all(self.thread_on_base) and self.queue.empty():
                         self.done = True
@@ -144,25 +133,11 @@ class TaskInvoker:
                 self.error_while_execution = True
                 break
 
-    def add_target(self, target):
-        self.queue.put(target)
+    async def add_target(self, target):
+        await self.queue.put(target)
 
-    def stop(self, wait=True):
-        self.done = True
-        if wait:
-            for t in self.threads:
-                t.join()
-
-    def wait(self):
-        try:
-            for t in self.threads:
-                t.join()
-        except KeyboardInterrupt:
-            print(f"{red('LicantError')}: Execution was interrupted by user")
-            self.done = True
-            self.error_while_execution = True
-            for t in self.threads:
-                t.join()
+    def add_target_async(self, target):
+        asyncio.run(self.queue.put(target))
 
 
 class UnknowTargetError(Exception):
@@ -213,7 +188,7 @@ class InverseRecursiveSolver:
 
         non_dependable_targets = self.get_non_dependable_targets()
         for target in non_dependable_targets:
-            self.task_invoker.add_target(target)
+            self.task_invoker.add_target_async(target)
 
         if len(non_dependable_targets) == 0:
             raise NoOneNonDependableTarget()
@@ -274,8 +249,8 @@ class InverseRecursiveSolver:
         return [target for target in self.deptargets if target.count_of_deps() == 0]
 
     def exec(self):
-        self.task_invoker.start()
-        self.task_invoker.wait()
+        asyncio.run(self.task_invoker.start())
+
         if not self.task_invoker.error_while_execution:
             assert self.task_invoker.queue.empty()
             assert all(d.depcount == 0 for d in self.deptargets)
