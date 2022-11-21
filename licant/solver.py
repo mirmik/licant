@@ -68,8 +68,9 @@ class DependableTargetRuntime:
 
 
 class TaskInvoker:
-    def __init__(self, threads_count: int, trace=False):
-        self.queue = asyncio.Queue()
+    def __init__(self, threads_count: int, trace=False, loop=None):
+        self.loop = loop if loop is not None else asyncio.get_event_loop()
+        self.queue = asyncio.Queue(loop=self.loop)
         self.threads_count = threads_count
         self.tasks = []
         self.thread_on_base = [True] * threads_count
@@ -77,12 +78,16 @@ class TaskInvoker:
         self.trace = trace
         self.error_while_execution = False
 
+    def run_until_complete(self):
+        self.loop.run_until_complete(self.start())
+
     async def start(self):
         if self.trace:
             print(f"[Trace] start with {self.threads_count} threads")
 
         for i in range(self.threads_count):
-            task = asyncio.create_task(self.worker(f'worker-{i}', self.queue, i))
+            task = asyncio.create_task(
+                self.worker(f'worker-{i}', self.queue, i))
             self.tasks.append(task)
 
         await self.queue.join()
@@ -118,9 +123,9 @@ class TaskInvoker:
                     self.thread_on_base[no] = True
                     if all(self.thread_on_base) and self.queue.empty():
                         break
-            except queue.Empty:
-                if all(self.thread_on_base) and self.queue.empty():
-                    break
+            # except queue.Empty:
+            #    if all(self.thread_on_base) and self.queue.empty():
+            #        break
             except KeyboardInterrupt:
                 self.error_while_execution = True
                 break
@@ -241,7 +246,7 @@ class InverseRecursiveSolver:
         return [target for target in self.deptargets if target.count_of_deps() == 0]
 
     def exec(self):
-        asyncio.run(self.task_invoker.start())
+        self.task_invoker.run_until_complete()
 
         if not self.task_invoker.error_while_execution:
             assert self.task_invoker.queue.empty()
