@@ -97,7 +97,7 @@ class TaskInvoker:
             task.cancel()
 
         # Wait until all worker tasks are cancelled.
-        await asyncio.gather(*self.tasks, return_exceptions=True, loop=self.loop)
+        await asyncio.gather(*self.tasks, return_exceptions=True)
 
     async def worker(self, name, queue, no):
         while True:
