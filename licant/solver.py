@@ -69,8 +69,9 @@ class DependableTargetRuntime:
 
 class TaskInvoker:
     def __init__(self, threads_count: int, trace=False, loop=None):
-        self.loop = loop if loop is not None else asyncio.get_event_loop()
-        self.queue = asyncio.Queue(loop=self.loop)
+        self.loop = loop if loop is not None else asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.queue = asyncio.Queue()
         self.threads_count = threads_count
         self.tasks = []
         self.thread_on_base = [True] * threads_count
@@ -96,7 +97,7 @@ class TaskInvoker:
             task.cancel()
 
         # Wait until all worker tasks are cancelled.
-        await asyncio.gather(*self.tasks, return_exceptions=True)
+        await asyncio.gather(*self.tasks, return_exceptions=True, loop=self.loop)
 
     async def worker(self, name, queue, no):
         while True:
