@@ -1,5 +1,6 @@
 import asyncio
 from licant.util import invert_depends_dictionary, red
+import contextlib
 
 
 class DependableTarget:
@@ -17,6 +18,7 @@ class DependableTarget:
     async def doit(self):
         task = asyncio.create_task(self.doit_impl())
         await task
+
         result = task.result()
         self._is_done = True
         return result
@@ -68,8 +70,8 @@ class DependableTargetRuntime:
 
 
 class TaskInvoker:
-    def __init__(self, threads_count: int, trace=False, loop=None):
-        self.loop = loop if loop is not None else asyncio.new_event_loop()
+    def __init__(self, threads_count: int, trace=False):
+        self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.queue = asyncio.Queue()
         self.threads_count = threads_count
@@ -80,7 +82,16 @@ class TaskInvoker:
         self.error_while_execution = False
 
     def run_until_complete(self):
-        self.loop.run_until_complete(self.start())
+        try:
+            self.loop.run_until_complete(self.start())
+        except KeyboardInterrupt:
+            self.error_while_execution = True
+            all_tasks = asyncio.gather(*self.tasks, return_exceptions=True)
+            all_tasks.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                self.loop.run_until_complete(all_tasks)
+            self.loop.run_until_complete(self.loop.shutdown_asyncgens())
+            raise
 
     async def start(self):
         if self.trace:
@@ -104,6 +115,9 @@ class TaskInvoker:
             try:
                 task = await self.queue.get()
 
+                if (self.error_while_execution):
+                    break
+
                 async with self.mtx:
                     self.thread_on_base[no] = False
                 if self.trace:
@@ -111,6 +125,9 @@ class TaskInvoker:
 
                 result = await task.doit()
                 self.queue.task_done()
+
+                if (self.error_while_execution):
+                    return
 
                 if self.trace:
                     print(f"[Trace] thread:{no} result of last task: ", result)
@@ -124,9 +141,7 @@ class TaskInvoker:
                     self.thread_on_base[no] = True
                     if all(self.thread_on_base) and self.queue.empty():
                         break
-            # except queue.Empty:
-            #    if all(self.thread_on_base) and self.queue.empty():
-            #        break
+
             except KeyboardInterrupt:
                 self.error_while_execution = True
                 break
