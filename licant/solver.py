@@ -127,7 +127,7 @@ class TaskInvoker:
                 self.queue.task_done()
 
                 if (self.error_while_execution):
-                    return
+                    break
 
                 if self.trace:
                     print(f"[Trace] thread:{no} result of last task: ", result)
@@ -145,6 +145,13 @@ class TaskInvoker:
             except KeyboardInterrupt:
                 self.error_while_execution = True
                 break
+
+        await self.release_queue()
+
+    async def release_queue(self):
+        while True:
+            task = await self.queue.get()
+            self.queue.task_done()
 
     async def add_target(self, target):
         await self.queue.put(target)
