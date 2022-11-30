@@ -552,6 +552,7 @@ def task(name, target, impl, type, core, **kwargs):
         licant.modules.module(module_name, impl=impl, type=type,
                               target=target, **kwargs)
     else:
+        module_name = name
         licant.modules.module(name, impl=impl, type=type, **kwargs)
     ret, opts = prepare_targets(module_name, core=core)
     #licant.make.fileset(tgt=name, targets=ret, finalopts=opts, core=core)
@@ -574,8 +575,8 @@ def static_library(name, target=None, impl=None, type="static_library", core=lic
     return task(name, target, impl, type, core=core, **kwargs)
 
 
-def objects(name, target=None, impl=None, type="objects", **kwargs):
-    return task(name, target, impl, type, **kwargs)
+def objects(name, target=None, impl=None, type="objects", core=licant.core.default_core(), **kwargs):
+    return task(name, target, impl, type, core=core, **kwargs)
 
 
 def library(*args, shared=True, **kwargs):
