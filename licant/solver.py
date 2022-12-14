@@ -84,6 +84,7 @@ class TaskInvoker:
     def run_until_complete(self):
         try:
             self.loop.run_until_complete(self.start())
+            self.loop.close()
         except KeyboardInterrupt:
             self.error_while_execution = True
             all_tasks = asyncio.gather(*self.tasks, return_exceptions=True)
