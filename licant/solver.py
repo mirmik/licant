@@ -12,14 +12,13 @@ class DependableTarget:
         self.kwargs = kwargs
         self._is_done = False
 
-    async def doit_impl(self):
-        return self.what_to_do(*self.args, **self.kwargs)
+    def doit_impl(self):
+        a = self.what_to_do(*self.args, **self.kwargs)
+        return a
 
     async def doit(self):
-        task = asyncio.create_task(self.doit_impl())
-        await task
-
-        result = task.result()
+        task = asyncio.to_thread(self.doit_impl)
+        result = await task
         self._is_done = True
         return result
 
