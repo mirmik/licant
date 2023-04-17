@@ -2,16 +2,14 @@
 
 from cmath import inf
 from licant.modules import mlibrary, module
-from licant.cxx_make import host_toolchain
 from licant.core import default_core
 from licant.util import red, yellow, cxx_read_depends
-
 import os
 import licant.util as gu
 import licant.make
-
 import glob
 import queue
+from licant.cxx_make import default_toolchain
 
 
 class solver:
@@ -124,8 +122,8 @@ def concat_to_submodule(base, local, solver, tbase, tlocal):
     return base + lm
 
 
-cxx_module_field_list = {
-    #                                       # merge                     #include                    #default
+def cxx_module_field_list():
+    return {
     "srcdir": solver("str", local, base, "."),
     "depends": solver("list", local, base, []),
     "objects": solver("list", local_add_srcdir, concat_add_srcdir, []),
@@ -144,7 +142,7 @@ cxx_module_field_list = {
     "modules": solver("list", local, concat, []),
     "type": solver("str", local, base, "objects"),
     "builddir": solver("str", local_if_exist, base, "build"),
-    "toolchain": solver("toolchain", local_if_exist, base, host_toolchain),
+    "toolchain": solver("toolchain", local_if_exist, base, default_toolchain()),
     "optimize": solver("str", local_if_exist, base, ""),
     "include_modules": solver("list", concat_to_submodule, base, []),
     "defines": solver("list", concat, concat, []),
@@ -166,7 +164,7 @@ class CXXModuleOptions:
             if k not in licant.modules.special:
                 if k not in self.table:
                     print("Unresolved option: {}".format(red(k)))
-                    print("cxx_module_field_list:", cxx_module_field_list)
+                    print("cxx_module_field_list:", cxx_module_field_list())
                     exit(-1)
 
                 if v.__class__.__name__ != self.table[k].type:
@@ -177,7 +175,8 @@ class CXXModuleOptions:
                     )
                     exit(-1)
 
-    def set_default_if_empty(self, table=cxx_module_field_list):
+    def set_default_if_empty(self):
+        table = cxx_module_field_list()
         for k in table:
             if k not in self.opts:
                 self.opts[k] = table[k].default
@@ -197,7 +196,8 @@ class CXXModuleOptions:
 
         return CXXModuleOptions(**resopts)
 
-    def __init__(self, table=cxx_module_field_list, **kwargs):
+    def __init__(self, **kwargs):
+        table = cxx_module_field_list()
         self.opts = kwargs
         self.table = table
         self.check()

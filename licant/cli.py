@@ -5,6 +5,7 @@ from argparse import RawTextHelpFormatter
 
 import licant.util
 import licant.core
+from licant.cxx_make import set_default_toolchain
 
 import sys
 import os
@@ -48,6 +49,9 @@ parser.add_argument("freeargs", type=str, nargs="*", help=make_freeargs_help())
 
 parser.add_argument("--printruntime", action="store_true", default=False)
 
+parser.add_argument("--clang_toolchain", action="store_true", default=False)
+parser.add_argument("--gcc_toolchain", action="store_true", default=False)
+
 
 def add_argument(*args, **kvargs):
     parser.add_argument(*args, **kvargs)
@@ -59,6 +63,12 @@ def parse(argv=sys.argv[1:]):
     if not opts:
         opts = parser.parse_args(argv)
         args = opts.freeargs
+
+    if opts.clang_toolchain:
+        set_default_toolchain("clang")
+    
+    if opts.gcc_toolchain:
+        set_default_toolchain("gcc")
 
     return opts, args
 

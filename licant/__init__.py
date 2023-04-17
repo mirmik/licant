@@ -18,7 +18,7 @@ from licant.modules import module, implementation, submodule
 from licant.modules import module_default_implementation as module_defimpl
 from licant.modules import module_default_implementation
 from licant.util import error
-from licant.cxx_make import gcc_toolchain, clang_toolchain, host_toolchain
+from licant.cxx_make import gcc_toolchain, clang_toolchain
 import licant.scripter
 from licant.libs import include
 

@@ -5,6 +5,12 @@ from licant.make import MakeCore
 import os
 
 
+DEFAULT_TOOLCHAIN = "std"
+
+def set_default_toolchain(toolchain):
+    global DEFAULT_TOOLCHAIN
+    DEFAULT_TOOLCHAIN = toolchain
+
 class Options:
     pass
 
@@ -26,30 +32,20 @@ class toolchain:
         return str(self.__dict__)
 
 
-host_toolchain = toolchain(
-    cxx="c++",
-    cc="cc",
-    ld="ld",
-    ar="ar",
-    objdump="objdump",
-    moc="moc",
-    uic="uic",
-    objcopy="objcopy"
-)
+def standart_toolchain():
+    return toolchain(
+        cxx="c++",
+        cc="cc",
+        ld="ld",
+        ar="ar",
+        objdump="objdump",
+        moc="moc",
+        uic="uic",
+        objcopy="objcopy"
+    )
 
 
-def toolchain_gcc(prefix):
-    print("{} is deprecated. Use {} instead".format(
-        yellow('toolchain_gcc'),
-        yellow('gcc_toolchain')
-    ))
-    return gcc_toolchain(prefix)
-
-
-def gcc_toolchain(prefix):
-    if prefix is None:
-        return host_toolchain
-
+def gcc_toolchain(prefix=""):
     return toolchain(
         cc=prefix+"gcc",
         cxx=prefix+"g++",
@@ -63,8 +59,8 @@ def gcc_toolchain(prefix):
 
 def clang_toolchain():
     return toolchain(
-        cc="clang++",
-        cxx="clang",
+        cc="clang",
+        cxx="clang++",
         ld="ld",
         ar="ar",
         objdump="objdump",
@@ -72,11 +68,22 @@ def clang_toolchain():
         moc="moc",
         uic="uic")
 
+def default_toolchain():
+    if DEFAULT_TOOLCHAIN == "clang":
+        return clang_toolchain()
+
+    if DEFAULT_TOOLCHAIN == "gcc":
+        return gcc_toolchain()
+
+    if DEFAULT_TOOLCHAIN == "std":
+        return standart_toolchain()
+        
+    raise Exception("unknown toolchain")
 
 class options:
     def __init__(
             self,
-            toolchain=host_toolchain,
+            toolchain=None,
             include_paths=None,
             defines=None,
             cxx_flags="",
@@ -86,6 +93,9 @@ class options:
             ldscripts=None,
             optimize="",
     ):
+        if toolchain is None:
+            toolchain = default_toolchain()
+
         self.toolchain = toolchain
         self.incopt = licant.util.flag_prefix("-I", include_paths)
         self.defopt = licant.util.flag_prefix("-D", defines)
