@@ -229,21 +229,37 @@ class InverseRecursiveSolver:
                     raise TypeError("Dep must be str")
 
     def dfs(self, target, visited, path):
+        stack = [(target, iter(target.inverse_deps))]
         visited.add(target)
         path.append(target)
-        for dep in target.inverse_deps:
-            if dep in path:
+        path_set = {target}
+
+        while stack:
+            node, children_iter = stack[-1]
+            try:
+                dep = next(children_iter)
+            except StopIteration:
+                stack.pop()
+                finished = path.pop()
+                path_set.discard(finished)
+                continue
+
+            if dep in path_set:
                 # нашли цикл
                 raise CircularDependencyError(path + [dep])
+
             if dep not in visited:
-                self.dfs(dep, visited, path)
-        path.pop()
+                visited.add(dep)
+                path.append(dep)
+                path_set.add(dep)
+                stack.append((dep, iter(dep.inverse_deps)))
 
     def connectivity_check(self, deptargets, non_dependable_targets):
         visited = set()
         path = []
         for target in non_dependable_targets:
-            self.dfs(target, visited, path)
+            if target not in visited:
+                self.dfs(target, visited, path)
 
         if len(visited) != len(deptargets):
             nonvisited = set(deptargets) - visited

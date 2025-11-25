@@ -8,11 +8,10 @@ from licant.cache import fcache
 from licant.util import purple, quite
 import threading
 import os
-import time
 import subprocess
-import fcntl
 import sys
-import traceback
+import shlex
+import shutil
 
 _rlock = threading.RLock()
 
@@ -43,15 +42,56 @@ def do_execute(target, rule, msgfield, prefix=None):
         else:
             sprint(rule)
 
-    proc = subprocess.Popen(
-        rule, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout = proc.stdout
-    stderr = proc.stderr
-    ret = proc.wait()
+    def _execute_builtin(formatted_rule):
+        """Handle simple commands without shell for cross-platform behavior."""
+        parts = shlex.split(formatted_rule)
+        if not parts:
+            return 0
 
-    sprint(stdout.read().decode("utf-8"), end="")
+        cmd, *rest = parts
+        if cmd == "rm":
+            # support `rm -f path` and `rm path`
+            force = "-f" in rest
+            targets = [arg for arg in rest if not arg.startswith("-")]
+            for path in targets:
+                try:
+                    os.remove(path)
+                except FileNotFoundError:
+                    if not force:
+                        raise
+            return 0
+
+        if cmd == "cp" and len(rest) == 2:
+            shutil.copy2(rest[0], rest[1])
+            return 0
+
+        return None
+
+    try:
+        ret = _execute_builtin(rule)
+    except Exception as e:
+        stdout_data = ""
+        stderr_data = str(e)
+        ret = 1
+    else:
+        if ret is None:
+            proc = subprocess.Popen(
+                rule,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+            stdout_data, stderr_data = proc.communicate()
+            ret = proc.returncode
+        else:
+            stdout_data, stderr_data = "", ""
+
+    sprint(stdout_data, end="")
     sys.stdout.flush()
-    sprint(stderr.read().decode("utf-8"), end="")
+    sprint(stderr_data, end="")
     sys.stderr.flush()
 
     if target.is_file():
