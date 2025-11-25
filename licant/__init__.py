@@ -19,7 +19,7 @@ from licant.modules import module_default_implementation as module_defimpl
 from licant.util import error
 import licant.scripter
 
-__version__ = "1.15.0"
+__version__ = "1.20.0"
 
 
 def directory():
