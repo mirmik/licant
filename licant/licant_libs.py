@@ -1,9 +1,9 @@
 #!/usr/bin/python
 #coding: utf-8
 
-import sys
-import os
 import json
+import os
+import sys
 from optparse import OptionParser
 
 import licant.libs

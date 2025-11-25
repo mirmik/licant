@@ -1,6 +1,7 @@
-from licant.core import core
-import licant.make
 import os
+
+import licant.make
+from licant.core import core
 
 
 class java_options:

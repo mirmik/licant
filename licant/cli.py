@@ -1,14 +1,12 @@
 # coding: utf-8
 
-from argparse import ArgumentParser
-from argparse import RawTextHelpFormatter
-
-import licant.util
-import licant.core
-from licant.cxx_make import set_default_toolchain
-
-import sys
+from argparse import ArgumentParser, RawTextHelpFormatter
 import os
+import sys
+
+import licant.core
+import licant.util
+from licant.cxx_make import set_default_toolchain
 
 default_target = None
 

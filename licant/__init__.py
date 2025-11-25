@@ -1,26 +1,23 @@
-import subprocess
 import os
+import subprocess
+
 from licant.cli import cliexecute as ex
-from licant.core import Core, Target, UpdatableTarget
-from licant.core import default_core
-from licant.core import routine
-from licant.core import do
-from licant.core import get_target
-from licant.make import copy, fileset, Executor, makefile, source, makedir, MakeCore, DirectoryTarget, FileTarget
-from licant.cxx_make import objcopy
-from licant.cxx_modules import application as cxx_application
-from licant.cxx_modules import shared_library as cxx_shared_library
-from licant.cxx_modules import static_library as cxx_static_library
-from licant.cxx_modules import static_and_shared as cxx_static_and_shared
-from licant.cxx_modules import library as cxx_library
-from licant.cxx_modules import objects as cxx_objects
-from licant.modules import module, implementation, submodule
-from licant.modules import module_default_implementation as module_defimpl
-from licant.modules import module_default_implementation
-from licant.util import error
-from licant.cxx_make import gcc_toolchain, clang_toolchain
-import licant.scripter
+from licant.core import Core, Target, UpdatableTarget, default_core, do, get_target, routine
+from licant.cxx_make import clang_toolchain, gcc_toolchain, objcopy
+from licant.cxx_modules import (
+    application as cxx_application,
+    library as cxx_library,
+    objects as cxx_objects,
+    shared_library as cxx_shared_library,
+    static_and_shared as cxx_static_and_shared,
+    static_library as cxx_static_library,
+)
 from licant.libs import include
+from licant.make import DirectoryTarget, Executor, FileTarget, MakeCore, copy, fileset, makefile, makedir, source
+from licant.modules import implementation, module, module_default_implementation, submodule
+from licant.modules import module_default_implementation as module_defimpl
+from licant.util import error
+import licant.scripter
 
 __version__ = "1.15.0"
 

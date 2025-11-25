@@ -1,8 +1,9 @@
-from licant.core import default_core
-from licant.util import yellow
-import licant.make
-from licant.make import MakeCore
 import os
+
+import licant.make
+from licant.core import default_core
+from licant.make import MakeCore
+from licant.util import yellow
 
 
 DEFAULT_TOOLCHAIN = "std"

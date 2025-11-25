@@ -1,8 +1,8 @@
-from licant.util import red
-from licant.scripter import scriptq
-import licant.core
-
 import re
+
+import licant.core
+from licant.scripter import scriptq
+from licant.util import red
 
 special = ["__script__", "__dir__"]
 

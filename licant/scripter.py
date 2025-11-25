@@ -1,5 +1,7 @@
-import sys
 import os
+import sys
+
+import licant.make
 import licant.util
 from licant.core import default_core
 

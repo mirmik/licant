@@ -1,9 +1,9 @@
+import json
+import os
+
+import licant.core
 from licant.scripter import scriptq
 from licant.util import yellow
-import licant.core
-
-import os
-import json
 
 gpath = "/var/lib/licant"
 lpath = os.path.expanduser("~/.licant")

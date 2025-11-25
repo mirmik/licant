@@ -1,12 +1,12 @@
-import os
-import inspect
-import types
-import re
+from collections import defaultdict
 import fnmatch
 import functools
-import warnings
+import inspect
+import os
 import random
-from collections import defaultdict
+import re
+import types
+import warnings
 
 string_types = (type(b""), type(u""))
 

@@ -2,16 +2,16 @@
 
 from __future__ import print_function
 
-import licant
-from licant.core import UpdatableTarget, Core, default_core
-from licant.cache import fcache
-from licant.util import purple, quite
-import threading
 import os
-import subprocess
-import sys
 import shlex
 import shutil
+import subprocess
+import sys
+import threading
+
+from licant.cache import fcache
+from licant.core import Core, UpdatableTarget, default_core
+from licant.util import canonical_path, do_nothing, purple, quite
 
 _rlock = threading.RLock()
 
@@ -160,7 +160,7 @@ class FileTarget(MakeFileTarget):
 
     def __init__(self, tgt, deps, force=False, use_dirkeep=True, **kwargs):
 
-        tgt = licant.util.canonical_path(tgt)
+        tgt = canonical_path(tgt)
 
         if use_dirkeep:
             dirpath = os.path.normpath(os.path.dirname(tgt))
@@ -257,7 +257,7 @@ def source(tgt, deps=[]):
     target = FileTarget(
         build=lambda self: self.warn_if_not_exist(), deps=deps, tgt=tgt)
     target.clr = None
-    target.dirkeep = licant.util.do_nothing
+    target.dirkeep = do_nothing
     return default_core().add(target)
 
 
@@ -396,13 +396,13 @@ class MakeCore(Core):
             message="SOURCE {tgt}"
         ))
         target.clr = None
-        target.dirkeep = licant.util.do_nothing
+        target.dirkeep = do_nothing
         return target
 
     def ftarget(self, tgt, build=None, deps=[], exec=None, message="FTARGET {tgt}"):
         """Make the file target."""
         if exec is not None:
-            build = licant.Executor(exec)
+            build = Executor(exec)
 
         if build is None:
             raise Exception("build action is None")

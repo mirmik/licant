@@ -1,15 +1,16 @@
 # coding: utf-8
 
 from cmath import inf
-from licant.modules import mlibrary, module
-from licant.core import default_core
-from licant.util import red, yellow, cxx_read_depends
-import os
-import licant.util as gu
-import licant.make
 import glob
+import os
 import queue
+
+import licant.make
+import licant.util as gu
+from licant.core import default_core
 from licant.cxx_make import default_toolchain
+from licant.modules import mlibrary, module
+from licant.util import cxx_read_depends, red, yellow
 
 
 class solver:

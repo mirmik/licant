@@ -1,6 +1,7 @@
 import asyncio
-from licant.util import invert_depends_dictionary, red
 import contextlib
+
+from licant.util import invert_depends_dictionary, red
 
 
 class DependableTarget:

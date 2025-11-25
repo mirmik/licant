@@ -1,8 +1,9 @@
 import os
+import subprocess
 import sys
+
 import licant.make
 import licant.util
-import subprocess
 from licant.core import default_core
 
 error_in_install_library = False

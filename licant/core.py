@@ -1,11 +1,12 @@
 # coding: utf-8
 
-import licant.util
-import types
-import inspect
-from functools import partial
 import glob
+import inspect
 import os
+import types
+from functools import partial
+
+import licant.util
 from licant.solver import DependableTarget, InverseRecursiveSolver
 
 
