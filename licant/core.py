@@ -17,6 +17,8 @@ class WrongAction(Exception):
     def __str__(self):
         return "WrongAction: obj:{} actname:{} class:{} dict:{self.obj.__dict__}".format(self.obj, self.actname, self.obj.__class__, self.obj.__dict__)
 
+    def __repr__(self):
+        return self.__str__()
 
 class NoneDictionary(dict):
     def __init__(self):
@@ -284,12 +286,11 @@ class Target:
         self.core.update_update_needity()
 
         func = getattr(self, funcname, None)
+        
         if func is None:
-            if critical:
-                print("wrong action: {}".format(funcname))
-                raise WrongAction(self, funcname)
-            return None
+            raise WrongAction(self, funcname)
 
+        print(func, "!!!!")
         if isinstance(func, types.MethodType):
             return func(*args, **kwargs)
 

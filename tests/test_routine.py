@@ -11,6 +11,6 @@ class RoutineTest(unittest.TestCase):
 
         def foo(x):
             x["a"] = 1
-        core.target("some_target", action=foo(x))
+        core.target("some_target", action=lambda s: foo(x))
         core.do("some_target", "action")
         self.assertEqual(x["a"], 1)
