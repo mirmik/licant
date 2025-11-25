@@ -1,0 +1,13 @@
+licant/**
+tests/**
+configurator/**
+./setup.py
+./README.md
+
+[TREE]
+licant/**
+tests/**
+configurator/**
+./setup.py
+./README.md
+./tools/**
