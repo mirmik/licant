@@ -116,7 +116,7 @@ class InvertDependsTest(unittest.TestCase):
             solver = InverseRecursiveSolver(targets, count_of_threads=1)
             solver.exec()
 
-    def test_ciclyc_task(self):
+    def test_ciclyc_task_2(self):
         def a_func():
             pass
 
@@ -128,3 +128,51 @@ class InvertDependsTest(unittest.TestCase):
         with self.assertRaises(CircularDependencyError) as context:
             solver = InverseRecursiveSolver(targets, count_of_threads=1)
             solver.exec()
+
+    def test_task_exception_does_not_deadlock(self):
+        calls = []
+
+        def a_func():
+            calls.append("a")
+
+        def b_func():
+            calls.append("b")
+            raise RuntimeError("fail")
+
+        def c_func():
+            calls.append("c")
+
+        targets = [
+            DependableTarget("a", deps={"b", "c"}, what_to_do=a_func),
+            DependableTarget("b", deps=set(), what_to_do=b_func),
+            DependableTarget("c", deps=set(), what_to_do=c_func),
+        ]
+
+        solver = InverseRecursiveSolver(targets, count_of_threads=2)
+
+        result_holder = {"res": None, "exc": None}
+
+        def run_solver():
+            try:
+                result_holder["res"] = solver.exec()
+            except Exception as e:
+                result_holder["exc"] = e
+
+        t = threading.Thread(target=run_solver, daemon=True)
+        t.start()
+        t.join(2.0)  # ждём максимум 2 секунды
+
+        # если поток всё ещё живой — считаем, что дедлок
+        self.assertFalse(t.is_alive(), "solver.exec() deadlocked (did not finish in 2 seconds)")
+
+        # если поток упал исключением — тоже важно увидеть
+        if result_holder["exc"] is not None:
+            raise result_holder["exc"]
+
+        # дальше уже логика поведения
+        self.assertIsNotNone(result_holder["res"])
+        self.assertFalse(result_holder["res"])  # при ошибке в задаче exec() должен вернуть False
+
+        self.assertIn("b", calls)
+        self.assertIn("c", calls)
+        self.assertNotIn("a", calls)
