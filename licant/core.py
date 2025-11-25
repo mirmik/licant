@@ -15,8 +15,10 @@ class WrongAction(Exception):
         self.actname = actname
 
     def __str__(self):
-        return "WrongAction: obj:{} actname:{} class:{} dict:{self.obj.__dict__}".format(self.obj, self.actname, self.obj.__class__, self.obj.__dict__)
-
+        return "WrongAction: obj:{} actname:{} class:{} dict:{}".format(
+            self.obj, self.actname, self.obj.__class__, self.obj.__dict__
+        )
+    
     def __repr__(self):
         return self.__str__()
 
