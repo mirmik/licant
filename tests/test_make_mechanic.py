@@ -9,7 +9,8 @@ from licant.solver import (DependableTarget,
                            InverseRecursiveSolver,
                            UnknowTargetError,
                            NoOneNonDependableTarget,
-                           CircularDependencyError)
+                           CircularDependencyError,
+                           ConnectivityError)
 
 
 class InvertDependsTest(unittest.TestCase):
@@ -176,3 +177,53 @@ class InvertDependsTest(unittest.TestCase):
         self.assertIn("b", calls)
         self.assertIn("c", calls)
         self.assertNotIn("a", calls)
+
+    def test_connectivity_error_for_unreachable_cycle(self):
+        """Есть нормальный кусок графа и отдельно висящий цикл — должны получить ConnectivityError."""
+        def a_func():
+            pass
+        
+        targets = [
+            # Связный нормальный участок: b -> a
+            DependableTarget("a", deps={"b"}, what_to_do=a_func),
+            DependableTarget("b", deps=set(), what_to_do=a_func),
+
+            # Отдельный компонент: цикл c <-> d, до него нельзя дойти от корней
+            DependableTarget("c", deps={"d"}, what_to_do=a_func),
+            DependableTarget("d", deps={"c"}, what_to_do=a_func),
+        ]
+
+        with self.assertRaises(ConnectivityError) as ctx:
+            # исключение вылетит уже в __init__
+            solver = InverseRecursiveSolver(targets, count_of_threads=1)
+            solver.exec()
+
+        # заодно проверим, что в lst именно "висячий" кусок
+        names = {t.name() for t in ctx.exception.lst}
+        self.assertEqual(names, {"c", "d"})
+
+    def test_target_type_must_be_dependable_target(self):
+        """Если в список целей засунули что-то не DependableTarget — должен быть TypeError."""
+        def a_func():
+            pass
+
+        targets = [
+            DependableTarget("a", deps=set(), what_to_do=a_func),
+            "not a target at all",
+        ]
+
+        with self.assertRaises(TypeError):
+            InverseRecursiveSolver(targets, count_of_threads=1)
+
+    def test_dep_type_must_be_str(self):
+        """Если зависимость не строка — тоже должен быть TypeError."""
+        def a_func():
+            pass
+
+        # dep — число, а не строка
+        targets = [
+            DependableTarget("a", deps={1}, what_to_do=a_func),
+        ]
+
+        with self.assertRaises(TypeError):
+            InverseRecursiveSolver(targets, count_of_threads=1)

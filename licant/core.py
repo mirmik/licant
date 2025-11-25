@@ -39,7 +39,6 @@ class Core:
         self.help_showed_targets = []
         self.runtime = NoneDictionary()
         self.debug = debug
-        self.depends_as_set_lazy_cache = {}
 
     def nullify_update_needity(self):
         if self.trace_mode():
@@ -106,18 +105,14 @@ class Core:
                 accum.add(d)
                 self.depends_as_set_impl(d, accum)
 
+
     def depends_as_set(self, tgt, incroot):
-        if (tgt, incroot) in self.depends_as_set_lazy_cache:
-            return self.depends_as_set_lazy_cache[(tgt, incroot)]
-
         accumulator = set()
+        tgt_str = str(tgt)
         if incroot:
-            accumulator.add(str(tgt))
-        self.depends_as_set_impl(tgt, accumulator)
-
-        ret = sorted(accumulator)
-        self.depends_as_set_lazy_cache[tgt] = ret
-        return ret
+            accumulator.add(tgt_str)
+        self.depends_as_set_impl(tgt_str, accumulator)
+        return sorted(accumulator)
 
     def target(self, name, deps=[], **kwargs):
         """Create new target"""
@@ -292,7 +287,6 @@ class Target:
         if func is None:
             raise WrongAction(self, funcname)
 
-        print(func, "!!!!")
         if isinstance(func, types.MethodType):
             return func(*args, **kwargs)
 
@@ -400,7 +394,7 @@ class UpdatableTarget(Target):
 
 class Routine(UpdatableTarget):
     __actions__ = {"recurse_update",
-                   "recurse_update_get_args", "invoke_routine" "update", "actlist"}
+                   "recurse_update_get_args", "invoke_routine", "update", "actlist"}
 
     def __init__(self,
                  func,
