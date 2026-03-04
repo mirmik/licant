@@ -12,7 +12,6 @@ paths = {}
 
 
 def add_record(name, path):
-    global paths
     abspath = os.path.abspath(path)
     exists = os.path.exists(abspath)
 

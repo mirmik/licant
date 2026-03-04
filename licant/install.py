@@ -46,8 +46,6 @@ def find_application_path():
 
 
 def find_headers_path():
-    global error_in_install_library
-
     if "PREFIX" in os.environ:
         return os.path.join(os.environ["PREFIX"], "include")
 
@@ -61,8 +59,6 @@ def find_headers_path():
 
 
 def find_libraries_path():
-    global error_in_install_library
-
     if "PREFIX" in os.environ:
         return os.path.join(os.environ["PREFIX"], "lib")
 
