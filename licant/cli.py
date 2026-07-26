@@ -148,9 +148,14 @@ def cliexecute(
         print("PRINT RUNTIME:", core.runtime)
 
     try:
-        __cliexecute(args, default=default, core=core)
+        result = __cliexecute(args, default=default, core=core)
     except KeyboardInterrupt:
         licant.util.error("interrupted by user")
 
+    if result is False:
+        raise SystemExit(1)
+
     if colorwrap:
         print(licant.util.yellow("[finish]"))
+
+    return result

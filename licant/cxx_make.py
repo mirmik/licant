@@ -35,14 +35,14 @@ class toolchain:
 
 def standart_toolchain():
     return toolchain(
-        cxx="c++",
-        cc="cc",
-        ld="ld",
-        ar="ar",
-        objdump="objdump",
+        cxx=os.environ.get("CXX", "c++"),
+        cc=os.environ.get("CC", "cc"),
+        ld=os.environ.get("LD", "ld"),
+        ar=os.environ.get("AR", "ar"),
+        objdump=os.environ.get("OBJDUMP", "objdump"),
         moc="moc",
         uic="uic",
-        objcopy="objcopy"
+        objcopy=os.environ.get("OBJCOPY", "objcopy")
     )
 
 

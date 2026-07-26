@@ -1,5 +1,6 @@
 import unittest
 import licant
+import licant.cli
 import shutil
 import os
 
@@ -14,6 +15,21 @@ class MyTest(unittest.TestCase):
         core.target("some_target", action=lambda s: foo(x))
         core.do("some_target", "action")
         self.assertEqual(x["a"], 1)
+
+    def test_cli_exits_nonzero_when_target_fails(self):
+        core = licant.Core()
+        core.target("failing", action=lambda target: False)
+
+        old_opts = licant.cli.opts
+        old_args = licant.cli.args
+        try:
+            licant.cli.opts = None
+            licant.cli.args = None
+            with self.assertRaisesRegex(SystemExit, "1"):
+                licant.cli.cliexecute(default="failing", argv=[], core=core)
+        finally:
+            licant.cli.opts = old_opts
+            licant.cli.args = old_args
 
     def test_target(self):
         core = licant.Core()
@@ -90,6 +106,7 @@ class MyTest(unittest.TestCase):
 
     def test_copy(self):
         core = licant.MakeCore(debug=True)
+        shutil.rmtree("/tmp/licant/test/", ignore_errors=True)
         os.makedirs("/tmp/licant/test/", exist_ok=True)
         with open("/tmp/licant/test/a.txt", "w") as f:
             f.write("Hello")
