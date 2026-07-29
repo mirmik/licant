@@ -1,5 +1,5 @@
-import asyncio
-import contextlib
+import queue
+import threading
 
 from licant.util import invert_depends_dictionary, red
 
@@ -19,9 +19,8 @@ class DependableTarget:
         result = self.what_to_do(*self.args, **self.kwargs)
         return result
 
-    async def doit(self):
-        # выносим в отдельный поток, чтобы не блокировать event loop
-        result = await asyncio.to_thread(self.doit_impl)
+    def doit(self):
+        result = self.doit_impl()
         self._is_done = True
         return result
 
@@ -45,18 +44,21 @@ class DependableTargetRuntime:
     def deps(self):
         return self.deptarget.deps
 
-    async def decrease_inverse_deps_count(self):
+    def decrease_inverse_deps_count(self):
         self.depcount -= 1
         if self.depcount == 0:
-            await self.task_invoker.add_target(self)
+            self.task_invoker.add_target(self)
         assert self.depcount >= 0
 
-    async def doit(self):
-        result = await self.deptarget.doit()
+    def doit(self):
+        result = self.deptarget.doit()
+        if result is False:
+            return result
+
         # после выполнения оповещаем всех, кто от нас зависит
-        async with self.task_invoker.mtx:
+        with self.task_invoker.mtx:
             for dep in self.inverse_deps:
-                await dep.decrease_inverse_deps_count()
+                dep.decrease_inverse_deps_count()
         return result
 
     def count_of_deps(self):
@@ -74,78 +76,52 @@ class DependableTargetRuntime:
 
 class TaskInvoker:
     def __init__(self, threads_count: int, trace: bool = False):
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-        self.queue = asyncio.Queue()
-        self.threads_count = threads_count
+        self.queue = queue.Queue()
+        self.threads_count = max(1, threads_count)
         self.tasks = []
-        self.mtx = asyncio.Lock()
+        self.mtx = threading.Lock()
         self.trace = trace
         self.error_while_execution = False
         self.last_exception = None
 
     def run_until_complete(self, initial_targets):
-        try:
-            async def main():
-                # кладём начальные задачи (без зависимостей) в очередь
-                for t in initial_targets:
-                    await self.add_target(t)
-                await self.start()
-
-            self.loop.run_until_complete(main())
-        except KeyboardInterrupt:
-            self.error_while_execution = True
-            # аккуратно гасим все таски event loop’а
-            pending = asyncio.all_tasks(self.loop)
-            for task in pending:
-                task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                self.loop.run_until_complete(
-                    asyncio.gather(*pending, return_exceptions=True)
-                )
-        finally:
-            with contextlib.suppress(RuntimeError):
-                self.loop.run_until_complete(self.loop.shutdown_asyncgens())
-            self.loop.close()
-
-    async def start(self):
         if self.trace:
             print(f"[Trace] start with {self.threads_count} threads")
 
+        for target in initial_targets:
+            self.add_target(target)
+
         for i in range(self.threads_count):
-            task = asyncio.create_task(
-                self.worker(f"worker-{i}", self.queue, i)
+            task = threading.Thread(
+                target=self.worker,
+                name=f"licant-worker-{i}",
+                args=(f"worker-{i}", self.queue, i),
             )
+            task.start()
             self.tasks.append(task)
 
-        # ждём, пока все задачи в очереди будут отмечены как выполненные
-        await self.queue.join()
+        try:
+            self.queue.join()
+        except KeyboardInterrupt:
+            self.error_while_execution = True
+        finally:
+            for _ in self.tasks:
+                self.queue.put(None)
+            for task in self.tasks:
+                task.join()
 
-        # после этого останавливаем воркеры
-        for task in self.tasks:
-            task.cancel()
-
-        await asyncio.gather(*self.tasks, return_exceptions=True)
-
-    async def worker(self, name, queue, no):
+    def worker(self, name, queue, no):
         while True:
-            try:
-                target = await queue.get()
-            except asyncio.CancelledError:
-                break
+            target = queue.get()
 
             try:
-                if self.error_while_execution:
-                    # уже была ошибка — эту задачу не выполняем,
-                    # но должны пометить как завершённую
-                    if self.trace:
-                        print(f"[Trace] {name}: skip task {target.name()} due to error flag")
-                    continue
+                if target is None:
+                    return
 
                 if self.trace:
                     print(f"[Trace] thread:{no} do task: {target.name()}")
 
-                result = await target.doit()
+                result = target.doit()
 
                 if self.trace:
                     print(f"[Trace] thread:{no} result of last task: {result}")
@@ -162,8 +138,8 @@ class TaskInvoker:
                 # ВАЖНО: всегда вызываем task_done для взятой задачи
                 queue.task_done()
 
-    async def add_target(self, target):
-        await self.queue.put(target)
+    def add_target(self, target):
+        self.queue.put(target)
 
 
 class UnknowTargetError(Exception):

@@ -178,6 +178,20 @@ class InvertDependsTest(unittest.TestCase):
         self.assertIn("c", calls)
         self.assertNotIn("a", calls)
 
+    def test_failed_task_blocks_only_its_dependents(self):
+        calls = []
+
+        targets = [
+            DependableTarget("a", deps={"b"}, what_to_do=lambda: calls.append("a")),
+            DependableTarget("b", deps=set(), what_to_do=lambda: calls.append("b") or False),
+            DependableTarget("c", deps=set(), what_to_do=lambda: calls.append("c")),
+        ]
+
+        solver = InverseRecursiveSolver(targets, count_of_threads=1)
+
+        self.assertFalse(solver.exec())
+        self.assertEqual(calls, ["b", "c"])
+
     def test_connectivity_error_for_unreachable_cycle(self):
         """Есть нормальный кусок графа и отдельно висящий цикл — должны получить ConnectivityError."""
         def a_func():
